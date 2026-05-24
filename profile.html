@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人资料 - 缘来是你</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 600px; margin: 0 auto; }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #ff6b9d;
+        }
+        .card-header h2 { color: #c44569; font-size: 1.3rem; }
+        
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn-primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); }
+        .btn-primary:hover { box-shadow: 0 5px 15px rgba(255,107,157,0.4); }
+        .btn-danger { background: #ff4757; }
+        .btn-danger:hover { background: #ff3344; }
+        .btn-secondary { background: #747d8c; }
+        .btn-secondary:hover { background: #636e72; }
+        .btn-success { background: #2ed573; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-info { background: #3498db; }
+        .btn-info:hover { background: #2980b9; }
+
+        .profile-section { text-align: center; margin-bottom: 25px; }
+        .avatar-container {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            border: 4px solid white;
+            box-shadow: 0 5px 20px rgba(255,107,157,0.3);
+        }
+        .avatar {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .avatar-placeholder { font-size: 4rem; color: white; }
+        .upload-btn {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+        }
+        .avatar-container:hover .upload-btn { display: block; }
+        .upload-input { display: none; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .form-row-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
+        }
+        .form-group { margin-bottom: 12px; }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #ff6b9d;
+        }
+        textarea { resize: vertical; min-height: 100px; }
+
+        .radio-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .radio-group label {
+            cursor: pointer;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+        }
+        .radio-group input { width: auto; margin-right: 5px; }
+
+        .activities-select, .hobbies-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .activity-tag, .hobby-tag {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .activity-tag.selected, .hobby-tag.selected {
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            color: white;
+        }
+
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .photo-item {
+            aspect-ratio: 1;
+            background: #f5f5f5;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-item.add {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 2rem;
+            border: 2px dashed #ddd;
+        }
+        .photo-item.add:hover {
+            background: #ffeaa7;
+            border-color: #ff6b9d;
+        }
+        .photo-delete {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+        }
+        .photo-item:hover .photo-delete { display: flex; }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+        }
+        .success-message {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-label {
+            width: 100px;
+            color: #666;
+            font-weight: 500;
+        }
+        .info-value { color: #333; }
+
+        .hidden { display: none; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .modal-header h3 { color: #c44569; font-size: 1.3rem; }
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover { color: #333; }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #c44569;
+            margin: 20px 0 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #ff6b9d30;
+        }
+
+        @media (max-width: 600px) {
+            .form-row, .form-row-3 { grid-template-columns: 1fr; }
+            .btn { width: 100%; text-align: center; margin-bottom: 10px; }
+            .card-header { flex-direction: column; gap: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💕 个人资料</h1>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>👤 基本信息</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="showEditForm()">编辑资料</button>
+                    <button class="btn btn-info" onclick="window.location.href='match.html'">💑 匹配信息</button>
+                    <button class="btn btn-success" onclick="window.location.href='chat.html'">💬 消息中心</button>
+                    <button class="btn btn-danger" onclick="logout()">退出登录</button>
+                </div>
+            </div>
+
+            <div id="profileView">
+                <div class="profile-section">
+                    <div class="avatar-container" onclick="document.getElementById('avatarInput').click()">
+                        <img id="profileAvatar" class="avatar" src="" alt="头像">
+                        <div id="avatarPlaceholder" class="avatar-placeholder">👤</div>
+                        <div class="upload-btn">更换头像</div>
+                    </div>
+                    <input type="file" id="avatarInput" class="upload-input" accept="image/*">
+                    <div style="font-size: 1.3rem; font-weight: 700; color: #333;">{{username}}</div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                    <div class="info-row"><span class="info-label">性别:</span><span class="info-value">{{gender}}</span></div>
+                    <div class="info-row"><span class="info-label">年龄:</span><span class="info-value">{{age}} 岁</span></div>
+                    <div class="info-row"><span class="info-label">身高/体重:</span><span class="info-value">{{height}}cm / {{weight}}kg</span></div>
+                    <div class="info-row"><span class="info-label">常住城市:</span><span class="info-value">{{city}}</span></div>
+                    <div class="info-row"><span class="info-label">家乡:</span><span class="info-value">{{hometown}}</span></div>
+                    <div class="info-row"><span class="info-label">婚姻状态:</span><span class="info-value">{{maritalStatus}}</span></div>
+                    <div class="info-row"><span class="info-label">学历:</span><span class="info-value">{{education}}</span></div>
+                    <div class="info-row"><span class="info-label">职业:</span><span class="info-value">{{occupation}}</span></div>
+                    <div class="info-row"><span class="info-label">年收入:</span><span class="info-value">{{income}}</span></div>
+                </div>
+
+                <div class="section-title">🍃 生活习惯</div>
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 10px;">
+                    <div class="info-row"><span class="info-label">吸烟:</span><span class="info-value">{{smoking}}</span></div>
+                    <div class="info-row"><span class="info-label">饮酒:</span><span class="info-value">{{drinking}}</span></div>
+                    <div class="info-row"><span class="info-label">宗教信仰:</span><span class="info-value">{{religion}}</span></div>
+                    <div class="info-row"><span class="info-label">作息习惯:</span><span class="info-value">{{schedule}}</span></div>
+                    <div class="info-row"><span class="info-label">接受宠物:</span><span class="info-value">{{petAccept}}</span></div>
+                </div>
+
+                <div class="section-title">🎭 性格与兴趣</div>
+                <div style="background: #f5f0ff; padding: 15px; border-radius: 10px;">
+                    <div style="margin-bottom: 10px;"><strong>性格自评:</strong> {{character}}</div>
+                    <div><strong>兴趣爱好:</strong> {{hobbiesDisplay}}</div>
+                </div>
+
+                <div class="section-title">💒 婚恋价值观</div>
+                <div style="background: #fff3e0; padding: 15px; border-radius: 10px;">
+                    <div class="info-row"><span class="info-label">婚后财务:</span><span class="info-value">{{financialView}}</span></div>
+                    <div class="info-row"><span class="info-label">与父母同住:</span><span class="info-value">{{liveWithParents}}</span></div>
+                    <div class="info-row"><span class="info-label">期望孩子数:</span><span class="info-value">{{expectedChildren}}</span></div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">自我描述:</div>
+                    <div style="background: #fff3e0; padding: 15px; border-radius: 10px; border-left: 4px solid #ff9800;">
+                        {{description || '暂无描述'}}
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">线下活动偏好:</div>
+                    <div class="activities-select" id="viewActivities">
+                        {{activityTags}}
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal" id="schemeModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>择偶方案管理</h3>
+                    <span class="close-btn" onclick="closeModal()">&times;</span>
+                </div>
+                <div id="modalContent"></div>
+            </div>
+        </div>
+        
+        <div id="profileEdit" class="hidden">
+                <div class="error-message" id="editError"></div>
+                
+                <div class="profile-section">
+                    <div class="avatar-container" onclick="document.getElementById('editAvatarInput').click()">
+                        <img id="editAvatarPreview" class="avatar" src="" alt="头像">
+                        <div id="editAvatarPlaceholder" class="avatar-placeholder">👤</div>
+                        <div class="upload-btn">上传头像</div>
+                    </div>
+                    <input type="file" id="editAvatarInput" class="upload-input" accept="image/*">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>昵称 *</label>
+                        <input type="text" id="editUsername" placeholder="请输入昵称" required>
+                    </div>
+                    <div class="form-group">
+                        <label>真实姓名 *</label>
+                        <input type="text" id="editRealName" placeholder="请输入真实姓名" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>性别 *</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="editGender" value="男" required> 👨 男</label>
+                        <label><input type="radio" name="editGender" value="女" required> 👩 女</label>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>出生日期 *</label>
+                        <input type="date" id="editBirthday" required>
+                    </div>
+                    <div class="form-group">
+                        <label>年龄</label>
+                        <input type="number" id="editAge" placeholder="自动计算" readonly>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>身高 (cm) *</label>
+                        <input type="number" id="editHeight" min="140" max="200" placeholder="如: 170" required>
+                    </div>
+                    <div class="form-group">
+                        <label>体重 (kg) *</label>
+                        <input type="number" id="editWeight" min="40" max="150" placeholder="如: 60" required>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>常住城市 *</label>
+                        <input type="text" id="editCity" placeholder="如: 北京" required>
+                    </div>
+                    <div class="form-group">
+                        <label>户籍地</label>
+                        <input type="text" id="editHometown" placeholder="如: 山东济南">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>婚姻状态 *</label>
+                        <select id="editMarital" required>
+                            <option value="">请选择</option>
+                            <option value="未婚">未婚</option>
+                            <option value="离异">离异</option>
+                            <option value="丧偶">丧偶</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>学历 *</label>
+                        <select id="editEducation" required>
+                            <option value="">请选择</option>
+                            <option value="高中">高中/中专</option>
+                            <option value="大专">大专</option>
+                            <option value="本科">本科</option>
+                            <option value="硕士">硕士</option>
+                            <option value="博士">博士及以上</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>职业 *</label>
+                        <input type="text" id="editOccupation" placeholder="如: 工程师" required>
+                    </div>
+                    <div class="form-group">
+                        <label>年收入</label>
+                        <select id="editIncome">
+                            <option value="">请选择</option>
+                            <option value="10万以下">10万以下</option>
+                            <option value="10-20万">10-20万</option>
+                            <option value="20-50万">20-50万</option>
+                            <option value="50-100万">50-100万</option>
+                            <option value="100万以上">100万以上</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="section-title">🍃 生活习惯</div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>吸烟</label>
+                        <select id="editSmoking">
+                            <option value="">请选择</option>
+                            <option value="不吸烟">不吸烟</option>
+                            <option value="偶尔吸烟">偶尔吸烟</option>
+                            <option value="经常吸烟">经常吸烟</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>饮酒</label>
+                        <select id="editDrinking">
+                            <option value="">请选择</option>
+                            <option value="不饮酒">不饮酒</option>
+                            <option value="偶尔饮酒">偶尔饮酒</option>
+                            <option value="经常饮酒">经常饮酒</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>宗教信仰</label>
+                        <select id="editReligion">
+                            <option value="">无</option>
+                            <option value="佛教">佛教</option>
+                            <option value="基督教">基督教</option>
+                            <option value="伊斯兰教">伊斯兰教</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>作息习惯</label>
+                        <select id="editSchedule">
+                            <option value="">请选择</option>
+                            <option value="早睡早起">早睡早起</option>
+                            <option value="正常作息">正常作息</option>
+                            <option value="夜猫子">夜猫子</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>是否接受宠物</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="editPetAccept" value="是"> 是</label>
+                        <label><input type="radio" name="editPetAccept" value="否"> 否</label>
+                        <label><input type="radio" name="editPetAccept" value="看情况"> 看情况</label>
+                    </div>
+                </div>
+
+                <div class="section-title">🎭 性格与兴趣</div>
+                
+                <div class="form-group">
+                    <label>性格自评</label>
+                    <select id="editCharacter">
+                        <option value="">请选择</option>
+                        <option value="开朗外向">开朗外向</option>
+                        <option value="内向安静">内向安静</option>
+                        <option value="沉稳成熟">沉稳成熟</option>
+                        <option value="活泼可爱">活泼可爱</option>
+                        <option value="理性务实">理性务实</option>
+                        <option value="感性细腻">感性细腻</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>兴趣爱好</label>
+                    <div class="hobbies-select" id="editHobbies">
+                        <div class="hobby-tag" onclick="toggleHobby('阅读')">阅读</div>
+                        <div class="hobby-tag" onclick="toggleHobby('旅行')">旅行</div>
+                        <div class="hobby-tag" onclick="toggleHobby('音乐')">音乐</div>
+                        <div class="hobby-tag" onclick="toggleHobby('电影')">电影</div>
+                        <div class="hobby-tag" onclick="toggleHobby('美食')">美食</div>
+                        <div class="hobby-tag" onclick="toggleHobby('运动')">运动</div>
+                        <div class="hobby-tag" onclick="toggleHobby('摄影')">摄影</div>
+                        <div class="hobby-tag" onclick="toggleHobby('烹饪')">烹饪</div>
+                        <div class="hobby-tag" onclick="toggleHobby('游戏')">游戏</div>
+                        <div class="hobby-tag" onclick="toggleHobby('绘画')">绘画</div>
+                        <div class="hobby-tag" onclick="toggleHobby('书法')">书法</div>
+                        <div class="hobby-tag" onclick="toggleHobby('乐器')">乐器</div>
+                    </div>
+                </div>
+
+                <div class="section-title">💒 婚恋价值观</div>
+                
+                <div class="form-group">
+                    <label>婚后财务看法</label>
+                    <textarea id="editFinancialView" placeholder="您对婚后财务的看法（如：AA制、共同管理等）"></textarea>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>是否与父母同住</label>
+                        <div class="radio-group">
+                            <label><input type="radio" name="editLiveWithParents" value="是"> 是</label>
+                            <label><input type="radio" name="editLiveWithParents" value="否"> 否</label>
+                            <label><input type="radio" name="editLiveWithParents" value="看情况"> 看情况</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>期望孩子数</label>
+                        <select id="editExpectedChildren">
+                            <option value="">请选择</option>
+                            <option value="0">丁克</option>
+                            <option value="1">1个</option>
+                            <option value="2">2个</option>
+                            <option value="3">3个及以上</option>
+                            <option value="看情况">看情况</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>自我描述</label>
+                    <textarea id="editDescription" placeholder="介绍一下自己（最多500字）"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>线下活动偏好</label>
+                    <div class="activities-select" id="editActivities">
+                        <div class="activity-tag" onclick="toggleActivity('聚餐')">聚餐</div>
+                        <div class="activity-tag" onclick="toggleActivity('徒步')">徒步</div>
+                        <div class="activity-tag" onclick="toggleActivity('K歌')">K歌</div>
+                        <div class="activity-tag" onclick="toggleActivity('桌游')">桌游</div>
+                        <div class="activity-tag" onclick="toggleActivity('读书会')">读书会</div>
+                        <div class="activity-tag" onclick="toggleActivity('健身')">健身</div>
+                        <div class="activity-tag" onclick="toggleActivity('露营')">露营</div>
+                        <div class="activity-tag" onclick="toggleActivity('看展')">看展</div>
+                    </div>
+                </div>
+
+                <button class="btn btn-success" onclick="saveProfile()" style="width: 100%;">保存资料</button>
+                <button class="btn btn-secondary" onclick="hideEditForm()" style="width: 100%;">取消</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>💑 择偶要求</h2>
+                <div>
+                    <button class="btn btn-primary" onclick="showPreferenceForm()">编辑择偶要求</button>
+                    <button class="btn btn-info" onclick="showSchemeModal()" style="margin-left: 10px;">📋 方案管理</button>
+                </div>
+            </div>
+
+            <div id="preferenceView">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <div style="font-weight: 600; color: #00b894;">当前方案: <span id="currentSchemeName">标准方案</span></div>
+                    <div class="scheme-switch" id="schemeSwitch" style="display: none;">
+                        <button class="btn btn-secondary" onclick="switchScheme('standard')" style="padding: 5px 15px; font-size: 12px;">标准</button>
+                        <button class="btn btn-secondary" onclick="switchScheme('relaxed')" style="padding: 5px 15px; font-size: 12px;">宽松</button>
+                    </div>
+                </div>
+                
+                <div style="background: #e8f5e9; padding: 15px; border-radius: 10px; border-left: 4px solid #00b894;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #00b894;">期望对象</div>
+                    <div class="info-row"><span class="info-label">年龄范围:</span><span class="info-value">{{reqMinAge}} - {{reqMaxAge}} 岁 {{reqAgeImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">身高范围:</span><span class="info-value">{{reqMinHeight}} - {{reqMaxHeight}} cm {{reqHeightImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">婚姻状况:</span><span class="info-value">{{reqMarital}} {{reqMaritalImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">期望城市:</span><span class="info-value">{{reqCity}} {{reqCityImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">学历要求:</span><span class="info-value">{{reqEducation}} {{reqEducationImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">年收入下限:</span><span class="info-value">{{reqIncome}} {{reqIncomeImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">体型:</span><span class="info-value">{{reqBodyType}} {{reqBodyTypeImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">吸烟饮酒:</span><span class="info-value">{{reqSmokingDrinking}} {{reqSmokingDrinkingImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">性格偏好:</span><span class="info-value">{{reqCharacter}} {{reqCharacterImportance}}</span></div>
+                    <div class="info-row"><span class="info-label">活动重合数:</span><span class="info-value">{{reqMinActivityMatch}} 项 {{reqActivityImportance}}</span></div>
+                </div>
+                
+                <div style="margin-top: 15px; background: #fff3e0; padding: 15px; border-radius: 10px; border-left: 4px solid #ff9800;">
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #e65100;">价值观要求</div>
+                    <div>{{reqValues}}</div>
+                </div>
+
+                <div style="margin-top: 15px;">
+                    <div style="font-weight: 600; margin-bottom: 10px;">活动偏好:</div>
+                    <div class="activities-select" id="viewPrefActivities">
+                        {{prefActivityTags}}
+                    </div>
+                </div>
+            </div>
+
+            <div id="preferenceEdit" class="hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>最小年龄</label>
+                        <input type="number" id="prefMinAge" min="18" max="60" placeholder="如: 25">
+                    </div>
+                    <div class="form-group">
+                        <label>最大年龄</label>
+                        <input type="number" id="prefMaxAge" min="18" max="60" placeholder="如: 35">
+                    </div>
+                    <div class="form-group">
+                        <label>重要程度</label>
+                        <select id="prefAgeImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>最小身高 (cm)</label>
+                        <input type="number" id="prefMinHeight" min="140" max="200" placeholder="如: 160">
+                    </div>
+                    <div class="form-group">
+                        <label>最大身高 (cm)</label>
+                        <input type="number" id="prefMaxHeight" min="140" max="200" placeholder="如: 180">
+                    </div>
+                    <div class="form-group">
+                        <label>重要程度</label>
+                        <select id="prefHeightImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>婚姻状况</label>
+                        <select id="prefMarital">
+                            <option value="">不限</option>
+                            <option value="未婚">未婚</option>
+                            <option value="离异">离异</option>
+                            <option value="丧偶">丧偶</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重要程度</label>
+                        <select id="prefMaritalImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>期望城市</label>
+                        <input type="text" id="prefCity" placeholder="如: 北京">
+                    </div>
+                    <div class="form-group">
+                        <label>重要程度</label>
+                        <select id="prefCityImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>学历要求</label>
+                        <select id="prefEducation">
+                            <option value="">不限</option>
+                            <option value="高中">高中/中专</option>
+                            <option value="大专">大专</option>
+                            <option value="本科">本科</option>
+                            <option value="硕士">硕士</option>
+                            <option value="博士">博士及以上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>年收入下限</label>
+                        <select id="prefIncome">
+                            <option value="">不限</option>
+                            <option value="10万以下">10万以下</option>
+                            <option value="10-20万">10-20万</option>
+                            <option value="20-50万">20-50万</option>
+                            <option value="50-100万">50-100万</option>
+                            <option value="100万以上">100万以上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>学历重要程度</label>
+                        <select id="prefEducationImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>体型偏好</label>
+                        <select id="prefBodyType">
+                            <option value="">不限</option>
+                            <option value="偏瘦">偏瘦</option>
+                            <option value="匀称">匀称</option>
+                            <option value="偏胖">偏胖</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>吸烟饮酒</label>
+                        <select id="prefSmokingDrinking">
+                            <option value="">不限</option>
+                            <option value="不吸烟不饮酒">不吸烟不饮酒</option>
+                            <option value="可接受偶尔">可接受偶尔</option>
+                            <option value="不接受吸烟">不接受吸烟</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>性格偏好</label>
+                        <select id="prefCharacter">
+                            <option value="">不限</option>
+                            <option value="开朗外向">开朗外向</option>
+                            <option value="内向安静">内向安静</option>
+                            <option value="沉稳成熟">沉稳成熟</option>
+                            <option value="活泼可爱">活泼可爱</option>
+                            <option value="理性务实">理性务实</option>
+                            <option value="感性细腻">感性细腻</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>重要程度</label>
+                        <select id="prefCharacterImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>线下活动偏好</label>
+                    <div class="activities-select" id="prefActivities">
+                        <div class="activity-tag" onclick="togglePrefActivity('聚餐')">聚餐</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('徒步')">徒步</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('K歌')">K歌</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('桌游')">桌游</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('读书会')">读书会</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('健身')">健身</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('露营')">露营</div>
+                        <div class="activity-tag" onclick="togglePrefActivity('看展')">看展</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>最低活动重合数</label>
+                        <input type="number" id="prefMinActivityMatch" min="1" max="8" placeholder="如: 2">
+                    </div>
+                    <div class="form-group">
+                        <label>活动重要程度</label>
+                        <select id="prefActivityImportance">
+                            <option value="must">必须满足</option>
+                            <option value="very">非常重要</option>
+                            <option value="normal">一般</option>
+                            <option value="optional">可有可无</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>价值观要求/结婚计划</label>
+                    <textarea id="prefValues" placeholder="您对另一半的期望和结婚计划"></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="savePreference()">保存择偶要求</button>
+                    <button class="btn btn-info" onclick="saveAsScheme()">另存为方案</button>
+                </div>
+                <button class="btn btn-secondary" onclick="hidePreferenceForm()" style="width: 100%;">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('datingCurrentUser'));
+        if (!currentUser) {
+            window.location.href = 'login.html';
+        }
+
+        let selectedActivities = [];
+        let selectedHobbies = [];
+        let selectedPrefActivities = [];
+
+        function initProfile() {
+            document.getElementById('profileAvatar').src = currentUser.photo || '';
+            document.getElementById('profileAvatar').style.display = currentUser.photo ? 'block' : 'none';
+            document.getElementById('avatarPlaceholder').style.display = currentUser.photo ? 'none' : 'block';
+
+            document.getElementById('editAvatarPreview').src = currentUser.photo || '';
+            document.getElementById('editAvatarPreview').style.display = currentUser.photo ? 'block' : 'none';
+            document.getElementById('editAvatarPlaceholder').style.display = currentUser.photo ? 'none' : 'block';
+
+            document.getElementById('editUsername').value = currentUser.username || '';
+            document.getElementById('editRealName').value = currentUser.realName || '';
+            
+            if (currentUser.gender) {
+                document.querySelector(`input[name="editGender"][value="${currentUser.gender}"]`).checked = true;
+            }
+            
+            document.getElementById('editBirthday').value = currentUser.birthday || '';
+            document.getElementById('editAge').value = currentUser.age || '';
+            document.getElementById('editHeight').value = currentUser.height || '';
+            document.getElementById('editWeight').value = currentUser.weight || '';
+            document.getElementById('editCity').value = currentUser.city || '';
+            document.getElementById('editHometown').value = currentUser.hometown || '';
+            document.getElementById('editMarital').value = currentUser.maritalStatus || '';
+            document.getElementById('editEducation').value = currentUser.education || '';
+            document.getElementById('editOccupation').value = currentUser.occupation || '';
+            document.getElementById('editIncome').value = currentUser.income || '';
+            document.getElementById('editSmoking').value = currentUser.smoking || '';
+            document.getElementById('editDrinking').value = currentUser.drinking || '';
+            document.getElementById('editReligion').value = currentUser.religion || '';
+            document.getElementById('editSchedule').value = currentUser.schedule || '';
+            document.getElementById('editCharacter').value = currentUser.character || '';
+            document.getElementById('editFinancialView').value = currentUser.financialView || '';
+            document.getElementById('editExpectedChildren').value = currentUser.expectedChildren || '';
+            document.getElementById('editDescription').value = currentUser.description || '';
+
+            if (currentUser.petAccept) {
+                document.querySelector(`input[name="editPetAccept"][value="${currentUser.petAccept}"]`).checked = true;
+            }
+            if (currentUser.liveWithParents) {
+                document.querySelector(`input[name="editLiveWithParents"][value="${currentUser.liveWithParents}"]`).checked = true;
+            }
+
+            selectedActivities = currentUser.offlineActivities || [];
+            document.querySelectorAll('#editActivities .activity-tag').forEach(tag => {
+                if (selectedActivities.includes(tag.textContent)) {
+                    tag.classList.add('selected');
+                }
+            });
+
+            selectedHobbies = currentUser.hobbies || [];
+            document.querySelectorAll('#editHobbies .hobby-tag').forEach(tag => {
+                if (selectedHobbies.includes(tag.textContent)) {
+                    tag.classList.add('selected');
+                }
+            });
+
+            document.getElementById('prefMinAge').value = currentUser.requirements?.minAge || '';
+            document.getElementById('prefMaxAge').value = currentUser.requirements?.maxAge || '';
+            document.getElementById('prefMinHeight').value = currentUser.requirements?.minHeight || '';
+            document.getElementById('prefMaxHeight').value = currentUser.requirements?.maxHeight || '';
+            document.getElementById('prefMarital').value = currentUser.requirements?.maritalStatus || '';
+            document.getElementById('prefCity').value = currentUser.requirements?.city || '';
+            document.getElementById('prefEducation').value = currentUser.requirements?.education || '';
+            document.getElementById('prefIncome').value = currentUser.requirements?.incomeMin || '';
+            document.getElementById('prefBodyType').value = currentUser.requirements?.bodyType || '';
+            document.getElementById('prefSmokingDrinking').value = currentUser.requirements?.smokingDrinking || '';
+            document.getElementById('prefCharacter').value = currentUser.requirements?.character || '';
+            document.getElementById('prefMinActivityMatch').value = currentUser.requirements?.minActivityMatch || '1';
+            document.getElementById('prefValues').value = currentUser.requirements?.values || '';
+            
+            document.getElementById('prefAgeImportance').value = currentUser.requirements?.ageImportance || 'normal';
+            document.getElementById('prefHeightImportance').value = currentUser.requirements?.heightImportance || 'normal';
+            document.getElementById('prefMaritalImportance').value = currentUser.requirements?.maritalImportance || 'normal';
+            document.getElementById('prefCityImportance').value = currentUser.requirements?.cityImportance || 'normal';
+            document.getElementById('prefEducationImportance').value = currentUser.requirements?.educationImportance || 'normal';
+            document.getElementById('prefCharacterImportance').value = currentUser.requirements?.characterImportance || 'normal';
+            document.getElementById('prefActivityImportance').value = currentUser.requirements?.activityImportance || 'normal';
+
+            selectedPrefActivities = currentUser.requirements?.offlineActivities || [];
+            document.querySelectorAll('#prefActivities .activity-tag').forEach(tag => {
+                if (selectedPrefActivities.includes(tag.textContent)) {
+                    tag.classList.add('selected');
+                }
+            });
+
+            loadSchemes();
+            updateView();
+        }
+
+        function getImportanceLabel(importance) {
+            const labels = {
+                'must': '<span style="color: #e74c3c; font-size: 11px;">(必须)</span>',
+                'very': '<span style="color: #f39c12; font-size: 11px;">(重要)</span>',
+                'normal': '',
+                'optional': '<span style="color: #95a5a6; font-size: 11px;">(次要)</span>'
+            };
+            return labels[importance] || '';
+        }
+
+        function updateView() {
+            const view = document.getElementById('profileView');
+            view.innerHTML = view.innerHTML
+                .replace('{{username}}', currentUser.username || '未设置')
+                .replace('{{gender}}', currentUser.gender || '未设置')
+                .replace('{{age}}', currentUser.age || '-')
+                .replace('{{height}}', currentUser.height || '-')
+                .replace('{{weight}}', currentUser.weight || '-')
+                .replace('{{city}}', currentUser.city || '未设置')
+                .replace('{{hometown}}', currentUser.hometown || '未设置')
+                .replace('{{maritalStatus}}', currentUser.maritalStatus || '未设置')
+                .replace('{{education}}', currentUser.education || '未设置')
+                .replace('{{occupation}}', currentUser.occupation || '未设置')
+                .replace('{{income}}', currentUser.income || '未设置')
+                .replace('{{smoking}}', currentUser.smoking || '未设置')
+                .replace('{{drinking}}', currentUser.drinking || '未设置')
+                .replace('{{religion}}', currentUser.religion || '无')
+                .replace('{{schedule}}', currentUser.schedule || '未设置')
+                .replace('{{petAccept}}', currentUser.petAccept || '未设置')
+                .replace('{{character}}', currentUser.character || '未设置')
+                .replace('{{financialView}}', currentUser.financialView || '未设置')
+                .replace('{{liveWithParents}}', currentUser.liveWithParents || '未设置')
+                .replace('{{expectedChildren}}', currentUser.expectedChildren || '未设置')
+                .replace('{{description}}', currentUser.description || '暂无描述');
+
+            const hobbies = currentUser.hobbies || [];
+            const hobbiesDisplay = hobbies.length > 0 ? hobbies.join('、') : '暂无';
+            view.innerHTML = view.innerHTML.replace('{{hobbiesDisplay}}', hobbiesDisplay);
+
+            const activities = currentUser.offlineActivities || [];
+            if (activities.length > 0) {
+                document.getElementById('viewActivities').innerHTML = activities.map(a => 
+                    `<div class="activity-tag selected">${a}</div>`
+                ).join('');
+            } else {
+                document.getElementById('viewActivities').innerHTML = '<span style="color: #999;">暂无偏好</span>';
+            }
+
+            const req = currentUser.requirements || {};
+            const reqSmokingDrinking = req.smokingDrinking || '不限';
+            const reqBodyType = req.bodyType || '不限';
+            const reqChar = req.character || '不限';
+            const reqMinActivityMatch = req.minActivityMatch || '1';
+            
+            const ageImportance = getImportanceLabel(req.ageImportance);
+            const heightImportance = getImportanceLabel(req.heightImportance);
+            const maritalImportance = getImportanceLabel(req.maritalImportance);
+            const cityImportance = getImportanceLabel(req.cityImportance);
+            const educationImportance = getImportanceLabel(req.educationImportance);
+            const incomeImportance = getImportanceLabel(req.incomeImportance);
+            const bodyTypeImportance = getImportanceLabel(req.bodyTypeImportance);
+            const smokingDrinkingImportance = getImportanceLabel(req.smokingDrinkingImportance);
+            const characterImportance = getImportanceLabel(req.characterImportance);
+            const activityImportance = getImportanceLabel(req.activityImportance);
+            
+            const prefView = document.getElementById('preferenceView');
+            prefView.innerHTML = prefView.innerHTML
+                .replace('{{reqMinAge}}', req.minAge || '-')
+                .replace('{{reqMaxAge}}', req.maxAge || '-')
+                .replace('{{reqMinHeight}}', req.minHeight || '-')
+                .replace('{{reqMaxHeight}}', req.maxHeight || '-')
+                .replace('{{reqMarital}}', req.maritalStatus || '不限')
+                .replace('{{reqCity}}', req.city || '不限')
+                .replace('{{reqEducation}}', req.education || '不限')
+                .replace('{{reqIncome}}', req.incomeMin ? req.incomeMin + '以上' : '不限')
+                .replace('{{reqBodyType}}', reqBodyType)
+                .replace('{{reqSmokingDrinking}}', reqSmokingDrinking)
+                .replace('{{reqCharacter}}', reqChar)
+                .replace('{{reqMinActivityMatch}}', reqMinActivityMatch)
+                .replace('{{reqValues}}', req.values || '暂无')
+                .replace('{{reqAgeImportance}}', ageImportance)
+                .replace('{{reqHeightImportance}}', heightImportance)
+                .replace('{{reqMaritalImportance}}', maritalImportance)
+                .replace('{{reqCityImportance}}', cityImportance)
+                .replace('{{reqEducationImportance}}', educationImportance)
+                .replace('{{reqIncomeImportance}}', incomeImportance)
+                .replace('{{reqBodyTypeImportance}}', bodyTypeImportance)
+                .replace('{{reqSmokingDrinkingImportance}}', smokingDrinkingImportance)
+                .replace('{{reqCharacterImportance}}', characterImportance)
+                .replace('{{reqActivityImportance}}', activityImportance);
+
+            const prefActivities = req.offlineActivities || [];
+            if (prefActivities.length > 0) {
+                document.getElementById('viewPrefActivities').innerHTML = prefActivities.map(a => 
+                    `<div class="activity-tag selected">${a}</div>`
+                ).join('');
+            } else {
+                document.getElementById('viewPrefActivities').innerHTML = '<span style="color: #999;">暂无偏好</span>';
+            }
+            
+            document.getElementById('currentSchemeName').textContent = currentUser.currentScheme || '标准方案';
+            document.getElementById('schemeSwitch').style.display = currentUser.schemes && Object.keys(currentUser.schemes).length > 1 ? 'block' : 'none';
+        }
+
+        function loadSchemes() {
+            if (!currentUser.schemes) {
+                currentUser.schemes = {};
+            }
+        }
+
+        function showSchemeModal() {
+            const schemes = currentUser.schemes || {};
+            let html = '<div style="margin-bottom: 20px;">';
+            html += '<h4 style="color: #c44569; margin-bottom: 15px;">📋 择偶方案管理</h4>';
+            
+            if (Object.keys(schemes).length === 0) {
+                html += '<p style="color: #999; text-align: center; padding: 20px;">暂无保存的方案</p>';
+            } else {
+                html += '<div style="max-height: 200px; overflow-y: auto;">';
+                Object.keys(schemes).forEach(name => {
+                    const isCurrent = currentUser.currentScheme === name;
+                    html += `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: ${isCurrent ? '#ffeaa7' : '#f8f9fa'}; border-radius: 8px; margin-bottom: 8px;">
+                            <div>
+                                <strong>${name}</strong>${isCurrent ? ' (当前)' : ''}
+                            </div>
+                            <div>
+                                ${!isCurrent ? `<button class="btn btn-primary" style="padding: 4px 12px; font-size: 11px; margin-right: 5px;" onclick="applyScheme('${name}')">使用</button>` : ''}
+                                <button class="btn btn-danger" style="padding: 4px 12px; font-size: 11px;" onclick="deleteScheme('${name}')">删除</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+            
+            html += '</div>';
+            html += '<button class="btn btn-success" onclick="closeModal()" style="width: 100%;">关闭</button>';
+            
+            document.getElementById('modalContent').innerHTML = html;
+            document.getElementById('schemeModal').style.display = 'flex';
+        }
+
+        function saveAsScheme() {
+            const schemeName = prompt('请输入方案名称：');
+            if (!schemeName || !schemeName.trim()) return;
+            
+            const newScheme = {
+                minAge: document.getElementById('prefMinAge').value,
+                maxAge: document.getElementById('prefMaxAge').value,
+                minHeight: document.getElementById('prefMinHeight').value,
+                maxHeight: document.getElementById('prefMaxHeight').value,
+                maritalStatus: document.getElementById('prefMarital').value,
+                city: document.getElementById('prefCity').value.trim(),
+                education: document.getElementById('prefEducation').value,
+                incomeMin: document.getElementById('prefIncome').value,
+                bodyType: document.getElementById('prefBodyType').value,
+                smokingDrinking: document.getElementById('prefSmokingDrinking').value,
+                character: document.getElementById('prefCharacter').value,
+                minActivityMatch: document.getElementById('prefMinActivityMatch').value,
+                values: document.getElementById('prefValues').value.trim(),
+                offlineActivities: selectedPrefActivities,
+                ageImportance: document.getElementById('prefAgeImportance').value,
+                heightImportance: document.getElementById('prefHeightImportance').value,
+                maritalImportance: document.getElementById('prefMaritalImportance').value,
+                cityImportance: document.getElementById('prefCityImportance').value,
+                educationImportance: document.getElementById('prefEducationImportance').value,
+                characterImportance: document.getElementById('prefCharacterImportance').value,
+                activityImportance: document.getElementById('prefActivityImportance').value
+            };
+            
+            if (!currentUser.schemes) {
+                currentUser.schemes = {};
+            }
+            currentUser.schemes[schemeName.trim()] = newScheme;
+            currentUser.currentScheme = schemeName.trim();
+            saveToStorage();
+            updateView();
+            alert('方案保存成功！');
+        }
+
+        function applyScheme(name) {
+            const scheme = currentUser.schemes[name];
+            if (!scheme) return;
+            
+            currentUser.requirements = {...scheme};
+            currentUser.currentScheme = name;
+            saveToStorage();
+            
+            document.getElementById('prefMinAge').value = scheme.minAge || '';
+            document.getElementById('prefMaxAge').value = scheme.maxAge || '';
+            document.getElementById('prefMinHeight').value = scheme.minHeight || '';
+            document.getElementById('prefMaxHeight').value = scheme.maxHeight || '';
+            document.getElementById('prefMarital').value = scheme.maritalStatus || '';
+            document.getElementById('prefCity').value = scheme.city || '';
+            document.getElementById('prefEducation').value = scheme.education || '';
+            document.getElementById('prefIncome').value = scheme.incomeMin || '';
+            document.getElementById('prefBodyType').value = scheme.bodyType || '';
+            document.getElementById('prefSmokingDrinking').value = scheme.smokingDrinking || '';
+            document.getElementById('prefCharacter').value = scheme.character || '';
+            document.getElementById('prefMinActivityMatch').value = scheme.minActivityMatch || '1';
+            document.getElementById('prefValues').value = scheme.values || '';
+            
+            document.getElementById('prefAgeImportance').value = scheme.ageImportance || 'normal';
+            document.getElementById('prefHeightImportance').value = scheme.heightImportance || 'normal';
+            document.getElementById('prefMaritalImportance').value = scheme.maritalImportance || 'normal';
+            document.getElementById('prefCityImportance').value = scheme.cityImportance || 'normal';
+            document.getElementById('prefEducationImportance').value = scheme.educationImportance || 'normal';
+            document.getElementById('prefCharacterImportance').value = scheme.characterImportance || 'normal';
+            document.getElementById('prefActivityImportance').value = scheme.activityImportance || 'normal';
+            
+            selectedPrefActivities = scheme.offlineActivities || [];
+            document.querySelectorAll('#prefActivities .activity-tag').forEach(tag => {
+                if (selectedPrefActivities.includes(tag.textContent)) {
+                    tag.classList.add('selected');
+                } else {
+                    tag.classList.remove('selected');
+                }
+            });
+            
+            closeModal();
+            hidePreferenceForm();
+            updateView();
+            alert('方案已应用！');
+        }
+
+        function deleteScheme(name) {
+            if (!confirm(`确定要删除方案 "${name}" 吗？`)) return;
+            
+            delete currentUser.schemes[name];
+            if (currentUser.currentScheme === name) {
+                currentUser.currentScheme = Object.keys(currentUser.schemes)[0] || null;
+            }
+            saveToStorage();
+            showSchemeModal();
+        }
+
+        function switchScheme(type) {
+            const schemeName = type === 'standard' ? '标准方案' : '宽松方案';
+            if (currentUser.schemes && currentUser.schemes[schemeName]) {
+                applyScheme(schemeName);
+            }
+        }
+
+        function toggleActivity(activity) {
+            const index = selectedActivities.indexOf(activity);
+            if (index > -1) {
+                selectedActivities.splice(index, 1);
+            } else {
+                selectedActivities.push(activity);
+            }
+            updateTagSelection(selectedActivities, '#editActivities .activity-tag');
+        }
+
+        function toggleHobby(hobby) {
+            const index = selectedHobbies.indexOf(hobby);
+            if (index > -1) {
+                selectedHobbies.splice(index, 1);
+            } else {
+                selectedHobbies.push(hobby);
+            }
+            updateTagSelection(selectedHobbies, '#editHobbies .hobby-tag');
+        }
+
+        function togglePrefActivity(activity) {
+            const index = selectedPrefActivities.indexOf(activity);
+            if (index > -1) {
+                selectedPrefActivities.splice(index, 1);
+            } else {
+                selectedPrefActivities.push(activity);
+            }
+            updateTagSelection(selectedPrefActivities, '#prefActivities .activity-tag');
+        }
+
+        function updateTagSelection(selected, selector) {
+            document.querySelectorAll(selector).forEach(tag => {
+                if (selected.includes(tag.textContent)) {
+                    tag.classList.add('selected');
+                } else {
+                    tag.classList.remove('selected');
+                }
+            });
+        }
+
+        function showEditForm() {
+            document.getElementById('profileView').classList.add('hidden');
+            document.getElementById('profileEdit').classList.remove('hidden');
+        }
+
+        function hideEditForm() {
+            document.getElementById('profileEdit').classList.add('hidden');
+            document.getElementById('profileView').classList.remove('hidden');
+        }
+
+        function showPreferenceForm() {
+            document.getElementById('preferenceView').classList.add('hidden');
+            document.getElementById('preferenceEdit').classList.remove('hidden');
+        }
+
+        function hidePreferenceForm() {
+            document.getElementById('preferenceEdit').classList.add('hidden');
+            document.getElementById('preferenceView').classList.remove('hidden');
+        }
+
+        function compressImage(dataUrl, maxWidth, maxHeight, quality, callback) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+                
+                if (width > maxWidth) {
+                    height = Math.round(height * (maxWidth / width));
+                    width = maxWidth;
+                }
+                
+                if (height > maxHeight) {
+                    width = Math.round(width * (maxHeight / height));
+                    height = maxHeight;
+                }
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                const compressedData = canvas.toDataURL('image/jpeg', quality);
+                callback(compressedData);
+            };
+            img.onerror = function() {
+                callback(dataUrl);
+            };
+            img.src = dataUrl;
+        }
+
+        function saveToStorage() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const index = users.findIndex(u => u.id === currentUser.id);
+            if (index !== -1) {
+                users[index] = currentUser;
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+            }
+            localStorage.setItem('datingCurrentUser', JSON.stringify(currentUser));
+        }
+
+        document.getElementById('editAvatarInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                document.getElementById('editError').textContent = '请选择图片格式';
+                document.getElementById('editError').style.display = 'block';
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                compressImage(event.target.result, 300, 300, 0.7, function(compressed) {
+                    currentUser.photo = compressed;
+                    document.getElementById('editAvatarPreview').src = compressed;
+                    document.getElementById('editAvatarPreview').style.display = 'block';
+                    document.getElementById('editAvatarPlaceholder').style.display = 'none';
+                    saveToStorage();
+                });
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        });
+
+        document.getElementById('editBirthday').addEventListener('change', function() {
+            const birthDate = new Date(this.value);
+            const today = new Date();
+            let age = today.getFullYear() - birthDate.getFullYear();
+            const monthDiff = today.getMonth() - birthDate.getMonth();
+            if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                age--;
+            }
+            if (age > 0 && age < 100) {
+                document.getElementById('editAge').value = age;
+            }
+        });
+
+        function saveProfile() {
+            const gender = document.querySelector('input[name="editGender"]:checked');
+            
+            if (!gender) {
+                document.getElementById('editError').textContent = '请选择性别';
+                document.getElementById('editError').style.display = 'block';
+                return;
+            }
+
+            currentUser.username = document.getElementById('editUsername').value.trim();
+            currentUser.realName = document.getElementById('editRealName').value.trim();
+            currentUser.gender = gender.value;
+            currentUser.birthday = document.getElementById('editBirthday').value;
+            currentUser.age = document.getElementById('editAge').value;
+            currentUser.height = document.getElementById('editHeight').value;
+            currentUser.weight = document.getElementById('editWeight').value;
+            currentUser.city = document.getElementById('editCity').value.trim();
+            currentUser.hometown = document.getElementById('editHometown').value.trim();
+            currentUser.maritalStatus = document.getElementById('editMarital').value;
+            currentUser.education = document.getElementById('editEducation').value;
+            currentUser.occupation = document.getElementById('editOccupation').value.trim();
+            currentUser.income = document.getElementById('editIncome').value;
+            currentUser.smoking = document.getElementById('editSmoking').value;
+            currentUser.drinking = document.getElementById('editDrinking').value;
+            currentUser.religion = document.getElementById('editReligion').value;
+            currentUser.schedule = document.getElementById('editSchedule').value;
+            currentUser.character = document.getElementById('editCharacter').value;
+            currentUser.financialView = document.getElementById('editFinancialView').value.trim();
+            currentUser.expectedChildren = document.getElementById('editExpectedChildren').value;
+            currentUser.description = document.getElementById('editDescription').value.trim();
+            currentUser.offlineActivities = selectedActivities;
+            currentUser.hobbies = selectedHobbies;
+            currentUser.petAccept = document.querySelector('input[name="editPetAccept"]:checked')?.value || '';
+            currentUser.liveWithParents = document.querySelector('input[name="editLiveWithParents"]:checked')?.value || '';
+            currentUser.profileCompleted = true;
+
+            saveToStorage();
+            updateView();
+            hideEditForm();
+            
+            document.getElementById('profileAvatar').src = currentUser.photo || '';
+            document.getElementById('profileAvatar').style.display = currentUser.photo ? 'block' : 'none';
+            document.getElementById('avatarPlaceholder').style.display = currentUser.photo ? 'none' : 'block';
+        }
+
+        function savePreference() {
+            if (!currentUser.requirements) {
+                currentUser.requirements = {};
+            }
+
+            currentUser.requirements.minAge = document.getElementById('prefMinAge').value;
+            currentUser.requirements.maxAge = document.getElementById('prefMaxAge').value;
+            currentUser.requirements.minHeight = document.getElementById('prefMinHeight').value;
+            currentUser.requirements.maxHeight = document.getElementById('prefMaxHeight').value;
+            currentUser.requirements.maritalStatus = document.getElementById('prefMarital').value;
+            currentUser.requirements.city = document.getElementById('prefCity').value.trim();
+            currentUser.requirements.education = document.getElementById('prefEducation').value;
+            currentUser.requirements.incomeMin = document.getElementById('prefIncome').value;
+            currentUser.requirements.bodyType = document.getElementById('prefBodyType').value;
+            currentUser.requirements.smokingDrinking = document.getElementById('prefSmokingDrinking').value;
+            currentUser.requirements.character = document.getElementById('prefCharacter').value;
+            currentUser.requirements.minActivityMatch = document.getElementById('prefMinActivityMatch').value;
+            currentUser.requirements.values = document.getElementById('prefValues').value.trim();
+            currentUser.requirements.offlineActivities = selectedPrefActivities;
+            
+            currentUser.requirements.ageImportance = document.getElementById('prefAgeImportance').value;
+            currentUser.requirements.heightImportance = document.getElementById('prefHeightImportance').value;
+            currentUser.requirements.maritalImportance = document.getElementById('prefMaritalImportance').value;
+            currentUser.requirements.cityImportance = document.getElementById('prefCityImportance').value;
+            currentUser.requirements.educationImportance = document.getElementById('prefEducationImportance').value;
+            currentUser.requirements.characterImportance = document.getElementById('prefCharacterImportance').value;
+            currentUser.requirements.activityImportance = document.getElementById('prefActivityImportance').value;
+
+            saveToStorage();
+            updateView();
+            hidePreferenceForm();
+        }
+
+        function closeModal() {
+            document.getElementById('schemeModal').style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('datingCurrentUser');
+            window.location.href = 'login.html';
+        }
+
+        initProfile();
+    </script>
+</body>
+</html>

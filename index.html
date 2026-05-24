@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缘来是你 - 婚恋交友</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; text-align: center; }
+        h1 {
+            color: white;
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .subtitle {
+            color: rgba(255,255,255,0.9);
+            font-size: 1.3rem;
+            margin-bottom: 3rem;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 45px;
+            background: white;
+            color: #c44569;
+            text-decoration: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 10px;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+        .button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+        .button-secondary {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid white;
+        }
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 50px;
+        }
+        .feature-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 25px;
+            border-radius: 16px;
+            color: white;
+        }
+        .feature-card i { font-size: 2.5rem; margin-bottom: 15px; }
+        .feature-card h3 { margin-bottom: 10px; }
+        .feature-card p { opacity: 0.9; font-size: 14px; }
+        @media (max-width: 768px) {
+            h1 { font-size: 2.2rem; }
+            .subtitle { font-size: 1.1rem; }
+            .button { padding: 12px 30px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>💕 缘来是你</h1>
+        <p class="subtitle">遇见命中注定的那个TA</p>
+        
+        <div>
+            <a href="login.html" class="button">登录</a>
+            <a href="register.html" class="button button-secondary">免费注册</a>
+        </div>
+        
+        <div class="features">
+            <div class="feature-card">
+                <i>👤</i>
+                <h3>真实资料</h3>
+                <p>严格审核，确保每位用户的真实性</p>
+            </div>
+            <div class="feature-card">
+                <i>💞</i>
+                <h3>精准匹配</h3>
+                <p>专业团队为您精心匹配有缘人</p>
+            </div>
+            <div class="feature-card">
+                <i>🔒</i>
+                <h3>隐私保护</h3>
+                <p>严格保护您的个人隐私信息</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

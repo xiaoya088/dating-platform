@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>中介管理后台 - 缘来是你</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            color: white;
+        }
+        .btn-primary { background: #ff6b9d; }
+        .btn-primary:hover { background: #e65c80; }
+        .btn-success { background: #2ed573; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-danger { background: #ff4757; }
+        .btn-danger:hover { background: #ff3344; }
+        .btn-secondary { background: #747d8c; }
+        .btn-secondary:hover { background: #636e72; }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .card-header h2 { color: #333; font-size: 1.4rem; }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        .tab-btn:hover { border-color: #667eea; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+        }
+        tr:hover { background: #f8f9fa; }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .badge-open { background: #81ecec; color: #00b894; }
+        .badge-agency { background: #ffeaa7; color: #d63031; }
+        .badge-pending { background: #fab1a0; color: #e17055; }
+        .badge-approved { background: #81ecec; color: #00b894; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            overflow-y: auto;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin: 20px;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { color: #333; font-size: 1.3rem; }
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover { color: #333; }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .form-group { margin-bottom: 12px; }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        textarea { resize: vertical; min-height: 80px; }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+        }
+        .radio-group label {
+            cursor: pointer;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+        }
+        .radio-group input { width: auto; margin-right: 5px; }
+
+        .activities-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .activity-tag {
+            padding: 6px 12px;
+            background: #f0f0f0;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .activity-tag.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 13px;
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+        }
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            .header-bar { flex-direction: column; gap: 10px; }
+            .btn { width: 100%; text-align: center; }
+            .tabs { flex-wrap: wrap; }
+            .tab-btn { flex: 1; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-row { grid-template-columns: 1fr; }
+            table { font-size: 11px; }
+            th, td { padding: 6px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 中介管理后台</h1>
+
+        <div class="header-bar">
+            <span style="color: white; font-weight: 600;">👤 {{agencyName}}</span>
+            <button class="btn btn-danger" onclick="logout()">退出登录</button>
+        </div>
+
+        <div class="card">
+            <div class="stats-grid" id="statsGrid">
+                <div class="stat-card">
+                    <div class="stat-value" id="statTotal">0</div>
+                    <div class="stat-label">录入用户</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statOpen">0</div>
+                    <div class="stat-label">开放模式</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statAgency">0</div>
+                    <div class="stat-label">中介联系</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="statPending">0</div>
+                    <div class="stat-label">待审核</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h2>📋 我的用户</h2>
+                <button class="btn btn-primary" onclick="showAddUserModal()">+ 录入用户</button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('users')">用户管理</button>
+                <button class="tab-btn" onclick="showTab('matches')">匹配协助</button>
+                <button class="tab-btn" onclick="showTab('messages')">沟通管理</button>
+            </div>
+            
+            <div id="tabUsers">
+                <div style="margin-bottom: 15px;">
+                    <button class="btn btn-primary" onclick="showAddUserModal()">+ 录入用户</button>
+                    <div style="display: inline-block; margin-left: 10px;">
+                        <button class="tab-btn" onclick="filterUsers('all')" style="padding: 5px 12px;">全部</button>
+                        <button class="tab-btn" onclick="filterUsers('open')" style="padding: 5px 12px;">开放模式</button>
+                        <button class="tab-btn" onclick="filterUsers('agency')" style="padding: 5px 12px;">中介联系</button>
+                        <button class="tab-btn" onclick="filterUsers('pending')" style="padding: 5px 12px;">待审核</button>
+                    </div>
+                </div>
+            
+                <table id="userTable">
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>性别</th>
+                            <th>年龄</th>
+                            <th>城市</th>
+                            <th>模式</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+            </div>
+            
+            <div id="tabMatches" class="hidden">
+                <div style="margin-bottom: 15px;">
+                    <select id="matchUserSelect" onchange="loadUserMatches()" style="padding: 10px; border-radius: 8px; border: 2px solid #e0e0e0;">
+                        <option value="">选择用户查看匹配</option>
+                    </select>
+                </div>
+                <div id="matchResults"></div>
+            </div>
+            
+            <div id="tabMessages" class="hidden">
+                <div style="display: flex; gap: 15px;">
+                    <div style="width: 250px; border-right: 1px solid #e0e0e0; padding-right: 15px; max-height: 500px; overflow-y: auto;">
+                        <div id="messageList"></div>
+                    </div>
+                    <div style="flex: 1;">
+                        <div id="chatHeader" style="padding-bottom: 15px; border-bottom: 1px solid #e0e0e0; margin-bottom: 15px;">
+                            <h3 id="chatTitle">选择一个对话开始聊天</h3>
+                        </div>
+                        <div id="chatMessages" style="height: 300px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;"></div>
+                        <div style="display: flex; gap: 10px;">
+                            <input type="text" id="chatInput" placeholder="输入消息..." style="flex: 1; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                            <button class="btn btn-primary" onclick="sendMessage()">发送</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>用户详情</h3>
+                <span class="close-btn" onclick="closeModal('detailModal')">&times;</span>
+            </div>
+            <div id="modalContent"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="addUserModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>录入用户信息</h3>
+                <span class="close-btn" onclick="closeModal('addUserModal')">&times;</span>
+            </div>
+            
+            <div class="error-message" id="addUserError"></div>
+            
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label>真实姓名 *</label>
+                    <input type="text" id="clientName" placeholder="请输入客户姓名" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>性别 *</label>
+                        <select id="clientGender" required>
+                            <option value="">请选择</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>手机号 *</label>
+                        <input type="tel" id="clientPhone" placeholder="客户手机号" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>出生日期</label>
+                        <input type="date" id="clientBirthday">
+                    </div>
+                    <div class="form-group">
+                        <label>身高 (cm)</label>
+                        <input type="number" id="clientHeight" min="140" max="200" placeholder="如: 170">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>体重 (kg)</label>
+                        <input type="number" id="clientWeight" min="40" max="150" placeholder="如: 60">
+                    </div>
+                    <div class="form-group">
+                        <label>常住城市</label>
+                        <input type="text" id="clientCity" placeholder="如: 北京">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>学历</label>
+                        <select id="clientEducation">
+                            <option value="">请选择</option>
+                            <option value="高中">高中/中专</option>
+                            <option value="大专">大专</option>
+                            <option value="本科">本科</option>
+                            <option value="硕士">硕士</option>
+                            <option value="博士">博士及以上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>职业</label>
+                        <input type="text" id="clientOccupation" placeholder="如: 工程师">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>婚姻状态</label>
+                    <select id="clientMarital">
+                        <option value="">请选择</option>
+                        <option value="未婚">未婚</option>
+                        <option value="离异">离异</option>
+                        <option value="丧偶">丧偶</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>信息开放模式 *</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="openMode" value="open" checked> 📢 信息开放</label>
+                        <label><input type="radio" name="openMode" value="agency"> 🔒 需通过中介联系</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>线下活动偏好</label>
+                    <div class="activities-select" id="activitiesSelect">
+                        <div class="activity-tag" onclick="toggleActivity('聚餐')">聚餐</div>
+                        <div class="activity-tag" onclick="toggleActivity('徒步')">徒步</div>
+                        <div class="activity-tag" onclick="toggleActivity('K歌')">K歌</div>
+                        <div class="activity-tag" onclick="toggleActivity('桌游')">桌游</div>
+                        <div class="activity-tag" onclick="toggleActivity('读书会')">读书会</div>
+                        <div class="activity-tag" onclick="toggleActivity('健身')">健身</div>
+                        <div class="activity-tag" onclick="toggleActivity('露营')">露营</div>
+                        <div class="activity-tag" onclick="toggleActivity('看展')">看展</div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-success" style="width: 100%;">保存用户</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const currentUser = JSON.parse(localStorage.getItem('datingCurrentUser'));
+        if (!currentUser || currentUser.role !== 'agency') {
+            window.location.href = 'login.html';
+        }
+        
+        const agencyName = currentUser.agencyInfo?.agencyName || '中介公司';
+        
+        let selectedActivities = [];
+        
+        function toggleActivity(activity) {
+            const index = selectedActivities.indexOf(activity);
+            if (index > -1) {
+                selectedActivities.splice(index, 1);
+            } else {
+                selectedActivities.push(activity);
+            }
+            
+            document.querySelectorAll('.activity-tag').forEach(tag => {
+                if (selectedActivities.includes(tag.textContent)) {
+                    tag.classList.add('selected');
+                } else {
+                    tag.classList.remove('selected');
+                }
+            });
+        }
+        
+        function logout() {
+            localStorage.removeItem('datingCurrentUser');
+            window.location.href = 'login.html';
+        }
+        
+        function renderUsers(filter = 'all') {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const myUsers = users.filter(u => u.registeredBy === currentUser.phone && u.role !== 'agency');
+            
+            let filteredUsers = myUsers;
+            if (filter === 'open') filteredUsers = myUsers.filter(u => u.openMode === 'open');
+            if (filter === 'agency') filteredUsers = myUsers.filter(u => u.openMode === 'agency');
+            if (filter === 'pending') filteredUsers = myUsers.filter(u => u.status === 'pending');
+            
+            const tbody = document.getElementById('userTableBody');
+            
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无数据</td></tr>';
+                return;
+            }
+            
+            let html = '';
+            filteredUsers.forEach(user => {
+                const modeClass = user.openMode === 'open' ? 'badge-open' : 'badge-agency';
+                const modeText = user.openMode === 'open' ? '开放' : '中介联系';
+                const statusClass = user.status === 'approved' ? 'badge-approved' : 'badge-pending';
+                const statusText = user.status === 'approved' ? '已审核' : '待审核';
+                
+                html += `
+                    <tr>
+                        <td>${user.realName || user.username}</td>
+                        <td>${user.gender || '-'}</td>
+                        <td>${user.age || '-'}</td>
+                        <td>${user.city || '-'}</td>
+                        <td><span class="badge ${modeClass}">${modeText}</span></td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td>
+                            <button class="btn btn-secondary" style="padding: 4px 10px; font-size: 11px;" onclick="editUser(${user.id})">编辑</button>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 11px;" onclick="deleteUser(${user.id})">删除</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            tbody.innerHTML = html;
+            updateStats();
+        }
+        
+        function filterUsers(filter) {
+            document.querySelectorAll('.tab-btn').forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            renderUsers(filter);
+        }
+        
+        function updateStats() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const myUsers = users.filter(u => u.registeredBy === currentUser.phone && u.role !== 'agency');
+            
+            document.getElementById('statTotal').textContent = myUsers.length;
+            document.getElementById('statOpen').textContent = myUsers.filter(u => u.openMode === 'open').length;
+            document.getElementById('statAgency').textContent = myUsers.filter(u => u.openMode === 'agency').length;
+            document.getElementById('statPending').textContent = myUsers.filter(u => u.status === 'pending').length;
+        }
+        
+        function showAddUserModal() {
+            selectedActivities = [];
+            document.querySelectorAll('.activity-tag').forEach(tag => tag.classList.remove('selected'));
+            document.getElementById('addUserForm').reset();
+            document.getElementById('addUserError').style.display = 'none';
+            document.getElementById('addUserModal').style.display = 'flex';
+        }
+        
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        document.getElementById('addUserForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const gender = document.getElementById('clientGender').value;
+            const birthday = document.getElementById('clientBirthday').value;
+            const height = document.getElementById('clientHeight').value;
+            const weight = document.getElementById('clientWeight').value;
+            const city = document.getElementById('clientCity').value.trim();
+            const education = document.getElementById('clientEducation').value;
+            const occupation = document.getElementById('clientOccupation').value.trim();
+            const marital = document.getElementById('clientMarital').value;
+            const openMode = document.querySelector('input[name="openMode"]:checked').value;
+            
+            if (!name || !phone || !gender) {
+                document.getElementById('addUserError').textContent = '请填写必填项';
+                document.getElementById('addUserError').style.display = 'block';
+                return;
+            }
+            
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                document.getElementById('addUserError').textContent = '请输入正确的手机号码';
+                document.getElementById('addUserError').style.display = 'block';
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            if (users.find(u => u.phone === phone)) {
+                document.getElementById('addUserError').textContent = '该手机号已被注册';
+                document.getElementById('addUserError').style.display = 'block';
+                return;
+            }
+            
+            let age = '';
+            if (birthday) {
+                const birthDate = new Date(birthday);
+                const today = new Date();
+                age = today.getFullYear() - birthDate.getFullYear();
+                const monthDiff = today.getMonth() - birthDate.getMonth();
+                if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+                    age--;
+                }
+            }
+            
+            const newUser = {
+                id: Date.now(),
+                phone: phone,
+                username: name,
+                realName: name,
+                gender: gender,
+                birthday: birthday,
+                age: age,
+                height: height,
+                weight: weight,
+                city: city,
+                education: education,
+                occupation: occupation,
+                maritalStatus: marital,
+                status: 'pending',
+                role: 'personal',
+                registeredBy: currentUser.phone,
+                agencyName: agencyName,
+                openMode: openMode,
+                offlineActivities: selectedActivities,
+                createdAt: new Date().toLocaleString('zh-CN'),
+                profileCompleted: false,
+                hometown: '',
+                income: '',
+                description: '',
+                photo: '',
+                photos: [],
+                smoking: '',
+                drinking: '',
+                religion: '',
+                character: '',
+                hobbies: [],
+                petAccept: '',
+                schedule: '',
+                financialView: '',
+                liveWithParents: '',
+                expectedChildren: '',
+                requirements: {
+                    minAge: '',
+                    maxAge: '',
+                    minHeight: '',
+                    maxHeight: '',
+                    maritalStatus: '',
+                    city: '',
+                    education: '',
+                    incomeMin: '',
+                    incomeMax: '',
+                    values: '',
+                    marriagePlan: '',
+                    offlineActivities: [],
+                    minActivityMatch: 1
+                }
+            };
+            
+            users.push(newUser);
+            localStorage.setItem('datingUsers', JSON.stringify(users));
+            
+            closeModal('addUserModal');
+            renderUsers('all');
+        });
+        
+        function editUser(userId) {
+            alert('编辑功能开发中');
+        }
+        
+        function deleteUser(userId) {
+            if (!confirm('确定要删除该用户吗？')) return;
+            
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const filtered = users.filter(u => u.id !== userId);
+            localStorage.setItem('datingUsers', JSON.stringify(filtered));
+            renderUsers('all');
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('tabUsers').classList.add('hidden');
+            document.getElementById('tabMatches').classList.add('hidden');
+            document.getElementById('tabMessages').classList.add('hidden');
+            
+            document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            
+            if (tabName === 'matches') {
+                loadMatchUserSelect();
+            } else if (tabName === 'messages') {
+                loadMessageList();
+            }
+        }
+        
+        function loadMatchUserSelect() {
+            const users = getAgencyUsers();
+            const select = document.getElementById('matchUserSelect');
+            select.innerHTML = '<option value="">选择用户查看匹配</option>';
+            users.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.id;
+                option.textContent = `${user.username} (${user.gender} ${user.age}岁)`;
+                select.appendChild(option);
+            });
+        }
+        
+        function loadUserMatches() {
+            const userId = document.getElementById('matchUserSelect').value;
+            if (!userId) {
+                document.getElementById('matchResults').innerHTML = '<p style="color: #999; text-align: center; padding: 30px;">请选择一个用户查看匹配</p>';
+                return;
+            }
+            
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const currentUser = users.find(u => u.id == userId);
+            if (!currentUser) return;
+            
+            const candidates = users.filter(u => 
+                u.role === 'personal' && 
+                u.id != userId && 
+                u.gender !== currentUser.gender
+            );
+            
+            const results = candidates.map(candidate => {
+                const match = calculateMatch(currentUser, candidate);
+                return { user: candidate, ...match };
+            }).filter(r => r.percentage > 0).sort((a, b) => b.percentage - a.percentage);
+            
+            if (results.length === 0) {
+                document.getElementById('matchResults').innerHTML = '<p style="color: #999; text-align: center; padding: 30px;">暂无匹配结果</p>';
+                return;
+            }
+            
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">';
+            results.forEach(result => {
+                html += `
+                    <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                        <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                            <div style="width: 60px; height: 60px; border-radius: 50%; background: #c44569; color: white; display: flex; align-items: center; justify-content: center; font-size: 24px; margin-right: 15px;">
+                                ${result.user.gender === '男' ? '👨' : '👩'}
+                            </div>
+                            <div>
+                                <h4 style="margin: 0; color: #333;">${result.user.username}</h4>
+                                <p style="margin: 2px 0; color: #999;">${result.user.age}岁 | ${result.user.city}</p>
+                            </div>
+                            <div style="margin-left: auto; text-align: right;">
+                                <div style="font-size: 24px; font-weight: bold; color: #c44569;">${result.percentage}%</div>
+                                <div style="font-size: 12px; color: #999;">匹配度</div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">匹配原因</div>
+                            <div style="font-size: 13px; color: #333;">${result.reasons.slice(0, 3).join('、')}</div>
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <div style="font-size: 12px; color: #666; margin-bottom: 5px;">活动偏好</div>
+                            <div>${(result.user.offlineActivities || []).map(a => `<span style="background: #ffeaa7; padding: 3px 8px; border-radius: 15px; font-size: 12px; margin-right: 5px;">${a}</span>`).join('')}</div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary" onclick="viewUserDetail(${result.user.id})">查看详情</button>
+                            ${result.user.openMode === 'open' ? 
+                                '<button class="btn btn-success" onclick="sendGreeting(' + currentUser.id + ', ' + result.user.id + ')">代打招呼</button>' : 
+                                '<button class="btn btn-info" onclick="showContactIntent(' + result.user.id + ')">联系中介</button>'
+                            }
+                        </div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            document.getElementById('matchResults').innerHTML = html;
+        }
+        
+        function calculateMatch(user, target) {
+            let score = 0;
+            let total = 0;
+            let reasons = [];
+            
+            const req = user.requirements || {};
+            
+            if (req.minAge && target.age >= parseInt(req.minAge)) { score++; reasons.push('年龄符合'); }
+            if (req.maxAge && target.age <= parseInt(req.maxAge)) { score++; }
+            total += 2;
+            
+            if (req.minHeight && target.height >= parseInt(req.minHeight)) { score++; reasons.push('身高符合'); }
+            if (req.maxHeight && target.height <= parseInt(req.maxHeight)) { score++; }
+            total += 2;
+            
+            if (req.maritalStatus && req.maritalStatus === target.maritalStatus) { score++; reasons.push('婚况匹配'); }
+            total += 1;
+            
+            if (req.city && req.city === target.city) { score++; reasons.push('同城'); }
+            total += 1;
+            
+            if (req.education && target.education && target.education >= req.education) { score++; reasons.push('学历达标'); }
+            total += 1;
+            
+            const userActivities = user.offlineActivities || [];
+            const targetActivities = target.offlineActivities || [];
+            const activityMatch = userActivities.filter(a => targetActivities.includes(a)).length;
+            if (activityMatch >= (req.minActivityMatch || 1)) { 
+                score += 2; 
+                reasons.push(`活动匹配(${activityMatch}项)`); 
+            }
+            total += 2;
+            
+            return {
+                percentage: total > 0 ? Math.round((score / total) * 100) : 0,
+                reasons: reasons,
+                activityMatch: activityMatch
+            };
+        }
+        
+        function viewUserDetail(userId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const user = users.find(u => u.id == userId);
+            if (!user) return;
+            
+            const html = `
+                <div style="padding: 20px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="width: 100px; height: 100px; border-radius: 50%; background: #c44569; color: white; display: flex; align-items: center; justify-content: center; font-size: 40px; margin: 0 auto 10px;">
+                            ${user.gender === '男' ? '👨' : '👩'}
+                        </div>
+                        <h3>${user.username}</h3>
+                    </div>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 15px;">
+                        <p><strong>性别：</strong>${user.gender}</p>
+                        <p><strong>年龄：</strong>${user.age}岁</p>
+                        <p><strong>身高：</strong>${user.height || '-'}cm</p>
+                        <p><strong>体重：</strong>${user.weight || '-'}kg</p>
+                        <p><strong>城市：</strong>${user.city || '-'}</p>
+                        <p><strong>学历：</strong>${user.education || '-'}</p>
+                        <p><strong>职业：</strong>${user.occupation || '-'}</p>
+                        <p><strong>婚姻状态：</strong>${user.maritalStatus || '-'}</p>
+                        <p><strong>开放模式：</strong>${user.openMode === 'open' ? '信息开放' : '需通过中介'}</p>
+                        <p><strong>活动偏好：</strong>${(user.offlineActivities || []).join('、') || '-'}</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('modalContent').innerHTML = html + '<button class="btn btn-success" onclick="closeModal(\'detailModal\')" style="width: 100%; margin-top: 20px;">关闭</button>';
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+        
+        function sendGreeting(fromId, toId) {
+            const fromUser = (JSON.parse(localStorage.getItem('datingUsers')) || []).find(u => u.id == fromId);
+            if (!fromUser) return;
+            
+            const message = {
+                id: Date.now(),
+                from: fromId,
+                to: toId,
+                content: `${fromUser.username} 通过 ${currentUser.companyName} 向您打招呼，希望认识您！`,
+                type: 'greeting',
+                timestamp: new Date().toLocaleString('zh-CN'),
+                agencyId: currentUser.id
+            };
+            
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            messages.push(message);
+            localStorage.setItem('datingMessages', JSON.stringify(messages));
+            
+            alert('打招呼消息已发送！');
+        }
+        
+        function showContactIntent(userId) {
+            alert(`用户已收到意向，可通过中介联系方式联系：${currentUser.phone}`);
+        }
+        
+        function loadMessageList() {
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            const agencyMessages = messages.filter(m => m.agencyId == currentUser.id || m.to == currentUser.id);
+            
+            const conversations = {};
+            agencyMessages.forEach(msg => {
+                const key = msg.from == currentUser.id ? msg.to : msg.from;
+                if (!conversations[key]) {
+                    conversations[key] = [];
+                }
+                conversations[key].push(msg);
+            });
+            
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            let html = '';
+            Object.keys(conversations).forEach(userId => {
+                const user = users.find(u => u.id == userId);
+                if (!user) return;
+                
+                const lastMsg = conversations[userId].sort((a, b) => b.id - a.id)[0];
+                html += `
+                    <div style="padding: 15px; border-bottom: 1px solid #e0e0e0; cursor: pointer;" onclick="openChat(${userId})">
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #c44569; color: white; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                                ${user.gender === '男' ? '👨' : '👩'}
+                            </div>
+                            <div style="flex: 1;">
+                                <div style="font-weight: 500;">${user.username}</div>
+                                <div style="font-size: 12px; color: #999; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${lastMsg.content}</div>
+                            </div>
+                            <div style="font-size: 11px; color: #999;">${lastMsg.timestamp}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (html === '') {
+                html = '<p style="color: #999; text-align: center; padding: 30px;">暂无消息</p>';
+            }
+            
+            document.getElementById('messageList').innerHTML = html;
+        }
+        
+        let currentChatUserId = null;
+        
+        function openChat(userId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const user = users.find(u => u.id == userId);
+            if (!user) return;
+            
+            currentChatUserId = userId;
+            document.getElementById('chatTitle').textContent = user.username;
+            loadChatMessages();
+        }
+        
+        function loadChatMessages() {
+            if (!currentChatUserId) return;
+            
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            const chatMessages = messages.filter(m => 
+                (m.from == currentUser.id && m.to == currentChatUserId) ||
+                (m.from == currentChatUserId && m.to == currentUser.id)
+            ).sort((a, b) => a.id - b.id);
+            
+            let html = '';
+            chatMessages.forEach(msg => {
+                const isMe = msg.from == currentUser.id;
+                html += `
+                    <div style="display: flex; ${isMe ? 'justify-content: flex-end;' : 'justify-content: flex-start;'} margin-bottom: 10px;">
+                        <div style="max-width: 70%; padding: 12px 16px; border-radius: 15px; ${isMe ? 'background: #c44569; color: white;' : 'background: white; border: 1px solid #e0e0e0;'}">
+                            <div style="font-size: 13px;">${msg.content}</div>
+                            <div style="font-size: 10px; margin-top: 5px; ${isMe ? 'color: rgba(255,255,255,0.8);' : 'color: #999;'}">${msg.timestamp}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            document.getElementById('chatMessages').innerHTML = html;
+            document.getElementById('chatMessages').scrollTop = document.getElementById('chatMessages').scrollHeight;
+        }
+        
+        function sendMessage() {
+            const content = document.getElementById('chatInput').value.trim();
+            if (!content || !currentChatUserId) return;
+            
+            const message = {
+                id: Date.now(),
+                from: currentUser.id,
+                to: currentChatUserId,
+                content: content,
+                type: 'text',
+                timestamp: new Date().toLocaleString('zh-CN'),
+                agencyId: currentUser.id
+            };
+            
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            messages.push(message);
+            localStorage.setItem('datingMessages', JSON.stringify(messages));
+            
+            document.getElementById('chatInput').value = '';
+            loadChatMessages();
+        }
+        
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+        
+        renderUsers('all');
+    </script>
+</body>
+</html>

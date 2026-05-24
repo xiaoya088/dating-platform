@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>匹配信息 - 缘来是你</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        h1 {
+            color: #c44569;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+        h2 {
+            color: #c44569;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ff6b9d;
+        }
+        .btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); }
+        .btn-primary:hover { box-shadow: 0 5px 15px rgba(255,107,157,0.4); }
+        .btn-secondary { background: #747d8c; }
+        .btn-secondary:hover { background: #636e72; }
+        .btn-relax { background: #f39c12; }
+        .btn-relax:hover { background: #e67e22; }
+        
+        .match-list {
+            display: grid;
+            gap: 15px;
+        }
+        .match-item {
+            background: #fff;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 2px solid #f0f0f0;
+        }
+        .match-item:hover {
+            border-color: #ff6b9d;
+            box-shadow: 0 6px 20px rgba(255,107,157,0.2);
+        }
+        .match-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        .match-info {
+            flex: 1;
+        }
+        .match-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        .match-basic {
+            font-size: 14px;
+            color: #666;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .match-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .stat-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            margin-bottom: 3px;
+        }
+        .stat-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+        }
+        .match-description {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #555;
+            margin-bottom: 15px;
+            background: #fff3e0;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #ff9800;
+        }
+        .match-requirements {
+            background: #e8f5e9;
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid #00b894;
+        }
+        .req-title {
+            font-weight: 600;
+            color: #00b894;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .req-content {
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .photos-preview {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .photo-thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #f0f0f0;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 50px 20px;
+            color: #999;
+        }
+        .empty-state .icon {
+            font-size: 4rem;
+            margin-bottom: 15px;
+        }
+        .empty-state p {
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        .empty-state small {
+            font-size: 14px;
+            color: #bbb;
+        }
+        .agency-badge {
+            background: #ffeaa7;
+            color: #8b4513;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 5px;
+        }
+        .privacy-note {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            margin-top: 10px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .match-percentage {
+            background: linear-gradient(90deg, #ff6b9d, #c44569);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 8px;
+            display: inline-block;
+        }
+        .match-percentage.high { background: linear-gradient(90deg, #2ed573, #27ae60); }
+        .match-percentage.medium { background: linear-gradient(90deg, #ffa502, #ff6348); }
+        .match-percentage.low { background: linear-gradient(90deg, #ff4757, #ff3344); }
+
+        .match-reason {
+            background: #f5f0ff;
+            padding: 10px 12px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+            color: #667eea;
+        }
+        .match-reason .title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .match-reason .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+        .match-reason .tag {
+            background: #667eea20;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+
+        .activity-match {
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+        .activity-match .title {
+            font-weight: 600;
+            color: #00b894;
+            margin-bottom: 5px;
+        }
+        .activity-match .common {
+            color: #27ae60;
+            font-weight: 500;
+        }
+
+        .relax-hint {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 14px;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .relax-hint .icon {
+            font-size: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .match-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .match-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>💑 匹配信息</h1>
+            
+            <a href="profile.html" class="btn btn-secondary">← 返回个人资料</a>
+            
+            <div id="relaxHint" class="relax-hint hidden">
+                <span class="icon">💡</span>
+                <span>提示：放宽择偶条件可以找到更多匹配对象</span>
+            </div>
+            
+            <div id="matchResults">
+                <div class="empty-state">
+                    <div class="icon">🔍</div>
+                    <p>正在查找匹配对象...</p>
+                    <small>请稍候</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = JSON.parse(localStorage.getItem('datingCurrentUser'));
+        if (!currentUser) { window.location.href = 'login.html'; }
+        
+        const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+        
+        function calculateActivityMatch(user, target) {
+            const userActivities = user.offlineActivities || [];
+            const targetActivities = target.offlineActivities || [];
+            
+            const commonActivities = userActivities.filter(a => targetActivities.includes(a));
+            const minRequired = parseInt(user.requirements?.minActivityMatch) || 1;
+            
+            return {
+                common: commonActivities,
+                count: commonActivities.length,
+                meetsRequirement: commonActivities.length >= minRequired,
+                userActivities: userActivities,
+                targetActivities: targetActivities
+            };
+        }
+
+        function calculateHobbyMatch(user, target) {
+            const userHobbies = user.hobbies || [];
+            const targetHobbies = target.hobbies || [];
+            
+            const commonHobbies = userHobbies.filter(h => targetHobbies.includes(h));
+            const similarity = userHobbies.length > 0 ? 
+                Math.round((commonHobbies.length / userHobbies.length) * 100) : 0;
+            
+            return {
+                common: commonHobbies,
+                similarity: similarity
+            };
+        }
+        
+        function getImportanceWeight(importance) {
+            const weights = {
+                'must': 0,      // 硬性过滤
+                'very': 1.5,
+                'normal': 1.0,
+                'optional': 0.5
+            };
+            return weights[importance] || 1.0;
+        }
+
+        function checkHardFilter(req, target, field, importance) {
+            if (importance !== 'must') return true;
+            
+            switch(field) {
+                case 'age':
+                    const age = parseInt(target.age);
+                    if (req.minAge && age < parseInt(req.minAge)) return false;
+                    if (req.maxAge && age > parseInt(req.maxAge)) return false;
+                    return true;
+                case 'height':
+                    const height = parseInt(target.height);
+                    if (req.minHeight && height < parseInt(req.minHeight)) return false;
+                    if (req.maxHeight && height > parseInt(req.maxHeight)) return false;
+                    return true;
+                case 'maritalStatus':
+                    if (req.maritalStatus && req.maritalStatus !== target.maritalStatus) return false;
+                    return true;
+                case 'city':
+                    if (req.city && (!target.city || !target.city.includes(req.city))) return false;
+                    return true;
+                case 'education':
+                    if (req.education) {
+                        const eduOrder = {'高中': 1, '大专': 2, '本科': 3, '硕士': 4, '博士': 5};
+                        const reqEdu = eduOrder[req.education] || 0;
+                        const targetEdu = eduOrder[target.education] || 0;
+                        if (targetEdu < reqEdu) return false;
+                    }
+                    return true;
+                case 'smokingDrinking':
+                    if (req.smokingDrinking === '不吸烟不饮酒') {
+                        if (target.smoking !== '不吸烟' || target.drinking !== '不饮酒') return false;
+                    } else if (req.smokingDrinking === '不接受吸烟') {
+                        if (target.smoking === '经常吸烟') return false;
+                    }
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        function calculateRangeMatch(value, min, max) {
+            if (!min && !max) return 100;
+            
+            const val = parseInt(value);
+            if (isNaN(val)) return 0;
+            
+            let minVal = min ? parseInt(min) : -Infinity;
+            let maxVal = max ? parseInt(max) : Infinity;
+            
+            if (val >= minVal && val <= maxVal) return 100;
+            
+            let deviation = 0;
+            if (val < minVal) deviation = minVal - val;
+            if (val > maxVal) deviation = val - maxVal;
+            
+            return Math.max(0, 100 - deviation * 10);
+        }
+
+        function calculateCategoryMatch(reqVal, targetVal) {
+            if (!reqVal) return 100;
+            if (!targetVal) return 0;
+            
+            if (reqVal === targetVal) return 100;
+            
+            const partialMatches = {
+                '吸烟': ['偶尔吸烟', '经常吸烟'],
+                '不吸烟': ['不吸烟'],
+                '饮酒': ['偶尔饮酒', '经常饮酒'],
+                '不饮酒': ['不饮酒'],
+                '本科': ['硕士', '博士'],
+                '大专': ['本科', '硕士', '博士'],
+                '高中': ['大专', '本科', '硕士', '博士']
+            };
+            
+            if (partialMatches[reqVal] && partialMatches[reqVal].includes(targetVal)) {
+                return 80;
+            }
+            
+            return 0;
+        }
+
+        function calculateJaccardSimilarity(arr1, arr2) {
+            if (!arr1 || !arr2 || arr1.length === 0) return 0;
+            
+            const intersection = arr1.filter(x => arr2.includes(x)).length;
+            const union = arr1.length + arr2.length - intersection;
+            
+            return union > 0 ? (intersection / union) * 100 : 0;
+        }
+
+        function calculateMatchPercentage(user, target) {
+            const req = user.requirements || {};
+            let totalScore = 0;
+            let totalWeight = 0;
+            let reasons = [];
+            
+            const ageImportance = req.ageImportance || 'normal';
+            const heightImportance = req.heightImportance || 'normal';
+            const maritalImportance = req.maritalImportance || 'normal';
+            const cityImportance = req.cityImportance || 'normal';
+            const educationImportance = req.educationImportance || 'normal';
+            const characterImportance = req.characterImportance || 'normal';
+            const activityImportance = req.activityImportance || 'normal';
+            
+            if (!checkHardFilter(req, target, 'age', ageImportance)) return { percentage: 0, reasons: [], filtered: true };
+            if (!checkHardFilter(req, target, 'height', heightImportance)) return { percentage: 0, reasons: [], filtered: true };
+            if (!checkHardFilter(req, target, 'maritalStatus', maritalImportance)) return { percentage: 0, reasons: [], filtered: true };
+            if (!checkHardFilter(req, target, 'city', cityImportance)) return { percentage: 0, reasons: [], filtered: true };
+            if (!checkHardFilter(req, target, 'education', educationImportance)) return { percentage: 0, reasons: [], filtered: true };
+            if (!checkHardFilter(req, target, 'smokingDrinking', req.smokingDrinkingImportance || 'normal')) return { percentage: 0, reasons: [], filtered: true };
+            
+            const ageScore = calculateRangeMatch(target.age, req.minAge, req.maxAge);
+            const ageWeight = getImportanceWeight(ageImportance);
+            if (ageWeight > 0) {
+                totalScore += ageScore * ageWeight;
+                totalWeight += ageWeight;
+                if (ageScore >= 80) reasons.push('年龄匹配');
+            }
+            
+            const heightScore = calculateRangeMatch(target.height, req.minHeight, req.maxHeight);
+            const heightWeight = getImportanceWeight(heightImportance);
+            if (heightWeight > 0) {
+                totalScore += heightScore * heightWeight;
+                totalWeight += heightWeight;
+                if (heightScore >= 80) reasons.push('身高匹配');
+            }
+            
+            const maritalScore = calculateCategoryMatch(req.maritalStatus, target.maritalStatus);
+            const maritalWeight = getImportanceWeight(maritalImportance);
+            if (maritalWeight > 0) {
+                totalScore += maritalScore * maritalWeight;
+                totalWeight += maritalWeight;
+                if (maritalScore >= 80) reasons.push('婚姻状况匹配');
+            }
+            
+            const cityScore = calculateCategoryMatch(req.city, target.city);
+            const cityWeight = getImportanceWeight(cityImportance);
+            if (cityWeight > 0) {
+                totalScore += cityScore * cityWeight;
+                totalWeight += cityWeight;
+                if (cityScore >= 80) reasons.push('同城');
+            }
+            
+            const eduOrder = {'高中': 1, '大专': 2, '本科': 3, '硕士': 4, '博士': 5};
+            let eduScore = 100;
+            if (req.education && target.education) {
+                const reqEdu = eduOrder[req.education] || 0;
+                const targetEdu = eduOrder[target.education] || 0;
+                if (targetEdu >= reqEdu) {
+                    eduScore = 100;
+                } else {
+                    eduScore = 0;
+                }
+            }
+            const eduWeight = getImportanceWeight(educationImportance);
+            if (eduWeight > 0) {
+                totalScore += eduScore * eduWeight;
+                totalWeight += eduWeight;
+                if (eduScore === 100) reasons.push('学历达标');
+            }
+            
+            const characterScore = calculateCategoryMatch(req.character, target.character);
+            const characterWeight = getImportanceWeight(characterImportance);
+            if (characterWeight > 0 && req.character) {
+                totalScore += characterScore * characterWeight;
+                totalWeight += characterWeight;
+                if (characterScore >= 80) reasons.push('性格匹配');
+            }
+            
+            const userHobbies = user.hobbies || [];
+            const targetHobbies = target.hobbies || [];
+            const hobbySimilarity = calculateJaccardSimilarity(userHobbies, targetHobbies);
+            const commonHobbies = userHobbies.filter(h => targetHobbies.includes(h));
+            
+            const userActivities = user.offlineActivities || [];
+            const targetActivities = target.offlineActivities || [];
+            const activitySimilarity = calculateJaccardSimilarity(userActivities, targetActivities);
+            const commonActivities = userActivities.filter(a => targetActivities.includes(a));
+            const minActivityMatch = parseInt(req.minActivityMatch) || 1;
+            
+            const activityWeight = getImportanceWeight(activityImportance);
+            if (activityWeight > 0) {
+                totalScore += activitySimilarity * activityWeight;
+                totalWeight += activityWeight;
+            }
+            
+            let percentage = totalWeight > 0 ? Math.round(totalScore / totalWeight) : 0;
+            
+            const hobbyBonus = Math.min(commonHobbies.length * 2, 10);
+            if (commonHobbies.length > 0) {
+                percentage += hobbyBonus;
+                reasons.push(`共同兴趣(${commonHobbies.length}个)`);
+            }
+            
+            if (commonHobbies.length > 0 && commonHobbies.length < minActivityMatch) {
+                percentage = Math.round(percentage * 0.5);
+            }
+            
+            const activityBonus = Math.min(commonActivities.length * 3, 15);
+            if (commonActivities.length > 0) {
+                percentage += activityBonus;
+                reasons.push(`活动契合(${commonActivities.length}项)`);
+            }
+            
+            if (commonActivities.length > 0 && commonActivities.length < minActivityMatch) {
+                percentage = Math.round(percentage * 0.7);
+            }
+            
+            percentage = Math.min(percentage, 100);
+            percentage = Math.max(percentage, 0);
+            
+            return {
+                percentage: percentage,
+                reasons: reasons.slice(0, 5),
+                activityMatch: { common: commonActivities, count: commonActivities.length },
+                hobbyMatch: { common: commonHobbies, similarity: hobbySimilarity }
+            };
+        }
+        
+        function filterMatches(relaxed = false) {
+            const matches = users.filter(user => {
+                if (user.id === currentUser.id) return false;
+                if (user.status !== 'approved') return false;
+                if (user.gender === currentUser.gender) return false;
+                if (!user.profileCompleted && !user.registeredBy) return false;
+                return true;
+            }).map(user => {
+                const matchResultAB = calculateMatchPercentage(currentUser, user);
+                const matchResultBA = calculateMatchPercentage(user, currentUser);
+                
+                if (!relaxed && matchResultAB.filtered) return null;
+                
+                const avgScore = Math.round((matchResultAB.percentage + matchResultBA.percentage) / 2);
+                
+                return {
+                    ...user,
+                    matchPercent: avgScore,
+                    scoreAB: matchResultAB.percentage,
+                    scoreBA: matchResultBA.percentage,
+                    reasons: matchResultAB.reasons,
+                    activityMatch: matchResultAB.activityMatch,
+                    hobbyMatch: matchResultAB.hobbyMatch
+                };
+            }).filter(match => {
+                if (!match) return false;
+                if (relaxed) return true;
+                return match.matchPercent >= 40;
+            }).sort((a, b) => {
+                if (b.matchPercent >= 70 && a.matchPercent < 70) return 1;
+                if (a.matchPercent >= 70 && b.matchPercent < 70) return -1;
+                return b.matchPercent - a.matchPercent;
+            });
+            
+            return matches;
+        }
+        
+        function getMatchPercentageClass(percent) {
+            if (percent >= 70) return 'high';
+            if (percent >= 50) return 'medium';
+            return 'low';
+        }
+        
+        function getAgencyName(agencyId) {
+            const agencies = JSON.parse(localStorage.getItem('datingAgencies')) || [];
+            const agency = agencies.find(a => a.id == agencyId);
+            return agency ? agency.name : '';
+        }
+
+        function renderMatch(user) {
+            const percentClass = getMatchPercentageClass(user.matchPercent);
+            const hasPhoto = user.photo && user.photo !== '';
+            const isAgencyUser = user.registeredBy && user.registeredBy !== '';
+            const openMode = user.openMode || 'open';
+            const agencyName = isAgencyUser ? getAgencyName(user.registeredBy) : '';
+            
+            if (isAgencyUser && openMode === 'agency') {
+                return `
+                    <div class="match-item">
+                        <div class="match-header">
+                            <div class="avatar">🔒</div>
+                            <div class="match-info">
+                                <div class="match-name">用户ID: ${user.id} 
+                                    <span class="match-percentage ${percentClass}">匹配度 ${user.matchPercent}%</span>
+                                    <span class="agency-badge">由${agencyName || '中介'}提供</span>
+                                </div>
+                                <div class="match-basic">
+                                    <span>${user.gender}</span>
+                                    <span>${user.age || '-'}岁</span>
+                                    <span>${user.city || '-'}</span>
+                                    <span>${user.education || '-'}</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        ${user.offlineActivities && user.offlineActivities.length > 0 ? `
+                        <div class="activity-match">
+                            <div class="title">🎯 线下活动偏好</div>
+                            <div>${user.offlineActivities.join('、')}</div>
+                            ${user.activityMatch && user.activityMatch.common.length > 0 ? `
+                            <div style="margin-top: 5px;">共同偏好: <span class="common">${user.activityMatch.common.join('、')}</span></div>
+                            ` : ''}
+                        </div>
+                        ` : ''}
+                        
+                        ${user.reasons && user.reasons.length > 0 ? `
+                        <div class="match-reason">
+                            <div class="title">✨ 匹配原因</div>
+                            <div class="tags">
+                                ${user.reasons.map(r => `<span class="tag">${r}</span>`).join('')}
+                            </div>
+                        </div>
+                        ` : ''}
+                        
+                        <div style="margin-top: 15px; text-align: center;">
+                            <button class="btn btn-secondary" onclick="contactAgency(${user.id})">📞 联系中介</button>
+                        </div>
+                        
+                        <div class="privacy-note">
+                            此用户需通过中介联系，点击上方按钮获取联系方式
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="match-item">
+                    <div class="match-header">
+                        <div class="avatar">
+                            ${hasPhoto ? `<img src="${user.photo}" class="avatar">` : (user.gender === '男' ? '👨' : '👩')}
+                        </div>
+                        <div class="match-info">
+                            <div class="match-name">${user.username || user.realName} 
+                                <span class="match-percentage ${percentClass}">匹配度 ${user.matchPercent}%</span>
+                                ${isAgencyUser ? `<span class="agency-badge">由${agencyName || '中介'}提供</span>` : ''}
+                            </div>
+                            <div class="match-basic">
+                                <span>${user.gender}</span>
+                                <span>${user.age || '-'}岁</span>
+                                <span>${user.city || '-'}</span>
+                                <span>${user.maritalStatus || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="match-stats">
+                        <div class="stat-item">
+                            <div class="stat-label">身高</div>
+                            <div class="stat-value">${user.height || '-'}cm</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">体重</div>
+                            <div class="stat-value">${user.weight || '-'}kg</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">学历</div>
+                            <div class="stat-value">${user.education || '-'}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">职业</div>
+                            <div class="stat-value">${user.occupation || '-'}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">年收入</div>
+                            <div class="stat-value">${user.income || '-'}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">家乡</div>
+                            <div class="stat-value">${user.hometown || '-'}</div>
+                        </div>
+                    </div>
+                    
+                    ${user.description ? `
+                    <div class="match-description">
+                        💬 ${user.description}
+                    </div>
+                    ` : ''}
+                    
+                    ${user.offlineActivities && user.offlineActivities.length > 0 ? `
+                    <div class="activity-match">
+                        <div class="title">🎯 线下活动偏好</div>
+                        <div>${user.offlineActivities.join('、')}</div>
+                        ${user.activityMatch && user.activityMatch.common.length > 0 ? `
+                        <div style="margin-top: 5px;">共同偏好: <span class="common">${user.activityMatch.common.join('、')}</span></div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                    
+                    ${user.reasons && user.reasons.length > 0 ? `
+                    <div class="match-reason">
+                        <div class="title">✨ 匹配原因</div>
+                        <div class="tags">
+                            ${user.reasons.map(r => `<span class="tag">${r}</span>`).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+                    
+                    ${user.photos && user.photos.length > 0 ? `
+                    <div class="photos-preview">
+                        ${user.photos.slice(0, 4).map((photo, idx) => `<img src="${photo}" class="photo-thumb" alt="生活照${idx + 1}">`).join('')}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="match-requirements">
+                        <div class="req-title">💝 择偶条件</div>
+                        <div class="req-content">
+                            ${user.requirements ? `
+                            <div>期望年龄: ${user.requirements.minAge || '-'} - ${user.requirements.maxAge || '-'} 岁</div>
+                            <div>期望身高: ${user.requirements.minHeight || '-'} - ${user.requirements.maxHeight || '-'} cm</div>
+                            <div>期望婚况: ${user.requirements.maritalStatus || '无要求'}</div>
+                            <div>意向城市: ${user.requirements.city || '无要求'}</div>
+                            <div>学历要求: ${user.requirements.education || '无要求'}</div>
+                            ${user.requirements.values ? `<div>三观偏好: ${user.requirements.values}</div>` : ''}
+                            ` : '暂无择偶条件'}
+                        </div>
+                    </div>
+                    
+                    <div style="margin-top: 15px; text-align: center;">
+                        <button class="btn btn-primary" onclick="sendGreeting(${user.id})">👋 打招呼</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function contactAgency(userId) {
+            const user = users.find(u => u.id == userId);
+            if (!user || !user.registeredBy) return;
+            
+            const agencies = JSON.parse(localStorage.getItem('datingAgencies')) || [];
+            const agency = agencies.find(a => a.id == user.registeredBy);
+            
+            if (!agency) {
+                alert('中介信息不存在');
+                return;
+            }
+            
+            const intent = {
+                id: Date.now(),
+                userId: currentUser.id,
+                targetUserId: userId,
+                agencyId: user.registeredBy,
+                createdAt: new Date().toLocaleString('zh-CN'),
+                status: 'pending'
+            };
+            
+            const intents = JSON.parse(localStorage.getItem('datingContactIntents')) || [];
+            intents.push(intent);
+            localStorage.setItem('datingContactIntents', JSON.stringify(intents));
+            
+            alert(`已向 ${agency.name} 发送联系意向\n\n中介联系方式：\n联系人：${agency.contactName}\n电话：${agency.phone}\n邮箱：${agency.email}`);
+        }
+
+        function sendGreeting(targetId) {
+            const targetUser = users.find(u => u.id == targetId);
+            if (!targetUser) return;
+            
+            const greeting = `你好，我觉得我们很匹配，想认识一下！😊`;
+            
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            messages.push({
+                id: Date.now(),
+                from: currentUser.id,
+                to: targetId,
+                content: greeting,
+                type: 'text',
+                timestamp: new Date().toLocaleString('zh-CN')
+            });
+            localStorage.setItem('datingMessages', JSON.stringify(messages));
+            
+            alert('打招呼成功！等待对方回复吧~');
+            window.location.href = 'chat.html';
+        }
+        
+        function renderMatches(relaxed = false) {
+            const matches = filterMatches(relaxed);
+            const container = document.getElementById('matchResults');
+            
+            if (matches.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">💔</div>
+                        <p>暂无匹配对象</p>
+                        <small>请完善您的个人资料和择偶条件，或等待更多用户注册</small>
+                    </div>
+                `;
+                document.getElementById('relaxHint').style.display = 'flex';
+                return;
+            }
+            
+            document.getElementById('relaxHint').style.display = 'none';
+            
+            container.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>找到 ${matches.length} 位匹配对象</h2>
+                    <button class="btn btn-relax" onclick="renderMatches(true)" style="margin-bottom: 0;">🔓 放宽条件</button>
+                </div>
+                <div class="match-list">
+                    ${matches.map(renderMatch).join('')}
+                </div>
+            `;
+        }
+        
+        renderMatches();
+    </script>
+</body>
+</html>

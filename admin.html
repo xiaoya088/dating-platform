@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员后台 - 缘来是你</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+            color: white;
+        }
+        .btn-primary { background: #667eea; }
+        .btn-primary:hover { background: #5a6fd6; }
+        .btn-success { background: #2ed573; }
+        .btn-success:hover { background: #27ae60; }
+        .btn-danger { background: #ff4757; }
+        .btn-danger:hover { background: #ff3344; }
+        .btn-secondary { background: #747d8c; }
+        .btn-secondary:hover { background: #636e72; }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .card-header h2 { color: #333; font-size: 1.5rem; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background: #f8f9fa;
+            color: #333;
+            font-weight: 600;
+        }
+        tr:hover { background: #f8f9fa; }
+
+        .badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .badge-pending { background: #ffeaa7; color: #d63031; }
+        .badge-approved { background: #81ecec; color: #00b894; }
+        .badge-danger { background: #ff6b6b; color: white; }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        .tab-btn:hover { background: rgba(255,255,255,0.3); }
+        .tab-btn.active { background: white; color: #667eea; }
+
+        .hidden { display: none; }
+
+        .stat-card {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+        }
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 85vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 { color: #333; font-size: 1.3rem; }
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .close-btn:hover { color: #333; }
+
+        .user-detail {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .detail-row {
+            display: flex;
+            margin-bottom: 12px;
+        }
+        .detail-label {
+            width: 100px;
+            color: #666;
+            font-weight: 500;
+        }
+        .detail-value { color: #333; }
+
+        .match-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e0e0e0;
+        }
+        .match-section h4 { 
+            color: #667eea; 
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .match-list {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .match-item {
+            background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            padding: 12px 15px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            border: 1px solid #667eea30;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .match-item:hover { 
+            background: linear-gradient(135deg, #667eea40 0%, #764ba240 100%);
+            border-color: #667eea;
+        }
+        .match-item-info {
+            flex: 1;
+        }
+        .match-item-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 3px;
+        }
+        .match-item-basic {
+            font-size: 12px;
+            color: #666;
+        }
+        .match-percentage {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .match-percentage.high { background: linear-gradient(135deg, #2ed573 0%, #27ae60 100%); }
+        .match-percentage.medium { background: linear-gradient(135deg, #ffa502 0%, #ff6348 100%); }
+        .match-percentage.low { background: linear-gradient(135deg, #ff4757 0%, #ff3344 100%); }
+
+        .requirements-box {
+            background: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .requirements-title {
+            color: #e65100;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 1.8rem; }
+            table { font-size: 12px; }
+            th, td { padding: 8px; }
+            .header-bar { flex-direction: column; gap: 10px; }
+            .btn { width: 100%; text-align: center; }
+            .modal-content { padding: 20px; margin: 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 婚恋网站管理后台</h1>
+
+        <div class="header-bar">
+            <span style="color: white; font-weight: 600;">👤 管理员</span>
+            <button class="btn btn-danger" onclick="logout()">退出登录</button>
+        </div>
+
+        <div class="tabs" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+            <button class="tab-btn active" onclick="showTab('users')">👥 用户管理</button>
+            <button class="tab-btn" onclick="showTab('agencies')">🏢 中介管理</button>
+            <button class="tab-btn" onclick="showTab('content')">📝 内容审核</button>
+            <button class="tab-btn" onclick="showTab('statistics')">📊 数据统计</button>
+        </div>
+
+        <div id="tabUsers">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📋 用户列表</h2>
+                    <div>
+                        <button class="btn btn-secondary" onclick="filterUsers('all')">全部</button>
+                        <button class="btn btn-danger" onclick="filterUsers('pending')">待审核</button>
+                        <button class="btn btn-success" onclick="filterUsers('approved')">已审核</button>
+                    </div>
+                </div>
+                <table id="userTable">
+                    <thead>
+                        <tr>
+                            <th>昵称</th>
+                            <th>性别</th>
+                            <th>年龄</th>
+                            <th>城市</th>
+                            <th>来源</th>
+                            <th>状态</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="userTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabAgencies" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏢 中介公司列表</h2>
+                    <div>
+                        <button class="btn btn-secondary" onclick="filterAgencies('all')">全部</button>
+                        <button class="btn btn-danger" onclick="filterAgencies('pending')">待审核</button>
+                        <button class="btn btn-success" onclick="filterAgencies('approved')">已通过</button>
+                    </div>
+                </div>
+                <table id="agencyTable">
+                    <thead>
+                        <tr>
+                            <th>公司名称</th>
+                            <th>联系人</th>
+                            <th>电话</th>
+                            <th>营业执照</th>
+                            <th>状态</th>
+                            <th>录入配额</th>
+                            <th>注册时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agencyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="tabContent" class="hidden">
+            <div class="card">
+                <div class="card-header">
+                    <h2>📝 线下活动类型管理</h2>
+                    <button class="btn btn-primary" onclick="showAddActivityModal()">+ 添加活动类型</button>
+                </div>
+                <div id="activityList">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>聚餐</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('聚餐')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>徒步</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('徒步')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>K歌</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('K歌')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>桌游</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('桌游')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>读书会</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('读书会')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>健身</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('健身')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>露营</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('露营')">删除</button>
+                        </div>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center;">
+                            <span>看展</span>
+                            <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;" onclick="deleteActivity('看展')">删除</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🔒 敏感词管理</h2>
+                    <button class="btn btn-primary" onclick="showAddSensitiveModal()">+ 添加敏感词</button>
+                </div>
+                <div id="sensitiveList">
+                    <div style="display: flex; flex-wrap: gap: 10px;">
+                        <span class="badge badge-danger">色情</span>
+                        <span class="badge badge-danger">暴力</span>
+                        <span class="badge badge-danger">赌博</span>
+                        <span class="badge badge-danger">诈骗</span>
+                        <span class="badge badge-danger">广告</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="tabStatistics" class="hidden">
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; margin-bottom: 20px;">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="statTotalUsers">0</div>
+                    <div class="stat-label">总用户数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="statApprovedUsers">0</div>
+                    <div class="stat-label">已审核用户</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🏢</div>
+                    <div class="stat-value" id="statAgencies">0</div>
+                    <div class="stat-label">中介公司</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💞</div>
+                    <div class="stat-value" id="statMatches">0</div>
+                    <div class="stat-label">匹配成功</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>📊 线下活动热度统计</h2>
+                </div>
+                <div id="activityStats"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🏆 中介公司排行</h2>
+                </div>
+                <table id="agencyRanking">
+                    <thead>
+                        <tr>
+                            <th>排名</th>
+                            <th>公司名称</th>
+                            <th>录入用户数</th>
+                            <th>匹配数</th>
+                        </tr>
+                    </thead>
+                    <tbody id="agencyRankingBody"></tbody>
+                </table>
+            </div>
+
+            <button class="btn btn-primary" onclick="exportStatistics()" style="width: 100%; margin-top: 15px;">📥 导出统计数据</button>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>用户详情</h3>
+                <span class="close-btn" onclick="closeModal('detailModal')">&times;</span>
+            </div>
+            <div id="userDetail"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="resetModal">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h3>重置密码</h3>
+                <span class="close-btn" onclick="closeModal('resetModal')">&times;</span>
+            </div>
+            <div id="resetError" style="background: #ffebee; color: #c62828; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none;"></div>
+            <div id="resetSuccess" style="background: #e8f5e9; color: #2e7d32; padding: 12px; border-radius: 8px; margin-bottom: 15px; display: none;"></div>
+            <form id="resetForm">
+                <input type="hidden" id="resetUserId">
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="margin-bottom: 8px;"><strong>用户名:</strong> <span id="resetUsername"></span></p>
+                    <p style="margin: 0;"><strong>手机号:</strong> <span id="resetPhone"></span></p>
+                </div>
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label for="newPassword" style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">新密码</label>
+                    <input type="password" id="newPassword" placeholder="请输入新密码" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: border-color 0.3s;">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label for="confirmPassword" style="display: block; margin-bottom: 8px; color: #555; font-weight: 600;">确认密码</label>
+                    <input type="password" id="confirmPassword" placeholder="请再次输入密码" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; transition: border-color 0.3s;">
+                </div>
+                <button type="submit" class="btn btn-success" style="width: 100%; padding: 14px; background: #00b894; border: none; border-radius: 10px; color: white; font-size: 16px; font-weight: 600; cursor: pointer; transition: all 0.3s;">确认重置</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="modal" id="photoModal">
+        <div class="modal-content" style="max-width: 90%; max-height: 90vh; background: transparent; display: flex; align-items: center; justify-content: center;">
+            <img id="photoModalImage" src="" style="max-width: 100%; max-height: 90vh; border-radius: 10px;">
+            <span class="close-btn" style="position: absolute; top: 20px; right: 30px; font-size: 40px; color: white; cursor: pointer;" onclick="closeModal('photoModal')">&times;</span>
+        </div>
+    </div>
+
+    <script>
+        const ADMIN_PHONE = '13800138000';
+
+        function initAdmin() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const adminExists = users.find(u => u.phone === ADMIN_PHONE);
+
+            if (!adminExists) {
+                const admin = {
+                    id: Date.now(),
+                    gender: '男',
+                    username: '管理员',
+                    age: 30,
+                    phone: ADMIN_PHONE,
+                    password: 'admin123',
+                    education: '本科',
+                    occupation: '管理员',
+                    city: '北京',
+                    description: '系统管理员',
+                    status: 'approved',
+                    createdAt: new Date().toLocaleString('zh-CN')
+                };
+                users.push(admin);
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+            }
+        }
+
+        initAdmin();
+
+        const currentUser = JSON.parse(localStorage.getItem('datingCurrentUser'));
+        if (!currentUser || currentUser.phone !== ADMIN_PHONE) {
+            window.location.href = 'login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('datingCurrentUser');
+            window.location.href = 'login.html';
+        }
+
+        function renderUsers(filter = 'all') {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const filteredUsers = users.filter(u => {
+                if (filter === 'all') return u.phone !== ADMIN_PHONE;
+                return u.status === filter && u.phone !== ADMIN_PHONE;
+            });
+
+            const tbody = document.getElementById('userTableBody');
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">暂无数据</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filteredUsers.forEach(user => {
+                const badgeClass = user.status === 'approved' ? 'badge-approved' : 'badge-pending';
+                const statusText = user.status === 'approved' ? '已审核' : '待审核';
+
+                html += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.gender || '-'}</td>
+                        <td>${user.age || '-'}</td>
+                        <td>${user.city || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td>${user.createdAt}</td>
+                        <td>
+                            <button class="btn btn-primary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="showDetail(${user.id})">查看</button>
+                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="showResetModal(${user.id})">重置密码</button>
+                            ${user.status === 'pending' ? `<button class="btn btn-success" style="padding: 5px 12px; font-size: 12px;" onclick="approveUser(${user.id})">通过</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function filterUsers(filter) {
+            renderUsers(filter);
+        }
+
+        function calculateMatchPercentage(user, target) {
+            let score = 0;
+            let total = 0;
+
+            const req = user.requirements || {};
+
+            if (req.minAge && target.age >= parseInt(req.minAge)) score++;
+            if (req.maxAge && target.age <= parseInt(req.maxAge)) score++;
+            total += 2;
+
+            if (req.minHeight && target.height >= parseInt(req.minHeight)) score++;
+            if (req.maxHeight && target.height <= parseInt(req.maxHeight)) score++;
+            total += 2;
+
+            if (req.maritalStatus && req.maritalStatus === target.maritalStatus) {
+                score++;
+                total++;
+            } else {
+                total++;
+            }
+
+            if (req.city && target.city && req.city.includes(target.city)) {
+                score++;
+                total++;
+            } else {
+                total++;
+            }
+
+            if (req.education && target.education) {
+                const eduOrder = {'高中': 1, '大专': 2, '本科': 3, '硕士': 4, '博士': 5};
+                const reqEdu = eduOrder[req.education] || 0;
+                const targetEdu = eduOrder[target.education] || 0;
+                if (targetEdu >= reqEdu) {
+                    score++;
+                    total++;
+                } else {
+                    total++;
+                }
+            } else {
+                total++;
+            }
+
+            if (req.incomeMin && target.income) {
+                const incomeOrder = {'5000以下': 1, '5000-10000': 2, '10000-20000': 3, '20000-50000': 4, '50000以上': 5};
+                const reqIncome = incomeOrder[req.incomeMin] || 0;
+                const targetIncome = incomeOrder[target.income] || 0;
+                if (targetIncome >= reqIncome) {
+                    score++;
+                    total++;
+                } else {
+                    total++;
+                }
+            } else {
+                total++;
+            }
+
+            return total > 0 ? Math.round((score / total) * 100) : 0;
+        }
+
+        function findPotentialMatches(user) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            return users.filter(u =>
+                u.id !== user.id &&
+                u.gender !== user.gender &&
+                u.status === 'approved' &&
+                u.profileCompleted
+            ).map(u => ({
+                ...u,
+                matchPercent: calculateMatchPercentage(user, u)
+            })).sort((a, b) => b.matchPercent - a.matchPercent);
+        }
+
+        function getMatchPercentageClass(percent) {
+            if (percent >= 70) return 'high';
+            if (percent >= 50) return 'medium';
+            return 'low';
+        }
+
+        function showMatchDetail(matchId) {
+            showDetail(matchId);
+        }
+
+        function showDetail(userId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const user = users.find(u => u.id === userId);
+
+            if (!user) return;
+
+            const matches = findPotentialMatches(user);
+
+            let matchesHtml = '';
+            if (matches.length === 0) {
+                matchesHtml = '<p style="color: #999; text-align: center; padding: 20px;">暂无匹配用户</p>';
+            } else {
+                matches.slice(0, 10).forEach(match => {
+                    const percentClass = getMatchPercentageClass(match.matchPercent);
+                    matchesHtml += `
+                        <div class="match-item" onclick="showMatchDetail(${match.id})">
+                            <div class="match-item-info">
+                                <div class="match-item-name">
+                                    ${match.photo ? `<img src="${match.photo}" style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-right: 5px;">` : ''}
+                                    ${match.username} (${match.gender} ${match.age || '-'}岁)
+                                </div>
+                                <div class="match-item-basic">
+                                    ${match.city || '-'} | ${match.education || '-'} | ${match.income || '-'}
+                                </div>
+                            </div>
+                            <div class="match-percentage ${percentClass}">${match.matchPercent}%</div>
+                        </div>
+                    `;
+                });
+                if (matches.length > 10) {
+                    matchesHtml += `<p style="text-align: center; color: #667eea; padding: 10px; font-size: 12px;">还有 ${matches.length - 10} 位匹配对象...</p>`;
+                }
+            }
+
+            const userReq = user.requirements || {};
+
+            document.getElementById('userDetail').innerHTML = `
+                <div class="user-detail">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        ${user.photo ? `<img src="${user.photo}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover;">` : `<div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #ff6b9d, #c44569); display: inline-flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white;">${user.gender === '男' ? '👨' : '👩'}</div>`}
+                        <div style="font-size: 1.2rem; font-weight: 700; margin-top: 8px;">${user.username}</div>
+                        <span class="badge ${user.status === 'approved' ? 'badge-approved' : 'badge-pending'}" style="margin-top: 5px;">${user.status === 'approved' ? '已审核' : '待审核'}</span>
+                    </div>
+
+                    ${user.photos && user.photos.length > 0 ? `
+                        <div style="margin: 15px 0;">
+                            <div style="font-weight: 600; margin-bottom: 8px;">生活照:</div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px;">
+                                ${user.photos.map((photo, idx) => `<img src="${photo}" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 5px; cursor: pointer;" onclick="showPhotoModal('${photo}')">`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 15px;">
+                        <div class="detail-row"><span class="detail-label">手机号码:</span><span class="detail-value">${user.phone}</span></div>
+                        <div class="detail-row"><span class="detail-label">真实姓名:</span><span class="detail-value">${user.realName || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">性别:</span><span class="detail-value">${user.gender || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">年龄/生日:</span><span class="detail-value">${user.age ? user.age + ' 岁' : '-'} / ${user.birthday || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">身高/体重:</span><span class="detail-value">${user.height ? user.height + 'cm' : '-'} / ${user.weight ? user.weight + 'kg' : '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">常住城市:</span><span class="detail-value">${user.city || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">家乡:</span><span class="detail-value">${user.hometown || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">婚姻状态:</span><span class="detail-value">${user.maritalStatus || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">学历:</span><span class="detail-value">${user.education || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">职业:</span><span class="detail-value">${user.occupation || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">月收入:</span><span class="detail-value">${user.income || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">注册时间:</span><span class="detail-value">${user.createdAt}</span></div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 10px;"><strong>自我介绍:</strong></div>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 20px;">${user.description || '暂无介绍'}</div>
+
+                <div class="requirements-box">
+                    <div class="requirements-title">💑 对另一半的要求</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                        <div><strong>年龄范围:</strong> ${(userReq.minAge || userReq.maxAge) ? `${userReq.minAge || '-'} - ${userReq.maxAge || '-'} 岁` : '-'}</div>
+                        <div><strong>身高:</strong> ${(userReq.minHeight || userReq.maxHeight) ? `${userReq.minHeight || '-'} - ${userReq.maxHeight || '-'} cm` : '-'}</div>
+                        <div><strong>婚姻状况:</strong> ${userReq.maritalStatus || '-'}</div>
+                        <div><strong>城市:</strong> ${userReq.city || '-'}</div>
+                        <div><strong>学历:</strong> ${userReq.education || '-'}</div>
+                        <div><strong>收入:</strong> ${userReq.incomeMin ? `${userReq.incomeMin}以上` : '-'}</div>
+                    </div>
+                    <div><strong>三观偏好/结婚计划:</strong> ${userReq.values || '暂无'}</div>
+                </div>
+
+                <div class="match-section">
+                    <h4>💞 潜在匹配对象 (已审核用户)</h4>
+                    <div class="match-list">${matchesHtml}</div>
+                </div>
+
+                ${user.status === 'pending' ? `<button class="btn btn-success" style="width: 100%; margin-top: 15px;" onclick="approveUser(${user.id}); closeModal('detailModal'); renderUsers();">通过审核</button>` : ''}
+            `;
+
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function approveUser(userId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const userIndex = users.findIndex(u => u.id === userId);
+
+            if (userIndex !== -1) {
+                users[userIndex].status = 'approved';
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+                renderUsers();
+            }
+        }
+
+        function showResetModal(userId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const user = users.find(u => u.id === userId);
+
+            if (!user) return;
+
+            document.getElementById('resetUserId').value = userId;
+            document.getElementById('resetUsername').textContent = user.username;
+            document.getElementById('resetPhone').textContent = user.phone;
+            document.getElementById('resetError').style.display = 'none';
+            document.getElementById('resetSuccess').style.display = 'none';
+            document.getElementById('resetForm').reset();
+
+            document.getElementById('resetModal').style.display = 'flex';
+        }
+
+        document.getElementById('resetForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const userId = parseInt(document.getElementById('resetUserId').value);
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (newPassword !== confirmPassword) {
+                document.getElementById('resetError').textContent = '两次输入的密码不一致';
+                document.getElementById('resetError').style.display = 'block';
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                document.getElementById('resetError').textContent = '密码长度不能少于6位';
+                document.getElementById('resetError').style.display = 'block';
+                return;
+            }
+
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const userIndex = users.findIndex(u => u.id === userId);
+
+            if (userIndex !== -1) {
+                users[userIndex].password = newPassword;
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+
+                document.getElementById('resetSuccess').textContent = '密码重置成功！';
+                document.getElementById('resetSuccess').style.display = 'block';
+
+                setTimeout(() => {
+                    closeModal('resetModal');
+                }, 1500);
+            }
+        });
+
+        function showPhotoModal(photoUrl) {
+            document.getElementById('photoModalImage').src = photoUrl;
+            document.getElementById('photoModal').style.display = 'flex';
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.getElementById('tabUsers').classList.add('hidden');
+            document.getElementById('tabAgencies').classList.add('hidden');
+            document.getElementById('tabContent').classList.add('hidden');
+            document.getElementById('tabStatistics').classList.add('hidden');
+            
+            document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.remove('hidden');
+            
+            if (tabName === 'agencies') {
+                renderAgencies('all');
+            } else if (tabName === 'statistics') {
+                loadStatistics();
+            }
+        }
+
+        function getSourceType(user) {
+            if (user.registeredBy) return '中介录入';
+            if (user.role === 'agency') return '中介账号';
+            return '自主注册';
+        }
+
+        function renderUsers(filter = 'all') {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const filteredUsers = users.filter(u => {
+                if (u.phone === ADMIN_PHONE) return false;
+                if (filter === 'all') return true;
+                return u.status === filter;
+            });
+
+            const tbody = document.getElementById('userTableBody');
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">暂无数据</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filteredUsers.forEach(user => {
+                const badgeClass = user.status === 'approved' ? 'badge-approved' : 'badge-pending';
+                const statusText = user.status === 'approved' ? '已审核' : '待审核';
+                const sourceType = getSourceType(user);
+
+                html += `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.gender || '-'}</td>
+                        <td>${user.age || '-'}</td>
+                        <td>${user.city || '-'}</td>
+                        <td>${sourceType}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td>${user.createdAt}</td>
+                        <td>
+                            <button class="btn btn-primary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="showDetail(${user.id})">查看</button>
+                            <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="showResetModal(${user.id})">重置密码</button>
+                            ${user.status === 'pending' ? `<button class="btn btn-success" style="padding: 5px 12px; font-size: 12px;" onclick="approveUser(${user.id})">通过</button>` : ''}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function renderAgencies(filter = 'all') {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const agencies = users.filter(u => u.role === 'agency');
+            const filteredAgencies = agencies.filter(a => {
+                if (filter === 'all') return true;
+                return a.status === filter;
+            });
+
+            const tbody = document.getElementById('agencyTableBody');
+
+            if (filteredAgencies.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">暂无数据</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filteredAgencies.forEach(agency => {
+                const badgeClass = agency.status === 'approved' ? 'badge-approved' : 'badge-pending';
+                const statusText = agency.status === 'approved' ? '已通过' : '待审核';
+
+                html += `
+                    <tr>
+                        <td>${agency.companyName}</td>
+                        <td>${agency.contactName || '-'}</td>
+                        <td>${agency.phone}</td>
+                        <td>${agency.businessLicense || '-'}</td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td>${agency.quota || 100}</td>
+                        <td>${agency.createdAt}</td>
+                        <td>
+                            <button class="btn btn-primary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="viewAgency(${agency.id})">查看</button>
+                            ${agency.status === 'pending' ? `<button class="btn btn-success" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="approveAgency(${agency.id})">通过</button>` : `<button class="btn btn-danger" style="padding: 5px 12px; font-size: 12px;" onclick="disableAgency(${agency.id})">禁用</button>`}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function filterAgencies(filter) {
+            renderAgencies(filter);
+        }
+
+        function approveAgency(agencyId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const index = users.findIndex(u => u.id === agencyId);
+            if (index !== -1) {
+                users[index].status = 'approved';
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+                renderAgencies();
+            }
+        }
+
+        function disableAgency(agencyId) {
+            if (!confirm('确定要禁用该中介公司吗？')) return;
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const index = users.findIndex(u => u.id === agencyId);
+            if (index !== -1) {
+                users[index].status = 'disabled';
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+                renderAgencies();
+            }
+        }
+
+        function viewAgency(agencyId) {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const agency = users.find(u => u.id === agencyId);
+            if (!agency) return;
+
+            document.getElementById('userDetail').innerHTML = `
+                <div class="user-detail">
+                    <div style="text-align: center; margin-bottom: 15px;">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #667eea, #764ba2); display: inline-flex; align-items: center; justify-content: center; font-size: 2.5rem; color: white;">🏢</div>
+                        <div style="font-size: 1.2rem; font-weight: 700; margin-top: 8px;">${agency.companyName}</div>
+                        <span class="badge ${agency.status === 'approved' ? 'badge-approved' : 'badge-pending'}" style="margin-top: 5px;">${agency.status === 'approved' ? '已通过' : agency.status === 'disabled' ? '已禁用' : '待审核'}</span>
+                    </div>
+                    <div style="border-top: 1px solid #e0e0e0; padding-top: 15px;">
+                        <div class="detail-row"><span class="detail-label">联系人:</span><span class="detail-value">${agency.contactName || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">联系电话:</span><span class="detail-value">${agency.phone}</span></div>
+                        <div class="detail-row"><span class="detail-label">邮箱:</span><span class="detail-value">${agency.email || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">营业执照:</span><span class="detail-value">${agency.businessLicense || '-'}</span></div>
+                        <div class="detail-row"><span class="detail-label">录入配额:</span><span class="detail-value">${agency.quota || 100}</span></div>
+                        <div class="detail-row"><span class="detail-label">注册时间:</span><span class="detail-value">${agency.createdAt}</span></div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px;">
+                    <input type="number" id="quotaInput" placeholder="新的录入配额" value="${agency.quota || 100}" style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; margin-bottom: 10px;">
+                    <button class="btn btn-primary" onclick="updateQuota(${agency.id})">更新配额</button>
+                </div>
+            `;
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function updateQuota(agencyId) {
+            const quota = parseInt(document.getElementById('quotaInput').value);
+            if (isNaN(quota) || quota < 1) {
+                alert('请输入有效的配额数');
+                return;
+            }
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const index = users.findIndex(u => u.id === agencyId);
+            if (index !== -1) {
+                users[index].quota = quota;
+                localStorage.setItem('datingUsers', JSON.stringify(users));
+                alert('配额更新成功');
+                closeModal('detailModal');
+                renderAgencies();
+            }
+        }
+
+        function showAddActivityModal() {
+            const activityName = prompt('请输入活动类型名称：');
+            if (!activityName || !activityName.trim()) return;
+            
+            const activities = JSON.parse(localStorage.getItem('datingActivities')) || ['聚餐', '徒步', 'K歌', '桌游', '读书会', '健身', '露营', '看展'];
+            if (!activities.includes(activityName.trim())) {
+                activities.push(activityName.trim());
+                localStorage.setItem('datingActivities', JSON.stringify(activities));
+                alert('添加成功');
+            } else {
+                alert('该活动类型已存在');
+            }
+        }
+
+        function deleteActivity(name) {
+            if (!confirm(`确定要删除活动类型 "${name}" 吗？`)) return;
+            const activities = JSON.parse(localStorage.getItem('datingActivities')) || [];
+            const filtered = activities.filter(a => a !== name);
+            localStorage.setItem('datingActivities', JSON.stringify(filtered));
+            alert('删除成功');
+        }
+
+        function showAddSensitiveModal() {
+            const word = prompt('请输入敏感词：');
+            if (!word || !word.trim()) return;
+            
+            const sensitiveWords = JSON.parse(localStorage.getItem('datingSensitiveWords')) || ['色情', '暴力', '赌博', '诈骗', '广告'];
+            if (!sensitiveWords.includes(word.trim())) {
+                sensitiveWords.push(word.trim());
+                localStorage.setItem('datingSensitiveWords', JSON.stringify(sensitiveWords));
+                alert('添加成功');
+            } else {
+                alert('该敏感词已存在');
+            }
+        }
+
+        function loadStatistics() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const agencies = users.filter(u => u.role === 'agency');
+            const personalUsers = users.filter(u => u.role !== 'agency' && u.phone !== ADMIN_PHONE);
+            const approvedUsers = personalUsers.filter(u => u.status === 'approved');
+
+            document.getElementById('statTotalUsers').textContent = personalUsers.length;
+            document.getElementById('statApprovedUsers').textContent = approvedUsers.length;
+            document.getElementById('statAgencies').textContent = agencies.length;
+            document.getElementById('statMatches').textContent = calculateMatches();
+
+            loadActivityStats();
+            loadAgencyRanking();
+        }
+
+        function calculateMatches() {
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            return messages.filter(m => m.type === 'greeting').length;
+        }
+
+        function loadActivityStats() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const activityCounts = {};
+            
+            users.forEach(user => {
+                if (user.offlineActivities && Array.isArray(user.offlineActivities)) {
+                    user.offlineActivities.forEach(activity => {
+                        activityCounts[activity] = (activityCounts[activity] || 0) + 1;
+                    });
+                }
+            });
+
+            const sortedActivities = Object.entries(activityCounts).sort((a, b) => b[1] - a[1]);
+            let html = '<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">';
+            sortedActivities.forEach(([activity, count]) => {
+                html += `
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                        <div style="font-weight: 600; margin-bottom: 5px;">${activity}</div>
+                        <div style="font-size: 24px; font-weight: 700; color: #667eea;">${count}</div>
+                        <div style="font-size: 12px; color: #999;">人选择</div>
+                    </div>
+                `;
+            });
+            html += '</div>';
+            document.getElementById('activityStats').innerHTML = html || '<p style="text-align: center; color: #999;">暂无数据</p>';
+        }
+
+        function loadAgencyRanking() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const agencies = users.filter(u => u.role === 'agency' && u.status === 'approved');
+            
+            const ranking = agencies.map(agency => {
+                const agencyUsers = users.filter(u => u.registeredBy === agency.phone);
+                return {
+                    ...agency,
+                    userCount: agencyUsers.length,
+                    matchCount: calculateAgencyMatches(agency)
+                };
+            }).sort((a, b) => b.userCount - a.userCount);
+
+            const tbody = document.getElementById('agencyRankingBody');
+            if (ranking.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center;">暂无数据</td></tr>';
+                return;
+            }
+
+            let html = '';
+            ranking.forEach((agency, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${agency.companyName}</td>
+                        <td>${agency.userCount}</td>
+                        <td>${agency.matchCount}</td>
+                    </tr>
+                `;
+            });
+            tbody.innerHTML = html;
+        }
+
+        function calculateAgencyMatches(agency) {
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            return messages.filter(m => m.agencyId === agency.id).length;
+        }
+
+        function exportStatistics() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            const agencies = JSON.parse(localStorage.getItem('datingAgencies')) || [];
+            const activities = JSON.parse(localStorage.getItem('datingActivities')) || ['聚餐', '徒步', 'K歌', '桌游', '读书会', '健身', '露营', '看展'];
+            const messages = JSON.parse(localStorage.getItem('datingMessages')) || [];
+            const intents = JSON.parse(localStorage.getItem('datingContactIntents')) || [];
+            
+            const personalUsers = users.filter(u => u.role !== 'agency' && u.phone !== ADMIN_PHONE);
+            const personalUsersApproved = personalUsers.filter(u => u.status === 'approved');
+            
+            let csv = '\uFEFF';
+            csv += '缘来是你 - 数据统计报告\n';
+            csv += `生成时间：${new Date().toLocaleString('zh-CN')}\n\n`;
+            
+            csv += '===== 一、用户统计 =====\n';
+            csv += `总用户数,${personalUsers.length}\n`;
+            csv += `已审核用户,${personalUsersApproved.length}\n`;
+            csv += `待审核用户,${personalUsers.filter(u => u.status === 'pending').length}\n`;
+            csv += `个人自主注册,${personalUsers.filter(u => !u.registeredBy).length}\n`;
+            csv += `中介录入用户,${personalUsers.filter(u => u.registeredBy).length}\n\n`;
+            
+            csv += '===== 二、中介公司统计 =====\n';
+            csv += `中介公司数,${agencies.length}\n`;
+            csv += `已通过公司,${agencies.filter(a => a.status === 'approved').length}\n`;
+            csv += `待审核公司,${agencies.filter(a => a.status === 'pending').length}\n\n`;
+            
+            csv += '===== 三、中介公司详情 =====\n';
+            csv += '公司名称,联系人,电话,邮箱,状态,录入用户数\n';
+            agencies.forEach(agency => {
+                const agencyUsers = users.filter(u => u.registeredBy === agency.phone);
+                csv += `"${agency.companyName}","${agency.contactName}","${agency.phone}","${agency.email}","${agency.status === 'approved' ? '已通过' : '待审核'}",${agencyUsers.length}\n`;
+            });
+            csv += '\n';
+            
+            csv += '===== 四、中介公司排行（按录入用户数）=====\n';
+            csv += '排名,公司名称,录入用户数,已审核用户\n';
+            const sortedAgencies = [...agencies].sort((a, b) => {
+                const aUsers = users.filter(u => u.registeredBy === a.phone).length;
+                const bUsers = users.filter(u => u.registeredBy === b.phone).length;
+                return bUsers - aUsers;
+            });
+            sortedAgencies.forEach((agency, index) => {
+                const agencyUsers = users.filter(u => u.registeredBy === agency.phone);
+                csv += `${index + 1},"${agency.companyName}",${agencyUsers.length},${agencyUsers.filter(u => u.status === 'approved').length}\n`;
+            });
+            csv += '\n';
+            
+            csv += '===== 五、线下活动热度统计 =====\n';
+            csv += '活动类型,选择人数\n';
+            const activityStats = {};
+            activities.forEach(act => activityStats[act] = 0);
+            personalUsersApproved.forEach(user => {
+                if (user.offlineActivities) {
+                    user.offlineActivities.forEach(act => {
+                        if (activityStats[act] !== undefined) activityStats[act]++;
+                    });
+                }
+            });
+            const sortedActivities = Object.entries(activityStats).sort((a, b) => b[1] - a[1]);
+            sortedActivities.forEach(([act, count]) => {
+                csv += `${act},${count}\n`;
+            });
+            csv += '\n';
+            
+            csv += '===== 六、消息统计 =====\n';
+            csv += `总消息数,${messages.length}\n`;
+            csv += `联系意向数,${intents.length}\n\n`;
+            
+            csv += '===== 七、用户列表（已审核）=====\n';
+            csv += '用户ID,昵称,性别,年龄,城市,学历,职业,年收入,注册方式,中介公司,注册时间\n';
+            personalUsersApproved.forEach(user => {
+                const agency = agencies.find(a => a.phone === user.registeredBy);
+                csv += `${user.id},"${user.username || user.realName || ''}",${user.gender || ''},${user.age || ''},${user.city || ''},${user.education || ''},${user.occupation || ''},${user.income || ''},${user.registeredBy ? '中介录入' : '自主注册'},"${agency ? agency.companyName : ''}","${user.createdAt || ''}"\n`;
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `缘来是你_数据统计_${new Date().toLocaleDateString('zh-CN').replace(/\//g, '-')}.csv`;
+            link.click();
+        }
+
+        renderUsers();
+    </script>
+</body>
+</html>
