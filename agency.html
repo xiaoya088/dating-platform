@@ -113,6 +113,8 @@
         .badge-agency { background: #ffeaa7; color: #d63031; }
         .badge-pending { background: #fab1a0; color: #e17055; }
         .badge-approved { background: #81ecec; color: #00b894; }
+        .badge-matched { background: #74b9ff; color: #0984e3; }
+        .badge-married { background: #fd79a8; color: #e84393; }
 
         .modal {
             display: none;
@@ -527,8 +529,11 @@
             filteredUsers.forEach(user => {
                 const modeClass = user.openMode === 'open' ? 'badge-open' : 'badge-agency';
                 const modeText = user.openMode === 'open' ? '开放' : '中介联系';
-                const statusClass = user.status === 'approved' ? 'badge-approved' : 'badge-pending';
-                const statusText = user.status === 'approved' ? '已审核' : '待审核';
+                let statusClass = 'badge-pending';
+                let statusText = '待审核';
+                if (user.status === 'approved') { statusClass = 'badge-approved'; statusText = '已审核'; }
+                else if (user.status === 'matched') { statusClass = 'badge-matched'; statusText = '牵手成功'; }
+                else if (user.status === 'married') { statusClass = 'badge-married'; statusText = '喜结良缘'; }
                 
                 html += `
                     <tr>

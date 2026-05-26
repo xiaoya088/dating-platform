@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>注册 - 缘来是你</title>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase 配置 -->
+    <script type="module" src="/supabase-config.js"></script>
+    <!-- Supabase 服务 -->
+    <script type="module" src="/services/supabase-service.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -198,7 +204,7 @@
             
             <div class="agree">
                 <input type="checkbox" id="agree" required>
-                <label for="agree">我已阅读并同意<a href="#">《用户服务协议》</a>和<a href="#">《隐私政策》</a></label>
+                <label for="agree">我已阅读并同意<a href="terms.html">《用户服务协议》</a>和<a href="privacy.html">《隐私政策》</a></label>
             </div>
             
             <button type="submit" class="btn">立即注册</button>
@@ -213,10 +219,12 @@
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        import { UserService } from '/services/supabase-service.js';
+        
         let registerType = 'personal';
         
-        function selectType(type) {
+        window.selectType = function(type) {
             registerType = type;
             document.getElementById('typePersonal').classList.toggle('active', type === 'personal');
             document.getElementById('typeAgency').classList.toggle('active', type === 'agency');
@@ -227,7 +235,7 @@
             return /^1[3-9]\d{9}$/.test(phone);
         }
         
-        document.getElementById('registerForm').addEventListener('submit', function(e) {
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const phone = document.getElementById('phone').value.trim();
@@ -261,75 +269,71 @@
                 }
             }
             
-            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
-            if (users.find(u => u.phone === phone)) {
-                document.getElementById('errorMessage').textContent = '该手机号已被注册';
+            try {
+                const newUser = {
+                    phone: phone,
+                    password: password,
+                    nickname: registerType === 'personal' ? '用户' : '中介',
+                    role: registerType,
+                    status: registerType === 'personal' ? 'approved' : 'pending',
+                    registeredat: new Date().toISOString(),
+                    gender: '',
+                    realname: '',
+                    birthday: '',
+                    age: null,
+                    height: null,
+                    weight: '',
+                    city: '',
+                    hometown: '',
+                    maritalstatus: '',
+                    education: '',
+                    occupation: '',
+                    income: '',
+                    description: '',
+                    photos: [],
+                    smoking: '',
+                    drinking: '',
+                    religion: '',
+                    character: '',
+                    hobbies: [],
+                    offlineactivities: [],
+                    petaccept: '',
+                    schedule: '',
+                    financialview: '',
+                    livewithparents: '',
+                    expectedchildren: '',
+                    openmode: 'open',
+                    registeredby: '',
+                    agencyname: registerType === 'agency' ? document.getElementById('agencyName').value.trim() : ''
+                };
+                
+                const result = await UserService.register(newUser);
+                
+                if (result.success) {
+                    localStorage.setItem('datingCurrentUser', JSON.stringify(result.user));
+                    
+                    document.getElementById('errorMessage').style.display = 'none';
+                    
+                    if (registerType === 'personal') {
+                        document.getElementById('successMessage').textContent = '注册成功！请完善个人资料';
+                        document.getElementById('successMessage').style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = 'profile.html';
+                        }, 1500);
+                    } else {
+                        document.getElementById('successMessage').textContent = '注册成功！请等待管理员审核';
+                        document.getElementById('successMessage').style.display = 'block';
+                        setTimeout(() => {
+                            window.location.href = 'login.html';
+                        }, 2000);
+                    }
+                } else {
+                    document.getElementById('errorMessage').textContent = result.message;
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            } catch (error) {
+                document.getElementById('errorMessage').textContent = '注册失败：' + error.message;
                 document.getElementById('errorMessage').style.display = 'block';
-                return;
-            }
-            
-            const newUser = {
-                id: Date.now(),
-                phone: phone,
-                password: password,
-                username: registerType === 'personal' ? '用户' : '中介',
-                role: registerType,
-                status: registerType === 'personal' ? 'approved' : 'pending',
-                createdAt: new Date().toLocaleString('zh-CN'),
-                profileCompleted: false,
-                agencyInfo: registerType === 'agency' ? {
-                    agencyName: document.getElementById('agencyName').value.trim(),
-                    agencyLicense: document.getElementById('agencyLicense').value.trim()
-                } : null,
-                gender: '',
-                realName: '',
-                birthday: '',
-                age: '',
-                height: '',
-                weight: '',
-                city: '',
-                hometown: '',
-                maritalStatus: '',
-                education: '',
-                occupation: '',
-                income: '',
-                description: '',
-                photo: '',
-                photos: [],
-                smoking: '',
-                drinking: '',
-                religion: '',
-                character: '',
-                hobbies: [],
-                offlineActivities: [],
-                petAccept: '',
-                schedule: '',
-                financialView: '',
-                liveWithParents: '',
-                expectedChildren: '',
-                openMode: 'open',
-                registeredBy: '',
-                agencyName: ''
-            };
-            
-            users.push(newUser);
-            localStorage.setItem('datingUsers', JSON.stringify(users));
-            localStorage.setItem('datingCurrentUser', JSON.stringify(newUser));
-            
-            document.getElementById('errorMessage').style.display = 'none';
-            
-            if (registerType === 'personal') {
-                document.getElementById('successMessage').textContent = '注册成功！请完善个人资料';
-                document.getElementById('successMessage').style.display = 'block';
-                setTimeout(() => {
-                    window.location.href = 'profile.html';
-                }, 1500);
-            } else {
-                document.getElementById('successMessage').textContent = '注册成功！请等待管理员审核';
-                document.getElementById('successMessage').style.display = 'block';
-                setTimeout(() => {
-                    window.location.href = 'login.html';
-                }, 2000);
             }
         });
     </script>

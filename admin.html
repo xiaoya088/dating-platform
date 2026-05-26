@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理员后台 - 缘来是你</title>
+    <!-- Supabase SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Supabase 配置 -->
+    <script type="module" src="/supabase-config.js"></script>
+    <!-- Supabase 服务 -->
+    <script type="module" src="/services/supabase-service.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -280,10 +286,40 @@
             <div class="card">
                 <div class="card-header">
                     <h2>📋 用户列表</h2>
-                    <div>
-                        <button class="btn btn-secondary" onclick="filterUsers('all')">全部</button>
-                        <button class="btn btn-danger" onclick="filterUsers('pending')">待审核</button>
-                        <button class="btn btn-success" onclick="filterUsers('approved')">已审核</button>
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 15px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 15px; align-items: center;">
+                        <div>
+                            <label style="font-size: 13px; color: #666; margin-right: 5px;">性别：</label>
+                            <select id="filterGender" onchange="applyUserFilters()" style="padding: 6px 12px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="all">全部</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 13px; color: #666; margin-right: 5px;">来源：</label>
+                            <select id="filterSource" onchange="applyUserFilters()" style="padding: 6px 12px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="all">全部</option>
+                                <option value="personal">个人注册</option>
+                                <option value="agency">中介录入</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 13px; color: #666; margin-right: 5px;">状态：</label>
+                            <select id="filterStatus" onchange="applyUserFilters()" style="padding: 6px 12px; border-radius: 5px; border: 1px solid #ddd;">
+                                <option value="all">全部</option>
+                                <option value="pending">待审核</option>
+                                <option value="approved">已审核</option>
+                                <option value="matched">牵手成功</option>
+                                <option value="married">喜结良缘</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size: 13px; color: #666; margin-right: 5px;">城市：</label>
+                            <input type="text" id="filterCity" placeholder="输入城市" onkeyup="applyUserFilters()" style="padding: 6px 12px; border-radius: 5px; border: 1px solid #ddd; width: 100px;">
+                        </div>
+                        <button class="btn btn-secondary" onclick="resetUserFilters()">重置筛选</button>
                     </div>
                 </div>
                 <table id="userTable">
@@ -335,7 +371,81 @@
         <div id="tabContent" class="hidden">
             <div class="card">
                 <div class="card-header">
-                    <h2>📝 线下活动类型管理</h2>
+                    <h2>📝 用户动态审核</h2>
+                    <div>
+                        <button class="btn btn-secondary" onclick="filterContents('all')">全部</button>
+                        <button class="btn btn-danger" onclick="filterContents('pending')">待审核</button>
+                        <button class="btn btn-success" onclick="filterContents('approved')">已通过</button>
+                        <button class="btn btn-warning" onclick="filterContents('rejected')">已拒绝</button>
+                    </div>
+                </div>
+                <table id="contentTable">
+                    <thead>
+                        <tr>
+                            <th>发布者</th>
+                            <th>内容</th>
+                            <th>图片</th>
+                            <th>发布时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contentTableBody">
+                        <tr><td colspan="6" style="text-align: center;">暂无数据</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>📸 用户照片审核</h2>
+                    <div>
+                        <button class="btn btn-secondary" onclick="filterPhotos('all')">全部</button>
+                        <button class="btn btn-danger" onclick="filterPhotos('pending')">待审核</button>
+                        <button class="btn btn-success" onclick="filterPhotos('approved')">已通过</button>
+                        <button class="btn btn-warning" onclick="filterPhotos('rejected')">已拒绝</button>
+                    </div>
+                </div>
+                <div id="photoList">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px;">
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; text-align: center;">
+                            <img src="https://via.placeholder.com/150" alt="用户照片" style="width: 100%; border-radius: 10px; margin-bottom: 10px;">
+                            <div style="font-size: 13px; color: #666; margin-bottom: 10px;">用户A</div>
+                            <span class="badge badge-pending">待审核</span>
+                            <div style="margin-top: 10px;">
+                                <button class="btn btn-success" style="padding: 4px 10px; font-size: 12px; margin-right: 5px;">通过</button>
+                                <button class="btn btn-danger" style="padding: 4px 10px; font-size: 12px;">拒绝</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🚨 举报管理</h2>
+                </div>
+                <table id="reportTable">
+                    <thead>
+                        <tr>
+                            <th>举报者</th>
+                            <th>被举报用户</th>
+                            <th>举报类型</th>
+                            <th>举报内容</th>
+                            <th>举报时间</th>
+                            <th>处理状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reportTableBody">
+                        <tr><td colspan="7" style="text-align: center;">暂无举报数据</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2>🎯 线下活动类型管理</h2>
                     <button class="btn btn-primary" onclick="showAddActivityModal()">+ 添加活动类型</button>
                 </div>
                 <div id="activityList">
@@ -519,7 +629,7 @@
         initAdmin();
 
         const currentUser = JSON.parse(localStorage.getItem('datingCurrentUser'));
-        if (!currentUser || currentUser.phone !== ADMIN_PHONE) {
+        if (!currentUser || (currentUser.phone !== ADMIN_PHONE && currentUser.role !== "admin")) {
             window.location.href = 'login.html';
         }
 
@@ -529,6 +639,10 @@
         }
 
         function renderUsers(filter = 'all') {
+            applyUserFilters();
+        }
+
+        function renderUsersOld(filter = 'all') {
             const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
             const filteredUsers = users.filter(u => {
                 if (filter === 'all') return u.phone !== ADMIN_PHONE;
@@ -567,8 +681,89 @@
             tbody.innerHTML = html;
         }
 
+        function applyUserFilters() {
+            const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+            
+            const genderFilter = document.getElementById('filterGender')?.value || 'all';
+            const sourceFilter = document.getElementById('filterSource')?.value || 'all';
+            const statusFilter = document.getElementById('filterStatus')?.value || 'all';
+            const cityFilter = document.getElementById('filterCity')?.value.toLowerCase().trim() || '';
+            
+            const filteredUsers = users.filter(u => {
+                if (u.phone === ADMIN_PHONE) return false;
+                if (u.role === 'agency') return false;
+                
+                if (genderFilter !== 'all' && u.gender !== genderFilter) return false;
+                
+                if (sourceFilter !== 'all') {
+                    const isPersonal = !u.registeredBy && u.role !== 'agency';
+                    const isAgency = u.registeredBy || u.role === 'agency';
+                    if (sourceFilter === 'personal' && !isPersonal) return false;
+                    if (sourceFilter === 'agency' && !isAgency) return false;
+                }
+                
+                if (statusFilter !== 'all' && u.status !== statusFilter) return false;
+                
+                if (cityFilter && u.city && !u.city.toLowerCase().includes(cityFilter)) return false;
+                
+                return true;
+            });
+
+            renderUserTable(filteredUsers);
+        }
+
+        function resetUserFilters() {
+            const genderSelect = document.getElementById('filterGender');
+            const sourceSelect = document.getElementById('filterSource');
+            const statusSelect = document.getElementById('filterStatus');
+            const cityInput = document.getElementById('filterCity');
+            
+            if (genderSelect) genderSelect.value = 'all';
+            if (sourceSelect) sourceSelect.value = 'all';
+            if (statusSelect) statusSelect.value = 'all';
+            if (cityInput) cityInput.value = '';
+            
+            applyUserFilters();
+        }
+
+        function renderUserTable(filteredUsers) {
+            const tbody = document.getElementById('userTableBody');
+
+            if (filteredUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">暂无数据</td></tr>';
+                return;
+            }
+
+            let html = '';
+            filteredUsers.forEach(user => {
+                let badgeClass = 'badge-pending';
+                let statusText = '待审核';
+                if (user.status === 'approved') { badgeClass = 'badge-approved'; statusText = '已审核'; }
+                else if (user.status === 'matched') { badgeClass = 'badge-matched'; statusText = '牵手成功'; }
+                else if (user.status === 'married') { badgeClass = 'badge-married'; statusText = '喜结良缘'; }
+                const sourceType = user.registeredBy ? '中介录入' : '自主注册';
+
+                html += `<tr>
+                    <td>${user.username}</td>
+                    <td>${user.gender || '-'}</td>
+                    <td>${user.age || '-'}</td>
+                    <td>${user.city || '-'}</td>
+                    <td>${sourceType}</td>
+                    <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                    <td>${user.createdAt}</td>
+                    <td>
+                        <button class="btn btn-primary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="showDetail(${user.id})">查看</button>
+                        <button class="btn btn-secondary" style="padding: 5px 12px; font-size: 12px; margin-right: 3px;" onclick="showResetModal(${user.id})">重置密码</button>
+                        ${user.status === 'pending' ? `<button class="btn btn-success" style="padding: 5px 12px; font-size: 12px;" onclick="approveUser(${user.id})">通过</button>` : ''}
+                    </td>
+                </tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
         function filterUsers(filter) {
-            renderUsers(filter);
+            applyUserFilters();
         }
 
         function calculateMatchPercentage(user, target) {
