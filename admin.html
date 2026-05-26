@@ -552,6 +552,29 @@
             </div>
 
             <button class="btn btn-primary" onclick="exportStatistics()" style="width: 100%; margin-top: 15px;">📥 导出统计数据</button>
+
+            <div class="card" style="background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%); border: none;">
+                <div class="card-header" style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                    <h2 style="color: white;">⚙️ 系统设置</h2>
+                </div>
+                <div style="color: white; margin-bottom: 20px;">
+                    <p style="margin-bottom: 10px;">⚠️ <strong>危险操作</strong>：此操作将删除所有非管理员用户数据，请谨慎操作！</p>
+                    <p style="opacity: 0.9;">• 将保留管理员账号（13800138000）</p>
+                    <p style="opacity: 0.9;">• 将清空所有用户注册数据</p>
+                    <p style="opacity: 0.9;">• 将清空所有动态和举报数据</p>
+                    <p style="opacity: 0.9;">• 此操作不可撤销！</p>
+                </div>
+                <button class="btn btn-danger" onclick="initializeSystem()" style="background: white; color: #ee5a5a; font-weight: bold; width: 100%; padding: 16px; font-size: 16px;">
+                    🗑️ 初始化系统（清空测试数据）
+                </button>
+            </div>
+
+            <div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none;">
+                <div class="card-header" style="border-bottom: 2px solid rgba(255,255,255,0.2);">
+                    <h2 style="color: white;">📋 系统状态</h2>
+                </div>
+                <div id="systemStatus" style="color: white;"></div>
+            </div>
         </div>
     </div>
 
@@ -637,6 +660,82 @@
             localStorage.removeItem('datingCurrentUser');
             window.location.href = 'login.html';
         }
+
+        async function loadSystemStatus() {
+            const statusDiv = document.getElementById('systemStatus');
+            if (!statusDiv) return;
+
+            try {
+                const url = 'https://awhpfdhxcoycxgfhpfoy.supabase.co';
+                const key = 'sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA';
+                const client = window.supabase.createClient(url, key);
+
+                const [usersRes, postsRes, reportsRes] = await Promise.all([
+                    client.from('users').select('id', { count: 'exact' }),
+                    client.from('posts').select('id', { count: 'exact' }),
+                    client.from('reports').select('id', { count: 'exact' })
+                ]);
+
+                const adminCount = usersRes.data?.length || 0;
+
+                statusDiv.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold;">${usersRes.count || 0}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">用户总数</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold;">${postsRes.count || 0}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">动态总数</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.2); padding: 15px; border-radius: 10px; text-align: center;">
+                            <div style="font-size: 2rem; font-weight: bold;">${reportsRes.count || 0}</div>
+                            <div style="font-size: 0.9rem; opacity: 0.9;">举报总数</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; padding: 10px; background: rgba(255,255,255,0.1); border-radius: 8px; text-align: center;">
+                        <strong>数据库:</strong> Supabase 云端 &nbsp;|&nbsp;
+                        <strong>状态:</strong> <span style="color: #2ed573;">正常运行</span>
+                    </div>
+                `;
+            } catch (error) {
+                statusDiv.innerHTML = `<p style="color: #ff4757;">加载失败: ${error.message}</p>`;
+            }
+        }
+
+        async function initializeSystem() {
+            if (!confirm('⚠️ 确认要初始化系统吗？\n\n此操作将：\n1. 删除所有非管理员用户\n2. 清空所有动态\n3. 清空所有举报\n4. 保留管理员账号（13800138000）\n\n此操作不可撤销！')) {
+                return;
+            }
+
+            if (!confirm('再次确认：所有测试数据将被永久删除！')) {
+                return;
+            }
+
+            try {
+                const url = 'https://awhpfdhxcoycxgfhpfoy.supabase.co';
+                const key = 'sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA';
+                const client = window.supabase.createClient(url, key);
+
+                await client.from('reports').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await client.from('posts').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                await client.from('users').delete().neq('phone', ADMIN_PHONE);
+
+                localStorage.removeItem('datingUsers');
+                localStorage.removeItem('datingPosts');
+                localStorage.removeItem('datingReports');
+
+                alert('✅ 系统初始化完成！\n\n已清空所有测试数据，管理员账号已保留。');
+                loadSystemStatus();
+                renderUsers();
+            } catch (error) {
+                alert('❌ 初始化失败：' + error.message);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSystemStatus();
+        });
 
         function renderUsers(filter = 'all') {
             applyUserFilters();
