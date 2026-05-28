@@ -86,17 +86,20 @@
                 if (isPhone) {
                     try {
                         user = await signIn(account, password);
+                        console.log('用户登录成功，用户数据:', user);
+                        
                         setCurrentUser({ ...user, role: 'user' });
+                        console.log('已设置当前用户到 localStorage');
                         
-                        const savedUser = getCurrentUser();
-                        if (!savedUser) {
-                            throw new Error('用户信息保存失败');
-                        }
-                        
-                        showAlert('登录成功', 'success');
                         setTimeout(() => {
+                            const savedUser = getCurrentUser();
+                            console.log('跳转前检查用户:', savedUser);
+                            if (!savedUser) {
+                                showAlert('用户信息保存失败，请重试', 'error');
+                                return;
+                            }
                             window.location.href = user.name ? 'match.html' : 'profile.html';
-                        }, 1500);
+                        }, 500);
                         return;
                     } catch (e) {
                         lastError = e;
@@ -106,17 +109,20 @@
                 
                 try {
                     user = await agencySignIn(account, password);
+                    console.log('中介登录成功，用户数据:', user);
+                    
                     setCurrentUser({ ...user, role: 'agency' });
+                    console.log('已设置当前用户到 localStorage');
                     
-                    const savedUser = getCurrentUser();
-                    if (!savedUser) {
-                        throw new Error('用户信息保存失败');
-                    }
-                    
-                    showAlert('登录成功', 'success');
                     setTimeout(() => {
+                        const savedUser = getCurrentUser();
+                        console.log('跳转前检查用户:', savedUser);
+                        if (!savedUser) {
+                            showAlert('用户信息保存失败，请重试', 'error');
+                            return;
+                        }
                         window.location.href = 'agency.html';
-                    }, 1500);
+                    }, 500);
                     return;
                 } catch (e) {
                     lastError = e;
@@ -125,17 +131,20 @@
                 
                 try {
                     user = await adminSignIn(account, password);
+                    console.log('管理员登录成功，用户数据:', user);
+                    
                     setCurrentUser({ ...user, role: 'admin' });
+                    console.log('已设置当前用户到 localStorage');
                     
-                    const savedUser = getCurrentUser();
-                    if (!savedUser) {
-                        throw new Error('用户信息保存失败');
-                    }
-                    
-                    showAlert('登录成功', 'success');
                     setTimeout(() => {
+                        const savedUser = getCurrentUser();
+                        console.log('跳转前检查用户:', savedUser);
+                        if (!savedUser) {
+                            showAlert('用户信息保存失败，请重试', 'error');
+                            return;
+                        }
                         window.location.href = 'admin.html';
-                    }, 1500);
+                    }, 500);
                     return;
                 } catch (e) {
                     lastError = e;

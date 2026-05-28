@@ -73,9 +73,15 @@
     <div id="alertBox" class="hidden"></div>
 
     <script>
+        console.log('match.html 页面加载，开始检查用户登录状态');
         const currentUser = getCurrentUser();
+        console.log('获取到的当前用户:', currentUser);
+        
         if (!currentUser) {
+            console.log('用户未登录，重定向到登录页');
             window.location.href = 'index.html';
+        } else {
+            console.log('用户已登录:', currentUser.name, currentUser.role);
         }
 
         let allMatches = [];
