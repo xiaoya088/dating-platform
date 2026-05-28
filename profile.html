@@ -1095,9 +1095,9 @@
                 const { error } = await supabase
                     .from('users')
                     .update({
-                        personality: personalityValues.length > 0 ? personalityValues.join(',') : null,
-                        interests: interestsValues.length > 0 ? interestsValues.join(',') : null,
-                        activity_types: activityTypesValues.length > 0 ? activityTypesValues.join(',') : null,
+                        personality: personalityValues.length > 0 ? personalityValues : null,
+                        interests: interestsValues.length > 0 ? interestsValues : null,
+                        activity_types: activityTypesValues.length > 0 ? activityTypesValues : null,
                         accept_pet: document.getElementById('acceptPet').value,
                         schedule: document.getElementById('schedule').value,
                         updated_at: new Date().toISOString()

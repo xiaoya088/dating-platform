@@ -46,7 +46,23 @@ CREATE TABLE users (
     agency_id UUID,
     status VARCHAR(20) DEFAULT 'active',
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
+    updated_at TIMESTAMP DEFAULT NOW(),
+    -- 性格兴趣字段
+    personality TEXT[],
+    interests TEXT[],
+    activity_types TEXT[],
+    accept_pet VARCHAR(20),
+    schedule VARCHAR(20),
+    -- 婚恋价值观字段
+    finance_view VARCHAR(20),
+    live_with_parents VARCHAR(20),
+    expected_children VARCHAR(20),
+    self_description TEXT,
+    -- 生活习惯字段
+    smoking VARCHAR(20),
+    drinking VARCHAR(20),
+    -- 隐私设置
+    privacy_visibility VARCHAR(20) DEFAULT 'all'
 );
 
 -- 用户照片表

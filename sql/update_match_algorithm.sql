@@ -12,9 +12,17 @@ ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS min_activity_overlap INTE
 
 -- 为 users 表添加更多信息
 ALTER TABLE users ADD COLUMN IF NOT EXISTS personality TEXT[];
+ALTER TABLE users ADD COLUMN IF NOT EXISTS interests TEXT[];
+ALTER TABLE users ADD COLUMN IF NOT EXISTS activity_types TEXT[];
 ALTER TABLE users ADD COLUMN IF NOT EXISTS smoking VARCHAR(20);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS drinking VARCHAR(20);
 ALTER TABLE users ADD COLUMN IF NOT EXISTS privacy_visibility VARCHAR(20) DEFAULT 'all';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS accept_pet VARCHAR(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS schedule VARCHAR(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS finance_view VARCHAR(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS live_with_parents VARCHAR(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS expected_children VARCHAR(20);
+ALTER TABLE users ADD COLUMN IF NOT EXISTS self_description TEXT;
 
 -- 重要程度枚举值说明:
 -- 'must' = 必须满足 (硬性过滤)
