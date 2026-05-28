@@ -506,8 +506,20 @@
             window.location.href = 'index.html';
         }
 
+        function updateNavLinks() {
+            const links = document.querySelectorAll('a[href="profile.html"]');
+            if (links.length > 0 && currentUser) {
+                const userDataStr = JSON.stringify(currentUser);
+                const encodedData = encodeURIComponent(userDataStr);
+                links.forEach(link => {
+                    link.href = 'profile.html?user=' + encodedData;
+                });
+            }
+        }
+
         initProvinceFilter();
         loadMatches();
+        updateNavLinks();
     </script>
 
     <style>

@@ -100,7 +100,6 @@
 
                         showAlert('登录成功', 'success');
                         setTimeout(() => {
-                            alert("即将跳转到首页...");
                             window.location.href = (user.name ? 'match.html' : 'profile.html') + '?user=' + encodedData;
                         }, 2000);
                         return;
@@ -120,7 +119,6 @@
 
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
-                        alert("即将跳转到中介后台...");
                         window.location.href = 'agency.html?user=' + encodedData;
                     }, 2000);
                     return;
@@ -138,7 +136,6 @@
                     console.log('用户数据已编码，长度:', encodedData.length);
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
-                        alert("即将跳转到管理后台...");
                         console.log("即将跳转到管理后台，URL:", "admin.html?user=" + encodedData.substring(0, 50) + "...");
                         window.location.href = "admin.html?user=" + encodedData;
                     }, 3000);
