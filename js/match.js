@@ -77,7 +77,7 @@ function calculateMultiSelectScore(myValues, reqValues) {
 }
 
 function getCurrentUser() {
-    const userStr = localStorage.getItem('user');
+    const userStr = localStorage.getItem('currentUser');
     return userStr ? JSON.parse(userStr) : null;
 }
 
