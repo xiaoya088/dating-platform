@@ -61,6 +61,9 @@ CREATE TABLE users (
     -- 生活习惯字段
     smoking VARCHAR(20),
     drinking VARCHAR(20),
+    -- 资产信息
+    property VARCHAR(20),
+    car VARCHAR(20),
     -- 隐私设置
     privacy_visibility VARCHAR(20) DEFAULT 'all'
 );
