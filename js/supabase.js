@@ -118,12 +118,36 @@ async function adminSignIn(username, password) {
 }
 
 function getCurrentUser() {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
+    try {
+        const userStr = localStorage.getItem('currentUser');
+        if (!userStr) return null;
+        
+        const user = JSON.parse(userStr);
+        console.log('getCurrentUser:', user);
+        return user;
+    } catch (e) {
+        console.error('getCurrentUser 错误:', e);
+        return null;
+    }
 }
 
 function setCurrentUser(user) {
-    localStorage.setItem('currentUser', JSON.stringify(user));
+    try {
+        const userStr = JSON.stringify(user);
+        localStorage.setItem('currentUser', userStr);
+        console.log('setCurrentUser:', user);
+        
+        // 验证写入是否成功
+        const saved = localStorage.getItem('currentUser');
+        if (!saved) {
+            console.error('localStorage 写入失败');
+            return false;
+        }
+        return true;
+    } catch (e) {
+        console.error('setCurrentUser 错误:', e);
+        return false;
+    }
 }
 
 function clearCurrentUser() {
