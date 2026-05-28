@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>婚恋红娘系统 - 个人资料</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/match.js"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; color: #333; }
+        .navbar { background: white; padding: 12px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 100; }
+        .navbar-brand { font-size: 18px; font-weight: 700; color: #667eea; }
+        .container { max-width: 100%; padding: 15px; }
+        .card { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .card-header { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #555; font-size: 14px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e1e5eb; border-radius: 8px; font-size: 16px; -webkit-appearance: none; appearance: none; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+        .form-row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
+        .form-col { flex: 1; min-width: 45%; }
+        .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .btn-primary:active { opacity: 0.9; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .tab-btn { padding: 10px 16px; background: #f0f2f5; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap; font-size: 14px; }
+        .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkbox-item { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f0f2f5; border-radius: 20px; cursor: pointer; font-size: 14px; }
+        .checkbox-item input { width: 18px; height: 18px; }
+        .checkbox-item.selected { background: #667eea; color: white; }
+        .alert { padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .back-link { display: inline-block; padding: 10px 15px; color: white; text-decoration: none; font-weight: 500; }
+        @media (max-width: 480px) {
+            .form-col { min-width: 100%; }
+            .card { padding: 15px; margin: 0 -5px 15px; border-radius: 8px; }
+            .tabs { gap: 5px; }
+            .tab-btn { padding: 8px 12px; font-size: 13px; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <a href="match.html" class="back-link">← 返回</a>
+        <span class="navbar-brand">💕 个人资料</span>
+        <a href="#" onclick="logout()" class="back-link">退出</a>
+    </nav>
+    
+    <div class="container">
+        <div id="announcementBanner" class="announcement-banner" style="display: none; background: linear-gradient(135deg, #ff6b6b, #ff8e53); color: white; padding: 12px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 14px;">
+            <strong>📢 公告：</strong><span id="announcementText"></span>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="basic">基本信息</button>
+            <button class="tab-btn" data-tab="photos">照片</button>
+            <button class="tab-btn" data-tab="appearance">外貌生活</button>
+            <button class="tab-btn" data-tab="personality">性格兴趣</button>
+            <button class="tab-btn" data-tab="values">婚恋价值观</button>
+            <button class="tab-btn" data-tab="requirements">择偶要求</button>
+            <button class="tab-btn" data-tab="matchStatus">匹配情况</button>
+        </div>
+        
+        <div id="basicTab" class="tab-content active">
+            <div class="card">
+                <div class="card-header">基本信息 ★ 必填项</div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>姓名（展示昵称） *</label>
+                            <input type="text" id="name" placeholder="请输入姓名">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>性别 *</label>
+                            <select id="gender">
+                                <option value="">请选择</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>出生日期 *</label>
+                            <input type="date" id="birthday">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>身高 (cm) *</label>
+                            <input type="number" id="height" placeholder="如: 175">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>现居地 *</label>
+                            <input type="text" id="currentAddress" placeholder="如: 广东省深圳市南山区科技园街道">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>户籍地 *</label>
+                            <input type="text" id="hukou" placeholder="如: 北京市朝阳区">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>婚姻状况 *</label>
+                    <select id="maritalStatus">
+                        <option value="">请选择</option>
+                        <option value="未婚">未婚</option>
+                        <option value="离异">离异</option>
+                        <option value="丧偶">丧偶</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveBasicInfo()">保存基本信息</button>
+            </div>
+        </div>
+        
+        <div id="photosTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">照片管理 ★ 必填项（最多9张）</div>
+                <div id="photoGrid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
+                <button class="btn btn-primary" onclick="uploadPhoto()" style="margin-top: 15px;">+ 添加照片</button>
+            </div>
+        </div>
+        
+        <div id="appearanceTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">外貌生活</div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>学历 ★</label>
+                            <select id="education">
+                                <option value="">请选择</option>
+                                <option value="小学">小学</option>
+                                <option value="初中">初中</option>
+                                <option value="高中">高中</option>
+                                <option value="大专">大专</option>
+                                <option value="本科">本科</option>
+                                <option value="硕士">硕士</option>
+                                <option value="博士">博士</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>职业 ★</label>
+                            <input type="text" id="occupation" placeholder="如: 程序员">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>体重 (kg)</label>
+                            <input type="number" id="weight" placeholder="如: 65">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>年收入</label>
+                            <select id="income">
+                                <option value="">请选择</option>
+                                <option value="3000以下">3000以下</option>
+                                <option value="3000-5000">3000-5000</option>
+                                <option value="5000-8000">5000-8000</option>
+                                <option value="8000-10000">8000-10000</option>
+                                <option value="10000-15000">10000-15000</option>
+                                <option value="15000-20000">15000-20000</option>
+                                <option value="20000-30000">20000-30000</option>
+                                <option value="30000以上">30000以上</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>房产</label>
+                            <select id="property">
+                                <option value="">请选择</option>
+                                <option value="有房">有房</option>
+                                <option value="无房">无房</option>
+                                <option value="与父母同住">与父母同住</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>车辆</label>
+                            <select id="car">
+                                <option value="">请选择</option>
+                                <option value="有车">有车</option>
+                                <option value="无车">无车</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>吸烟</label>
+                            <select id="smoking">
+                                <option value="">请选择</option>
+                                <option value="不吸烟">不吸烟</option>
+                                <option value="偶尔吸">偶尔吸</option>
+                                <option value="经常吸">经常吸</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>饮酒</label>
+                            <select id="drinking">
+                                <option value="">请选择</option>
+                                <option value="不饮酒">不饮酒</option>
+                                <option value="偶尔喝">偶尔喝</option>
+                                <option value="经常喝">经常喝</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>宗教信仰</label>
+                    <input type="text" id="religion" placeholder="如: 佛教、基督教等">
+                </div>
+                
+                <div class="form-group">
+                    <label>微信号</label>
+                    <input type="text" id="wechat" placeholder="请输入微信号">
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveAppearanceInfo()">保存外貌生活信息</button>
+            </div>
+        </div>
+        
+        <div id="personalityTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">性格与兴趣</div>
+                
+                <div class="form-group">
+                    <label>性格自评</label>
+                    <div class="checkbox-group" id="personalityList">
+                        <label class="checkbox-item"><input type="checkbox" value="开朗">开朗</label>
+                        <label class="checkbox-item"><input type="checkbox" value="内向">内向</label>
+                        <label class="checkbox-item"><input type="checkbox" value="稳重">稳重</label>
+                        <label class="checkbox-item"><input type="checkbox" value="活泼">活泼</label>
+                        <label class="checkbox-item"><input type="checkbox" value="幽默">幽默</label>
+                        <label class="checkbox-item"><input type="checkbox" value="细心">细心</label>
+                        <label class="checkbox-item"><input type="checkbox" value="体贴">体贴</label>
+                        <label class="checkbox-item"><input type="checkbox" value="独立">独立</label>
+                        <label class="checkbox-item"><input type="checkbox" value="随和">随和</label>
+                        <label class="checkbox-item"><input type="checkbox" value="上进">上进</label>
+                        <label class="checkbox-item"><input type="checkbox" value="乐观">乐观</label>
+                        <label class="checkbox-item"><input type="checkbox" value="真诚">真诚</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>兴趣爱好</label>
+                    <div class="checkbox-group" id="interestsList">
+                        <label class="checkbox-item"><input type="checkbox" value="运动健身">运动健身</label>
+                        <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="阅读">阅读</label>
+                        <label class="checkbox-item"><input type="checkbox" value="音乐">音乐</label>
+                        <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
+                        <label class="checkbox-item"><input type="checkbox" value="美食">美食</label>
+                        <label class="checkbox-item"><input type="checkbox" value="摄影">摄影</label>
+                        <label class="checkbox-item"><input type="checkbox" value="游戏">游戏</label>
+                        <label class="checkbox-item"><input type="checkbox" value="宠物">宠物</label>
+                        <label class="checkbox-item"><input type="checkbox" value="手工">手工</label>
+                        <label class="checkbox-item"><input type="checkbox" value="绘画">绘画</label>
+                        <label class="checkbox-item"><input type="checkbox" value="舞蹈">舞蹈</label>
+                        <label class="checkbox-item"><input type="checkbox" value="瑜伽">瑜伽</label>
+                        <label class="checkbox-item"><input type="checkbox" value="钓鱼">钓鱼</label>
+                        <label class="checkbox-item"><input type="checkbox" value="园艺">园艺</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>线下活动类型（多选）</label>
+                    <div class="checkbox-group" id="activityTypes">
+                        <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
+                        <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
+                        <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
+                        <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
+                        <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
+                        <label class="checkbox-item"><input type="checkbox" value="露营">露营</label>
+                        <label class="checkbox-item"><input type="checkbox" value="看展">看展</label>
+                        <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
+                        <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="运动">运动</label>
+                        <label class="checkbox-item"><input type="checkbox" value="品茶">品茶</label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>是否接受宠物</label>
+                            <select id="acceptPet">
+                                <option value="">请选择</option>
+                                <option value="是">是</option>
+                                <option value="否">否</option>
+                                <option value="无所谓">无所谓</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>作息习惯</label>
+                            <select id="schedule">
+                                <option value="">请选择</option>
+                                <option value="早睡早起">早睡早起</option>
+                                <option value="规律作息">规律作息</option>
+                                <option value="夜猫子">夜猫子</option>
+                                <option value="弹性作息">弹性作息</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="savePersonalityInfo()">保存性格兴趣信息</button>
+            </div>
+        </div>
+        
+        <div id="valuesTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">婚恋价值观</div>
+                
+                <div class="form-group">
+                    <label>婚后财务看法</label>
+                    <select id="financeView">
+                        <option value="">请选择</option>
+                        <option value="AA制">AA制</option>
+                        <option value="共同账户">共同账户</option>
+                        <option value="男方承担">男方承担</option>
+                        <option value="女方承担">女方承担</option>
+                        <option value="协商处理">协商处理</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>是否与父母同住</label>
+                    <select id="liveWithParents">
+                        <option value="">请选择</option>
+                        <option value="愿意">愿意</option>
+                        <option value="不愿意">不愿意</option>
+                        <option value="视情况">视情况</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>期望孩子数</label>
+                    <select id="expectedChildren">
+                        <option value="">请选择</option>
+                        <option value="0">丁克</option>
+                        <option value="1">1个</option>
+                        <option value="2">2个</option>
+                        <option value="3">3个及以上</option>
+                        <option value="不限">不限</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>自我描述（最多500字）</label>
+                    <textarea id="selfDescription" rows="5" placeholder="描述自己的性格、爱好、婚恋观等（500字以内）" maxlength="500"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>婚恋宣言</label>
+                    <textarea id="declaration" rows="3" placeholder="描述自己、感情观（200字以内）" maxlength="200"></textarea>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveValuesInfo()">保存婚恋价值观</button>
+            </div>
+        </div>
+        
+        <div id="requirementsTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">择偶要求</div>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                    <button class="btn btn-secondary" onclick="loadRequirementScheme('standard')" style="flex: 1;">标准方案</button>
+                    <button class="btn btn-secondary" onclick="loadRequirementScheme('relaxed')" style="flex: 1;">宽松方案</button>
+                    <button class="btn btn-primary" onclick="saveCurrentScheme()" style="flex: 1;">保存当前方案</button>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最小年龄</label>
+                            <input type="number" id="reqMinAge" placeholder="如: 25">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最大年龄</label>
+                            <input type="number" id="reqMaxAge" placeholder="如: 35">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>年龄重要程度</label>
+                            <select id="ageImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最小身高 (cm)</label>
+                            <input type="number" id="reqMinHeight" placeholder="如: 160">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最大身高 (cm)</label>
+                            <input type="number" id="reqMaxHeight" placeholder="如: 175">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>身高重要程度</label>
+                            <select id="heightImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>学历要求</label>
+                            <div class="checkbox-group" id="reqEducation">
+                                <label class="checkbox-item"><input type="checkbox" value="大专">大专</label>
+                                <label class="checkbox-item"><input type="checkbox" value="本科">本科</label>
+                                <label class="checkbox-item"><input type="checkbox" value="硕士">硕士</label>
+                                <label class="checkbox-item"><input type="checkbox" value="博士">博士</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>学历重要程度</label>
+                            <select id="educationImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>婚姻状况要求</label>
+                            <div class="checkbox-group" id="reqMarital">
+                                <label class="checkbox-item"><input type="checkbox" value="未婚">未婚</label>
+                                <label class="checkbox-item"><input type="checkbox" value="离异">离异</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>婚姻重要程度</label>
+                            <select id="maritalImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>现居地要求</label>
+                            <input type="text" id="reqProvince" placeholder="如: 北京市">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>地区重要程度</label>
+                            <select id="provinceImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>体型偏好</label>
+                            <select id="reqBodyType">
+                                <option value="">不限</option>
+                                <option value="偏瘦">偏瘦</option>
+                                <option value="匀称">匀称</option>
+                                <option value="健壮">健壮</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>年收入下限</label>
+                            <select id="reqMinIncome">
+                                <option value="">不限</option>
+                                <option value="3000">3000</option>
+                                <option value="5000">5000</option>
+                                <option value="8000">8000</option>
+                                <option value="10000">10000</option>
+                                <option value="15000">15000</option>
+                                <option value="20000">20000</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>吸烟要求</label>
+                            <select id="reqSmoking">
+                                <option value="">不限</option>
+                                <option value="不吸烟">不吸烟</option>
+                                <option value="偶尔吸">偶尔吸</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>饮酒要求</label>
+                            <select id="reqDrinking">
+                                <option value="">不限</option>
+                                <option value="不饮酒">不饮酒</option>
+                                <option value="偶尔喝">偶尔喝</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>性格偏好</label>
+                    <div class="checkbox-group" id="reqPersonality">
+                        <label class="checkbox-item"><input type="checkbox" value="开朗">开朗</label>
+                        <label class="checkbox-item"><input type="checkbox" value="稳重">稳重</label>
+                        <label class="checkbox-item"><input type="checkbox" value="幽默">幽默</label>
+                        <label class="checkbox-item"><input type="checkbox" value="细心">细心</label>
+                        <label class="checkbox-item"><input type="checkbox" value="体贴">体贴</label>
+                        <label class="checkbox-item"><input type="checkbox" value="独立">独立</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>兴趣重合度要求（最低几项）</label>
+                    <input type="number" id="reqMinInterestOverlap" placeholder="如: 2" value="2">
+                </div>
+                
+                <div class="form-group">
+                    <label>线下活动偏好（多选）</label>
+                    <div class="checkbox-group" id="reqActivities">
+                        <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
+                        <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
+                        <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
+                        <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
+                        <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
+                        <label class="checkbox-item"><input type="checkbox" value="露营">露营</label>
+                        <label class="checkbox-item"><input type="checkbox" value="看展">看展</label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>活动最低重合数</label>
+                            <input type="number" id="reqMinActivityOverlap" placeholder="如: 1" value="1">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>价值观要求</label>
+                            <select id="reqValues">
+                                <option value="">不限</option>
+                                <option value="传统">传统</option>
+                                <option value="现代">现代</option>
+                                <option value="自由">自由</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveRequirements()">保存择偶要求</button>
+            </div>
+        </div>
+        
+        <div id="matchStatusTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">匹配情况</div>
+                <div id="matchStats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">匹配对象（按匹配得分排序）</div>
+                <div id="matchList" style="display: flex; flex-direction: column; gap: 12px;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">我点赞的用户</div>
+                <div id="myLikesList"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">点赞我的用户</div>
+                <div id="likedMeList"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">互相喜欢的用户</div>
+                <div id="mutualLikesList"></div>
+            </div>
+        </div>
+
+        <div id="alertBox" class="alert" style="display: none;"></div>
+    </div>
+    
+    <script>
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
+                if (this.dataset.tab === 'photos') {
+                    loadPhotos();
+                } else if (this.dataset.tab === 'matchStatus') {
+                    loadMatchStatusData();
+                }
+            });
+        });
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.style.display = 'block';
+            alertBox.className = 'alert alert-' + type;
+            alertBox.textContent = message;
+            setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+        }
+        
+        async function loadAnnouncement() {
+            try {
+                const supabase = getSupabase();
+                const { data, error } = await supabase
+                    .from('announcements')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+                
+                if (error) {
+                    console.log('加载公告失败:', error.message);
+                    return;
+                }
+                
+                if (data && data.length > 0) {
+                    const announcement = data[0];
+                    if (!announcement.is_active || announcement.is_active === true) {
+                        document.getElementById('announcementText').textContent = announcement.content;
+                        document.getElementById('announcementBanner').style.display = 'block';
+                    }
+                }
+            } catch (e) {
+                console.log('加载公告失败:', e.message);
+            }
+        }
+
+        async function saveBasicInfo() {
+            const name = document.getElementById('name').value.trim();
+            const gender = document.getElementById('gender').value;
+            const birthday = document.getElementById('birthday').value;
+            const height = document.getElementById('height').value;
+            const hukou = document.getElementById('hukou').value.trim();
+            const currentAddress = document.getElementById('currentAddress').value.trim();
+            const maritalStatus = document.getElementById('maritalStatus').value;
+            
+            if (!name || !gender || !birthday || !height || !hukou || !currentAddress || !maritalStatus) {
+                showAlert('请填写所有必填项（姓名、性别、出生日期、身高、户籍地、现居地、婚姻状况）', 'error');
+                return;
+            }
+            
+            try {
+                const supabase = getSupabase();
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        name: name,
+                        gender: gender,
+                        birthday: birthday,
+                        height: parseInt(height),
+                        hukou: hukou,
+                        current_address: currentAddress,
+                        marital_status: maritalStatus,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功！', 'success');
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveAppearanceInfo() {
+            const education = document.getElementById('education').value;
+            const occupation = document.getElementById('occupation').value.trim();
+            
+            if (!education || !occupation) {
+                showAlert('请填写必填项（学历、职业）', 'error');
+                return;
+            }
+            
+            try {
+                const supabase = getSupabase();
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        education: education,
+                        occupation: occupation,
+                        weight: document.getElementById('weight').value ? parseInt(document.getElementById('weight').value) : null,
+                        income: document.getElementById('income').value,
+                        property: document.getElementById('property').value,
+                        car: document.getElementById('car').value,
+                        smoking: document.getElementById('smoking').value,
+                        drinking: document.getElementById('drinking').value,
+                        religion: document.getElementById('religion').value.trim(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功！', 'success');
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadUserData() {
+            try {
+                const supabase = getSupabase();
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', currentUser.id)
+                    .single();
+                
+                if (error) throw error;
+                
+                document.getElementById('name').value = data.name || '';
+                document.getElementById('gender').value = data.gender || '';
+                document.getElementById('birthday').value = data.birthday || '';
+                document.getElementById('height').value = data.height || '';
+                document.getElementById('hukou').value = data.hukou || '';
+                document.getElementById('currentAddress').value = data.current_address || '';
+                document.getElementById('maritalStatus').value = data.marital_status || '';
+                document.getElementById('weight').value = data.weight || '';
+                document.getElementById('education').value = data.education || '';
+                document.getElementById('occupation').value = data.occupation || '';
+                document.getElementById('income').value = data.income || '';
+                document.getElementById('property').value = data.property || '';
+                document.getElementById('car').value = data.car || '';
+                document.getElementById('smoking').value = data.smoking || '';
+                document.getElementById('drinking').value = data.drinking || '';
+                document.getElementById('religion').value = data.religion || '';
+                document.getElementById('wechat').value = data.wechat || '';
+                document.getElementById('declaration').value = data.declaration || '';
+                
+                if (data.personality) {
+                    data.personality.split(',').forEach(val => {
+                        const el = document.querySelector(`#personalityList input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                if (data.interests) {
+                    data.interests.split(',').forEach(val => {
+                        const el = document.querySelector(`#interestsList input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                if (data.activity_types) {
+                    data.activity_types.split(',').forEach(val => {
+                        const el = document.querySelector(`#activityTypes input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                document.getElementById('acceptPet').value = data.accept_pet || '';
+                document.getElementById('schedule').value = data.schedule || '';
+                document.getElementById('financeView').value = data.finance_view || '';
+                document.getElementById('liveWithParents').value = data.live_with_parents || '';
+                document.getElementById('expectedChildren').value = data.expected_children || '';
+                document.getElementById('selfDescription').value = data.self_description || '';
+            } catch (e) {
+                console.error('加载数据失败:', e);
+            }
+        }
+        
+        async function loadPhotos() {
+            try {
+                const supabase = getSupabase();
+                const { data: photos, error } = await supabase
+                    .from('user_photos')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .order('created_at', { ascending: true });
+                
+                if (error) throw error;
+                
+                const photoGrid = document.getElementById('photoGrid');
+                photoGrid.innerHTML = '';
+                
+                if (!photos || photos.length === 0) {
+                    photoGrid.innerHTML = '<p style="color: #888; padding: 20px; text-align: center;">暂无照片，点击下方按钮上传</p>';
+                    return;
+                }
+                
+                photos.forEach(photo => {
+                    const photoItem = document.createElement('div');
+                    photoItem.style.cssText = 'position: relative; width: 100px; height: 100px;';
+                    photoItem.innerHTML = `
+                        <img src="${photo.photo_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                        ${photo.is_avatar ? '<span style="position: absolute; bottom: 5px; left: 5px; background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">封面</span>' : ''}
+                        <button onclick="setAvatar('${photo.id}')" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;">封面</button>
+                        <button onclick="deletePhoto('${photo.id}')" style="position: absolute; top: 5px; left: 5px; background: rgba(220,53,69,0.8); color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;">删除</button>
+                    `;
+                    photoGrid.appendChild(photoItem);
+                });
+            } catch (e) {
+                console.error('加载照片失败:', e);
+            }
+        }
+        
+        async function uploadPhoto() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                if (file.size > 5 * 1024 * 1024) {
+                    showAlert('图片大小不能超过5MB', 'error');
+                    return;
+                }
+                
+                try {
+                    showAlert('上传中...', 'success');
+                    
+                    const supabase = getSupabase();
+                    const fileExt = file.name.split('.').pop();
+                    const fileName = `${currentUser.id}/${Date.now()}.${fileExt}`;
+                    
+                    const { data: uploadData, error: uploadError } = await supabase.storage
+                        .from('photos')
+                        .upload(fileName, file);
+                    
+                    if (uploadError) throw uploadError;
+                    
+                    const { data: urlData } = supabase.storage
+                        .from('photos')
+                        .getPublicUrl(fileName);
+                    
+                    const photoUrl = urlData.publicUrl;
+                    
+                    const { data: photos, error: countError } = await supabase
+                        .from('user_photos')
+                        .select('id')
+                        .eq('user_id', currentUser.id);
+                    
+                    if (countError) throw countError;
+                    
+                    if (photos && photos.length >= 9) {
+                        showAlert('最多只能上传9张照片', 'error');
+                        return;
+                    }
+                    
+                    const isAvatar = (!photos || photos.length === 0) ? true : false;
+                    
+                    const { error: insertError } = await supabase
+                        .from('user_photos')
+                        .insert([{
+                            user_id: currentUser.id,
+                            photo_url: photoUrl,
+                            is_avatar: isAvatar
+                        }]);
+                    
+                    if (insertError) throw insertError;
+                    
+                    if (isAvatar) {
+                        await supabase
+                            .from('users')
+                            .update({ avatar_url: photoUrl })
+                            .eq('id', currentUser.id);
+                    }
+                    
+                    showAlert('上传成功！', 'success');
+                    loadPhotos();
+                } catch (e) {
+                    showAlert('上传失败: ' + e.message, 'error');
+                }
+            };
+            input.click();
+        }
+        
+        async function setAvatar(photoId) {
+            try {
+                const supabase = getSupabase();
+                
+                await supabase
+                    .from('user_photos')
+                    .update({ is_avatar: false })
+                    .eq('user_id', currentUser.id);
+                
+                await supabase
+                    .from('user_photos')
+                    .update({ is_avatar: true })
+                    .eq('id', photoId);
+                
+                const { data: photo } = await supabase
+                    .from('user_photos')
+                    .select('photo_url')
+                    .eq('id', photoId)
+                    .single();
+                
+                if (photo) {
+                    await supabase
+                        .from('users')
+                        .update({ avatar_url: photo.photo_url })
+                        .eq('id', currentUser.id);
+                }
+                
+                showAlert('封面设置成功！', 'success');
+                loadPhotos();
+            } catch (e) {
+                showAlert('设置失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deletePhoto(photoId) {
+            if (!confirm('确定删除这张照片？')) return;
+            
+            try {
+                const supabase = getSupabase();
+                
+                const { data: photo } = await supabase
+                    .from('user_photos')
+                    .select('photo_url, is_avatar')
+                    .eq('id', photoId)
+                    .single();
+                
+                const fileName = photo.photo_url.split('/photos/')[1];
+                if (fileName) {
+                    await supabase.storage.from('photos').remove([fileName]);
+                }
+                
+                const { error } = await supabase
+                    .from('user_photos')
+                    .delete()
+                    .eq('id', photoId);
+                
+                if (error) throw error;
+                
+                if (photo.is_avatar) {
+                    const { data: remaining } = await supabase
+                        .from('user_photos')
+                        .select('photo_url')
+                        .eq('user_id', currentUser.id)
+                        .order('created_at', { ascending: true })
+                        .limit(1);
+                    
+                    const newAvatar = remaining && remaining.length > 0 ? remaining[0].photo_url : null;
+                    
+                    await supabase
+                        .from('users')
+                        .update({ avatar_url: newAvatar })
+                        .eq('id', currentUser.id);
+                    
+                    if (newAvatar) {
+                        await supabase
+                            .from('user_photos')
+                            .update({ is_avatar: true })
+                            .eq('id', remaining[0].id);
+                    }
+                }
+                
+                showAlert('删除成功！', 'success');
+                loadPhotos();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function savePersonalityInfo() {
+            try {
+                const supabase = getSupabase();
+                
+                const personalityValues = Array.from(document.querySelectorAll('#personalityList input:checked')).map(el => el.value);
+                const interestsValues = Array.from(document.querySelectorAll('#interestsList input:checked')).map(el => el.value);
+                const activityTypesValues = Array.from(document.querySelectorAll('#activityTypes input:checked')).map(el => el.value);
+                
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        personality: personalityValues.length > 0 ? personalityValues.join(',') : null,
+                        interests: interestsValues.length > 0 ? interestsValues.join(',') : null,
+                        activity_types: activityTypesValues.length > 0 ? activityTypesValues.join(',') : null,
+                        accept_pet: document.getElementById('acceptPet').value,
+                        schedule: document.getElementById('schedule').value,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功！', 'success');
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveValuesInfo() {
+            try {
+                const supabase = getSupabase();
+                const selfDescription = document.getElementById('selfDescription').value.trim();
+                
+                if (selfDescription.length > 500) {
+                    showAlert('自我描述不能超过500字', 'error');
+                    return;
+                }
+                
+                const { error } = await supabase
+                    .from('users')
+                    .update({
+                        finance_view: document.getElementById('financeView').value,
+                        live_with_parents: document.getElementById('liveWithParents').value,
+                        expected_children: document.getElementById('expectedChildren').value,
+                        self_description: selfDescription,
+                        declaration: document.getElementById('declaration').value.trim(),
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentUser.id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功！', 'success');
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveRequirements() {
+            try {
+                const supabase = getSupabase();
+                
+                const educationValues = Array.from(document.querySelectorAll('#reqEducation input:checked')).map(el => el.value);
+                const maritalValues = Array.from(document.querySelectorAll('#reqMarital input:checked')).map(el => el.value);
+                const personalityValues = Array.from(document.querySelectorAll('#reqPersonality input:checked')).map(el => el.value);
+                const activityValues = Array.from(document.querySelectorAll('#reqActivities input:checked')).map(el => el.value);
+                
+                const requirements = {
+                    min_age: document.getElementById('reqMinAge').value ? parseInt(document.getElementById('reqMinAge').value) : null,
+                    max_age: document.getElementById('reqMaxAge').value ? parseInt(document.getElementById('reqMaxAge').value) : null,
+                    age_importance: document.getElementById('ageImportance').value,
+                    min_height: document.getElementById('reqMinHeight').value ? parseInt(document.getElementById('reqMinHeight').value) : null,
+                    max_height: document.getElementById('reqMaxHeight').value ? parseInt(document.getElementById('reqMaxHeight').value) : null,
+                    height_importance: document.getElementById('heightImportance').value,
+                    education: educationValues.length > 0 ? educationValues.join(',') : null,
+                    education_importance: document.getElementById('educationImportance').value,
+                    marital_status: maritalValues.length > 0 ? maritalValues.join(',') : null,
+                    marital_importance: document.getElementById('maritalImportance').value,
+                    province: document.getElementById('reqProvince').value.trim(),
+                    province_importance: document.getElementById('provinceImportance').value,
+                    body_type: document.getElementById('reqBodyType').value,
+                    min_income: document.getElementById('reqMinIncome').value ? parseInt(document.getElementById('reqMinIncome').value) : null,
+                    smoking: document.getElementById('reqSmoking').value,
+                    drinking: document.getElementById('reqDrinking').value,
+                    personality: personalityValues.length > 0 ? personalityValues.join(',') : null,
+                    min_interest_overlap: document.getElementById('reqMinInterestOverlap').value ? parseInt(document.getElementById('reqMinInterestOverlap').value) : null,
+                    activities: activityValues.length > 0 ? activityValues.join(',') : null,
+                    min_activity_overlap: document.getElementById('reqMinActivityOverlap').value ? parseInt(document.getElementById('reqMinActivityOverlap').value) : null,
+                    values: document.getElementById('reqValues').value,
+                    scheme_type: currentSchemeType || 'standard',
+                    updated_at: new Date().toISOString()
+                };
+                
+                const { data: existing, error: selectError } = await supabase
+                    .from('user_requirements')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .eq('scheme_type', currentSchemeType || 'standard')
+                    .single();
+                
+                if (selectError && selectError.code !== 'PGRST116') throw selectError;
+                
+                let error;
+                if (existing) {
+                    ({ error } = await supabase
+                        .from('user_requirements')
+                        .update(requirements)
+                        .eq('id', existing.id));
+                } else {
+                    ({ error } = await supabase
+                        .from('user_requirements')
+                        .insert({ ...requirements, user_id: currentUser.id }));
+                }
+                
+                if (error) throw error;
+                
+                showAlert('保存成功！', 'success');
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        let currentSchemeType = 'standard';
+        
+        async function loadRequirementScheme(schemeType) {
+            currentSchemeType = schemeType;
+            try {
+                const supabase = getSupabase();
+                const { data: requirements, error } = await supabase
+                    .from('user_requirements')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('scheme_type', schemeType)
+                    .single();
+                
+                if (error && error.code !== 'PGRST116') throw error;
+                
+                if (!requirements) {
+                    clearRequirementsForm();
+                    return;
+                }
+                
+                document.getElementById('reqMinAge').value = requirements.min_age || '';
+                document.getElementById('reqMaxAge').value = requirements.max_age || '';
+                document.getElementById('ageImportance').value = requirements.age_importance || 'normal';
+                document.getElementById('reqMinHeight').value = requirements.min_height || '';
+                document.getElementById('reqMaxHeight').value = requirements.max_height || '';
+                document.getElementById('heightImportance').value = requirements.height_importance || 'normal';
+                document.getElementById('educationImportance').value = requirements.education_importance || 'normal';
+                document.getElementById('maritalImportance').value = requirements.marital_importance || 'normal';
+                document.getElementById('reqProvince').value = requirements.province || '';
+                document.getElementById('provinceImportance').value = requirements.province_importance || 'normal';
+                document.getElementById('reqBodyType').value = requirements.body_type || '';
+                document.getElementById('reqMinIncome').value = requirements.min_income || '';
+                document.getElementById('reqSmoking').value = requirements.smoking || '';
+                document.getElementById('reqDrinking').value = requirements.drinking || '';
+                document.getElementById('reqMinInterestOverlap').value = requirements.min_interest_overlap || '2';
+                document.getElementById('reqMinActivityOverlap').value = requirements.min_activity_overlap || '1';
+                document.getElementById('reqValues').value = requirements.values || '';
+                
+                if (requirements.education) {
+                    requirements.education.split(',').forEach(val => {
+                        const el = document.querySelector(`#reqEducation input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                
+                if (requirements.marital_status) {
+                    requirements.marital_status.split(',').forEach(val => {
+                        const el = document.querySelector(`#reqMarital input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                
+                if (requirements.personality) {
+                    requirements.personality.split(',').forEach(val => {
+                        const el = document.querySelector(`#reqPersonality input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                
+                if (requirements.activities) {
+                    requirements.activities.split(',').forEach(val => {
+                        const el = document.querySelector(`#reqActivities input[value="${val}"]`);
+                        if (el) el.checked = true;
+                    });
+                }
+                
+                showAlert(`已加载${schemeType === 'standard' ? '标准' : '宽松'}方案`, 'success');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        function clearRequirementsForm() {
+            document.getElementById('reqMinAge').value = '';
+            document.getElementById('reqMaxAge').value = '';
+            document.getElementById('ageImportance').value = 'normal';
+            document.getElementById('reqMinHeight').value = '';
+            document.getElementById('reqMaxHeight').value = '';
+            document.getElementById('heightImportance').value = 'normal';
+            document.getElementById('educationImportance').value = 'normal';
+            document.getElementById('maritalImportance').value = 'normal';
+            document.getElementById('reqProvince').value = '';
+            document.getElementById('provinceImportance').value = 'normal';
+            document.getElementById('reqBodyType').value = '';
+            document.getElementById('reqMinIncome').value = '';
+            document.getElementById('reqSmoking').value = '';
+            document.getElementById('reqDrinking').value = '';
+            document.getElementById('reqMinInterestOverlap').value = '2';
+            document.getElementById('reqMinActivityOverlap').value = '1';
+            document.getElementById('reqValues').value = '';
+            
+            document.querySelectorAll('#reqEducation input').forEach(el => el.checked = false);
+            document.querySelectorAll('#reqMarital input').forEach(el => el.checked = false);
+            document.querySelectorAll('#reqPersonality input').forEach(el => el.checked = false);
+            document.querySelectorAll('#reqActivities input').forEach(el => el.checked = false);
+        }
+        
+        async function saveCurrentScheme() {
+            const schemeName = currentSchemeType === 'standard' ? '标准方案' : '宽松方案';
+            if (confirm(`确定保存当前设置为${schemeName}吗？`)) {
+                await saveRequirements();
+            }
+        }
+
+        async function loadMatchStats() {
+            const supabase = getSupabase();
+
+            const { count: myLikesCount } = await supabase
+                .from('likes')
+                .select('*', { count: 'exact', head: true })
+                .eq('from_user_id', currentUser.id);
+
+            const { count: likedMeCount } = await supabase
+                .from('likes')
+                .select('*', { count: 'exact', head: true })
+                .eq('to_user_id', currentUser.id);
+
+            const { data: mutualLikes } = await supabase
+                .from('likes')
+                .select('from_user_id, to_user_id, liked_user:to_user_id(*)')
+                .eq('to_user_id', currentUser.id);
+
+            let mutualCount = 0;
+            if (mutualLikes && mutualLikes.length > 0) {
+                const myLikeIds = (await supabase
+                    .from('likes')
+                    .select('to_user_id')
+                    .eq('from_user_id', currentUser.id)).data?.map(l => l.to_user_id) || [];
+                mutualCount = mutualLikes.filter(l => myLikeIds.includes(l.from_user_id)).length;
+            }
+
+            document.getElementById('matchStats').innerHTML = `
+                <div style="background: #f0f2f5; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #667eea;">${myLikesCount || 0}</div>
+                    <div style="font-size: 12px; color: #888;">我点赞</div>
+                </div>
+                <div style="background: #f0f2f5; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #e74c3c;">${likedMeCount || 0}</div>
+                    <div style="font-size: 12px; color: #888;">收到点赞</div>
+                </div>
+                <div style="background: #f0f2f5; padding: 15px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: 700; color: #27ae60;">${mutualCount || 0}</div>
+                    <div style="font-size: 12px; color: #888;">互相喜欢</div>
+                </div>
+            `;
+        }
+
+        async function loadMyLikes() {
+            const supabase = getSupabase();
+
+            const { data: likes, error } = await supabase
+                .from('likes')
+                .select('*, to_user:to_user_id(*)')
+                .eq('from_user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('loadMyLikes error:', error);
+            }
+
+            const list = document.getElementById('myLikesList');
+
+            if (!likes || likes.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
+                return;
+            }
+
+            list.innerHTML = likes.map(like => {
+                const user = like.to_user;
+                if (!user) return '';
+                return `
+                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <img src="${user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                        </div>
+                        <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="viewUserProfile('${user.id}')">查看</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadLikedMe() {
+            const supabase = getSupabase();
+
+            const { data: likes, error } = await supabase
+                .from('likes')
+                .select('*, from_user:from_user_id(*)')
+                .eq('to_user_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('loadLikedMe error:', error);
+            }
+
+            const list = document.getElementById('likedMeList');
+
+            if (!likes || likes.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
+                return;
+            }
+
+            list.innerHTML = likes.map(like => {
+                const user = like.from_user;
+                if (!user) return '';
+                return `
+                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <img src="${user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                        </div>
+                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="likeUserBack('${user.id}')">回赞</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function loadMutualLikes() {
+            const supabase = getSupabase();
+
+            const { data: myLikes, error: myLikesError } = await supabase
+                .from('likes')
+                .select('to_user_id')
+                .eq('from_user_id', currentUser.id);
+
+            if (myLikesError) {
+                console.error('loadMutualLikes error:', myLikesError);
+            }
+
+            const myLikeIds = myLikes?.map(l => l.to_user_id) || [];
+
+            const { data: likedMe, error: likedMeError } = await supabase
+                .from('likes')
+                .select('*, from_user:from_user_id(*)')
+                .eq('to_user_id', currentUser.id);
+
+            if (likedMeError) {
+                console.error('loadMutualLikes error:', likedMeError);
+            }
+
+            const mutualLikes = likedMe?.filter(l => myLikeIds.includes(l.from_user_id)) || [];
+
+            const list = document.getElementById('mutualLikesList');
+
+            if (mutualLikes.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无互相喜欢的用户</p>';
+                return;
+            }
+
+            list.innerHTML = mutualLikes.map(like => {
+                const user = like.from_user;
+                if (!user) return '';
+                return `
+                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <img src="${user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                        </div>
+                        <span style="color: #27ae60; font-size: 12px; margin-right: 10px;">💕 互相喜欢</span>
+                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="sendMessage('${user.id}')">发消息</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function likeUserBack(userId) {
+            const supabase = getSupabase();
+
+            const { error } = await supabase
+                .from('likes')
+                .insert([{ from_user_id: currentUser.id, to_user_id: userId }]);
+
+            if (error) {
+                showAlert('操作失败', 'error');
+            } else {
+                showAlert('回赞成功！', 'success');
+                loadMatchStats();
+                loadLikedMe();
+                loadMutualLikes();
+            }
+        }
+
+        function viewUserProfile(userId) {
+            window.location.href = `user.html?id=${userId}`;
+        }
+
+        function sendMessage(userId) {
+            window.location.href = `messages.html?to=${userId}`;
+        }
+
+        function loadMatchStatusData() {
+            loadMatchStats();
+            loadMatches();
+            loadMyLikes();
+            loadLikedMe();
+            loadMutualLikes();
+        }
+
+        async function loadMatches() {
+            console.log('开始加载匹配对象...');
+            const matchListDiv = document.getElementById('matchList');
+            
+            if (!currentUser || !currentUser.id) {
+                console.error('currentUser 未定义或没有 id');
+                matchListDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">请先登录</div>';
+                return;
+            }
+            
+            matchListDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">加载中...</div>';
+            
+            try {
+                console.log('调用 findMatches, userId:', currentUser.id);
+                const matches = await findMatches(currentUser.id, { maxResults: 50 });
+                console.log('匹配结果:', matches);
+                
+                if (matches.length === 0) {
+                    matchListDiv.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">暂无匹配对象，请完善个人资料和择偶要求</div>';
+                    return;
+                }
+                
+                matchListDiv.innerHTML = matches.map((match, index) => {
+                    console.log(`处理第 ${index + 1} 个匹配:`, match);
+                    const { user, score, reasons, userType } = match;
+                    
+                    if (!user) {
+                        console.error('匹配对象 user 为空:', match);
+                        return '';
+                    }
+                    
+                    const card = formatMatchCard(match);
+                    console.log('格式化后的卡片:', card);
+                    
+                    const scoreClass = score >= 80 ? 'score-excellent' : score >= 70 ? 'score-good' : 'score-normal';
+                    const scoreLabel = score >= 80 ? '完美' : score >= 70 ? '优质' : score >= 50 ? '一般' : '偏低';
+                    
+                    return `
+                        <div class="match-card" style="display: flex; align-items: center; padding: 12px; border: 1px solid #e1e5eb; border-radius: 8px; cursor: pointer;">
+                            <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/80?text=无'" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover; margin-right: 15px;">
+                            <div class="match-info" style="flex: 1;">
+                                <div class="match-name" style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">
+                                    ${card.displayInfo.name}
+                                    ${card.badge}
+                                </div>
+                                <div class="match-meta" style="font-size: 13px; color: #666; margin-bottom: 4px;">
+                                    ${card.displayInfo.age}岁 · ${card.displayInfo.height}cm · ${card.displayInfo.city}
+                                </div>
+                                <div class="match-education" style="font-size: 13px; color: #888;">${card.displayInfo.education || '学历未填'}</div>
+                            </div>
+                            <div class="match-score-container" style="text-align: center; margin-left: 15px;">
+                                <div class="match-score ${scoreClass}" style="font-size: 22px; font-weight: 700;">${score}</div>
+                                <div class="match-score-label" style="font-size: 11px; color: #888;">${scoreLabel}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                console.log('匹配列表渲染完成');
+            } catch (e) {
+                console.error('加载匹配列表失败', e);
+                matchListDiv.innerHTML = `<div style="text-align: center; color: #dc3545; padding: 20px;">加载失败: ${e.message}</div>`;
+            }
+        }
+
+        if (currentUser) {
+            loadUserData();
+            loadAnnouncement();
+        }
+    </script>
+</body>
+</html>

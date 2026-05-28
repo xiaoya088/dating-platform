@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 登录</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <div class="container" style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
+        <div class="card" style="width: 100%; max-width: 400px;">
+            <div class="card-header" style="text-align: center;">
+                💕 婚恋红娘系统
+            </div>
+            
+            <div id="loginForm">
+                <div class="form-group">
+                    <label>账号</label>
+                    <input type="text" id="loginAccount" placeholder="手机号/用户名">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="loginPassword" placeholder="请输入密码">
+                </div>
+                <button class="btn btn-primary btn-block" id="btnLogin">登录</button>
+                <p style="text-align: center; margin-top: 20px; color: #888;">
+                    还没有账号？<a href="register.html" style="color: #667eea;">立即注册</a>
+                </p>
+            </div>
+            
+            <div id="alertBox" class="hidden"></div>
+        </div>
+    </div>
+    
+    <script>
+        document.getElementById('btnLogin').addEventListener('click', handleLogin);
+        document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleLogin();
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden');
+            
+            setTimeout(() => {
+                alertBox.classList.add('hidden');
+            }, 3000);
+        }
+        
+        function checkSupabaseReady() {
+            try {
+                const client = getSupabase();
+                if (!client) {
+                    showAlert('Supabase 初始化失败，请检查网络连接', 'error');
+                    return false;
+                }
+                return true;
+            } catch (e) {
+                showAlert('Supabase 初始化失败: ' + e.message, 'error');
+                return false;
+            }
+        }
+        
+        async function handleLogin() {
+            if (!checkSupabaseReady()) return;
+            
+            const account = document.getElementById('loginAccount').value.trim();
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!account || !password) {
+                showAlert('请输入账号和密码', 'error');
+                return;
+            }
+            
+            try {
+                let user;
+                let lastError = null;
+                const isPhone = /^1[3-9]\d{9}$/.test(account);
+                
+                if (isPhone) {
+                    try {
+                        user = await signIn(account, password);
+                        setCurrentUser({ ...user, role: 'user' });
+                        showAlert('登录成功', 'success');
+                        setTimeout(() => {
+                            window.location.href = user.name ? 'match.html' : 'profile.html';
+                        }, 1000);
+                        return;
+                    } catch (e) {
+                        lastError = e;
+                        console.log('用户登录失败:', e.message);
+                    }
+                }
+                
+                try {
+                    user = await agencySignIn(account, password);
+                    setCurrentUser({ ...user, role: 'agency' });
+                    showAlert('登录成功', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'agency.html';
+                    }, 1000);
+                    return;
+                } catch (e) {
+                    lastError = e;
+                    console.log('中介登录失败:', e.message);
+                }
+                
+                try {
+                    user = await adminSignIn(account, password);
+                    setCurrentUser({ ...user, role: 'admin' });
+                    showAlert('登录成功', 'success');
+                    setTimeout(() => {
+                        window.location.href = 'admin.html';
+                    }, 1000);
+                    return;
+                } catch (e) {
+                    lastError = e;
+                    console.log('管理员登录失败:', e.message);
+                }
+                
+                if (lastError && lastError.message.includes('network') || 
+                    lastError && lastError.message.includes('fetch') ||
+                    lastError && lastError.message.includes('Connection')) {
+                    showAlert('网络连接失败，请检查网络设置', 'error');
+                } else if (lastError && lastError.message.includes('401') ||
+                          lastError && lastError.message.includes('unauthorized')) {
+                    showAlert('认证失败，请检查账号配置', 'error');
+                } else {
+                    showAlert('账号或密码错误', 'error');
+                }
+            } catch (error) {
+                showAlert('登录异常: ' + error.message, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

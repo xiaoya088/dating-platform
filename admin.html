@@ -1,0 +1,1832 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 管理员后台</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
+        .navbar { background: #fff; padding: 12px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .navbar-brand { font-size: 18px; font-weight: 600; color: #667eea; }
+        .nav-links { float: right; }
+        .nav-links button { margin-left: 10px; padding: 8px 16px; background: #f0f2f5; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        .nav-links button.active { background: #667eea; color: white; }
+        .container { padding: 15px; }
+        .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card-header { font-size: 16px; font-weight: 600; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
+        .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px; }
+        .stat-card { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 24px; font-weight: 700; color: #667eea; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+        .search-box { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+        .search-box input, .search-box select { padding: 10px; border: 1px solid #e1e5eb; border-radius: 6px; font-size: 14px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: #f0f2f5; color: #333; }
+        .btn-danger { background: #dc3545; color: white; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #e1e5eb; }
+        th { background: #f8f9fa; font-weight: 600; }
+        .badge { padding: 3px 8px; border-radius: 12px; font-size: 12px; }
+        .badge-success { background: #d4edda; color: #155724; }
+        .badge-danger { background: #f8d7da; color: #721c24; }
+        .alert { padding: 12px; border-radius: 6px; margin-bottom: 15px; font-size: 14px; }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 100; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; padding: 20px; border-radius: 10px; width: 95%; max-width: 900px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .modal-close { font-size: 24px; border: none; background: none; cursor: pointer; color: #999; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 500; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #e1e5eb; border-radius: 6px; font-size: 14px; }
+        .pagination { display: flex; justify-content: center; gap: 5px; margin-top: 15px; }
+        .pagination button { padding: 8px 12px; border: 1px solid #e1e5eb; border-radius: 4px; background: white; cursor: pointer; }
+        .pagination button.active { background: #667eea; color: white; border-color: #667eea; }
+        .loading { text-align: center; padding: 40px; color: #888; }
+        .empty { text-align: center; padding: 40px; color: #888; }
+        @media (max-width: 768px) {
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .search-box { flex-direction: column; }
+            .search-box input, .search-box select { width: 100%; }
+            table { font-size: 12px; }
+            th, td { padding: 6px; }
+        }
+        @media print {
+            body { background: white; }
+            .navbar, .nav-links, .search-box, .card > .card-header, .btn, .no-print { display: none !important; }
+            .container { padding: 0; max-width: 100%; }
+            .card { box-shadow: none; border: none; padding: 0; margin: 0; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+            .print-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+            .print-table th, .print-table td { border: 1px solid #333; padding: 8px 12px; text-align: left; vertical-align: top; }
+            .print-table th { background: #f0f0f0 !important; font-weight: bold; width: 30%; }
+            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; }
+            .print-footer { display: block !important; margin-top: 30px; text-align: right; font-size: 10pt; color: #666; border-top: 1px solid #333; padding-top: 10px; }
+            .modal { position: static; background: none; display: block !important; }
+            .modal-content { width: 100%; max-width: 100%; max-height: none; overflow: visible; box-shadow: none; border: none; padding: 0; }
+            .modal-header { display: none; }
+        }
+        .print-header { display: none; }
+        .print-footer { display: none; }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <span class="navbar-brand">💕 管理员后台</span>
+        <div class="nav-links">
+            <button id="tabBtnUsers" class="active">用户管理</button>
+            <button id="tabBtnAgencies">中介管理</button>
+            <button id="tabBtnAnnouncements">公告管理</button>
+            <button id="tabBtnActivities">活动管理</button>
+            <button id="tabBtnMatches">匹配管理</button>
+            <button id="tabBtnSystem">系统维护</button>
+            <button id="tabBtnParams">参数设置</button>
+            <button id="btnLogout">退出</button>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div id="alertBox" class="alert" style="display: none;"></div>
+        
+        <div id="usersTab">
+            <div class="card">
+                <div class="card-header">用户管理</div>
+                
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="stat-number" id="totalUsers">0</div><div class="stat-label">总用户数</div></div>
+                    <div class="stat-card"><div class="stat-number" id="activeUsers">0</div><div class="stat-label">活跃用户</div></div>
+                    <div class="stat-card"><div class="stat-number" id="maleUsers">0</div><div class="stat-label">男性用户</div></div>
+                    <div class="stat-card"><div class="stat-number" id="femaleUsers">0</div><div class="stat-label">女性用户</div></div>
+                </div>
+                
+                <div class="search-box">
+                    <input type="text" id="searchUser" placeholder="搜索姓名/手机号">
+                    <select id="userStatusFilter">
+                        <option value="">全部状态</option>
+                        <option value="active">正常</option>
+                        <option value="disabled">禁用</option>
+                    </select>
+                    <button class="btn btn-secondary" id="btnSearchUsers">搜索</button>
+                    <button class="btn btn-primary" id="btnRefreshUsers">刷新</button>
+                </div>
+                
+                <div id="userList">
+                    <div class="loading">加载中...</div>
+                </div>
+                
+                <div id="userPagination" class="pagination"></div>
+            </div>
+        </div>
+        
+        <div id="agenciesTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">中介管理</div>
+                
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="stat-number" id="totalAgencies">0</div><div class="stat-label">总中介数</div></div>
+                    <div class="stat-card"><div class="stat-number" id="activeAgencies">0</div><div class="stat-label">活跃中介</div></div>
+                </div>
+                
+                <div id="agencyList">
+                    <div class="loading">加载中...</div>
+                </div>
+                
+                <button class="btn btn-primary" style="margin-top: 15px;" id="btnAddAgency">添加中介</button>
+            </div>
+        </div>
+        
+        <div id="announcementsTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">公告管理</div>
+                
+                <div id="announcementList">
+                    <div class="loading">加载中...</div>
+                </div>
+                
+                <button class="btn btn-primary" style="margin-top: 15px;" id="btnAddAnnouncement">发布公告</button>
+            </div>
+        </div>
+        
+        <div id="activitiesTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">活动管理</div>
+
+                <div id="activityList">
+                    <div class="loading">加载中...</div>
+                </div>
+
+                <button class="btn btn-primary" style="margin-top: 15px;" id="btnAddActivity">创建活动</button>
+            </div>
+        </div>
+
+        <div id="matchesTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">匹配情况统计</div>
+
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="stat-number" id="totalLikes">0</div><div class="stat-label">总点赞数</div></div>
+                    <div class="stat-card"><div class="stat-number" id="totalMutualLikes">0</div><div class="stat-label">互相喜欢</div></div>
+                    <div class="stat-card"><div class="stat-number" id="totalMessages">0</div><div class="stat-label">私信总数</div></div>
+                    <div class="stat-card"><div class="stat-number" id="totalMatches">0</div><div class="stat-label">成功匹配</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">按用户查看匹配详情</div>
+                <div class="search-box">
+                    <input type="text" id="searchMatchUserId" placeholder="输入用户ID" style="width: 300px;">
+                    <button class="btn btn-primary" onclick="loadUserMatchDetails()">查询</button>
+                </div>
+                <div id="userMatchDetails" style="margin-top: 15px;">
+                    <div class="empty">请输入用户ID查询该用户的匹配情况</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">点赞记录</div>
+                <div class="search-box">
+                    <input type="text" id="searchLikeUser" placeholder="搜索用户">
+                    <button class="btn btn-secondary" onclick="loadLikes()">搜索</button>
+                    <button class="btn btn-primary" onclick="loadLikes()">刷新</button>
+                </div>
+                <div id="likesList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">互相喜欢记录</div>
+                <div id="mutualLikesList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="systemTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">系统维护</div>
+
+                <div class="stat-grid">
+                    <div class="stat-card"><div class="stat-number" id="dbSize">-</div><div class="stat-label">数据库大小</div></div>
+                    <div class="stat-card"><div class="stat-number" id="totalTables">-</div><div class="stat-label">数据表数</div></div>
+                    <div class="stat-card"><div class="stat-number" id="totalStorage">-</div><div class="stat-label">存储使用</div></div>
+                    <div class="stat-card"><div class="stat-number" id="apiRequests">-</div><div class="stat-label">API请求(今日)</div></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">操作日志</div>
+                <div class="search-box">
+                    <select id="logTypeFilter">
+                        <option value="">全部类型</option>
+                        <option value="user">用户操作</option>
+                        <option value="admin">管理员操作</option>
+                        <option value="system">系统事件</option>
+                    </select>
+                    <button class="btn btn-secondary" onclick="loadSystemLogs()">筛选</button>
+                    <button class="btn btn-primary" onclick="loadSystemLogs()">刷新</button>
+                </div>
+                <div id="systemLogsList">
+                    <div class="loading">加载中...</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">数据库维护</div>
+                <p style="color: #666; margin-bottom: 15px;">以下操作需要谨慎执行，可能会影响数据完整性。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="optimizeDatabase()">优化数据库</button>
+                    <button class="btn btn-secondary" onclick="vacuumDatabase()">清理数据库</button>
+                    <button class="btn btn-danger" onclick="backupDatabase()">导出备份</button>
+                </div>
+                <div id="maintenanceResult" style="margin-top: 15px;"></div>
+            </div>
+        </div>
+
+        <div id="paramsTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">系统参数设置</div>
+
+                <div class="form-group">
+                    <label>每日点赞次数限制</label>
+                    <input type="number" id="paramDailyLikeLimit" value="10" style="width: 200px;">
+                    <button class="btn btn-secondary" style="width: auto; margin-left: 10px;" onclick="updateParam('daily_like_limit')">保存</button>
+                </div>
+
+                <div class="form-group">
+                    <label>密码最小长度</label>
+                    <input type="number" id="paramMinPasswordLength" value="6" style="width: 200px;">
+                    <button class="btn btn-secondary" style="width: auto; margin-left: 10px;" onclick="updateParam('min_password_length')">保存</button>
+                </div>
+
+                <div class="form-group">
+                    <label>新用户默认状态</label>
+                    <select id="paramDefaultUserStatus" style="width: 200px;">
+                        <option value="active">正常</option>
+                        <option value="pending">待审核</option>
+                    </select>
+                    <button class="btn btn-secondary" style="width: auto; margin-left: 10px;" onclick="updateParam('default_user_status')">保存</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">学历选项管理</div>
+                <div id="educationOptionsList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddEducationOptionModal()">添加学历</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">收入区间管理</div>
+                <div id="incomeOptionsList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddIncomeOptionModal()">添加收入区间</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">婚姻状况选项管理</div>
+                <div id="maritalOptionsList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddMaritalOptionModal()">添加婚姻状况</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">兴趣爱好管理</div>
+                <div id="interestsList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddInterestModal()">添加兴趣爱好</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">活动类型管理</div>
+                <div id="activityTypesList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddActivityTypeModal()">添加活动类型</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">详情</span>
+                <button class="modal-close" id="btnCloseModal">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/match.js"></script>
+    <script>
+        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        
+        if (!currentUser || currentUser.role !== 'admin') {
+            window.location.href = 'index.html';
+        }
+        
+        function initApp() {
+            console.log('🔄 开始初始化应用...');
+            try {
+                if (typeof supabase === 'undefined') {
+                    throw new Error('Supabase 库未加载');
+                }
+                
+                if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_ANON_KEY === 'undefined') {
+                    throw new Error('Supabase 配置未定义');
+                }
+                
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase 客户端初始化成功');
+                
+                loadUsers();
+                loadActivities();
+                loadAgencies();
+                loadAnnouncements();
+                console.log('✅ 应用初始化完成');
+            } catch (error) {
+                console.error('❌ 应用初始化失败:', error.message);
+                alert('系统初始化失败: ' + error.message);
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        let allUsers = [];
+        let currentPage = 1;
+        const pageSize = 20;
+        
+        // 初始化事件绑定
+        document.getElementById('tabBtnUsers').addEventListener('click', () => showTab('users'));
+        document.getElementById('tabBtnAgencies').addEventListener('click', () => showTab('agencies'));
+        document.getElementById('tabBtnAnnouncements').addEventListener('click', () => showTab('announcements'));
+        document.getElementById('tabBtnActivities').addEventListener('click', () => showTab('activities'));
+        document.getElementById('btnLogout').addEventListener('click', logout);
+        document.getElementById('btnSearchUsers').addEventListener('click', searchUsers);
+        document.getElementById('btnRefreshUsers').addEventListener('click', loadUsers);
+        document.getElementById('btnAddAgency').addEventListener('click', showAddAgencyModal);
+        document.getElementById('btnAddAnnouncement').addEventListener('click', showAddAnnouncementModal);
+        document.getElementById('btnAddActivity').addEventListener('click', showAddActivityModal);
+        document.getElementById('btnCloseModal').addEventListener('click', closeModal);
+        document.getElementById('tabBtnMatches').addEventListener('click', () => showTab('matches'));
+        document.getElementById('tabBtnSystem').addEventListener('click', () => showTab('system'));
+        document.getElementById('tabBtnParams').addEventListener('click', () => showTab('params'));
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.style.display = 'block';
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
+        }
+        
+        function closeModal() {
+            document.getElementById('modal').classList.remove('show');
+        }
+        
+        function showTab(tabName) {
+            // 移除所有按钮的 active 状态
+            document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
+            // 隐藏所有标签页
+            document.querySelectorAll('[id$="Tab"]').forEach(t => t.style.display = 'none');
+
+            // 激活当前按钮和标签页
+            document.getElementById('tabBtn' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+            document.getElementById(tabName + 'Tab').style.display = 'block';
+
+            // 加载对应数据
+            if (tabName === 'users') loadUsers();
+            else if (tabName === 'agencies') loadAgencies();
+            else if (tabName === 'announcements') loadAnnouncements();
+            else if (tabName === 'activities') loadActivities();
+            else if (tabName === 'matches') { loadMatchStats(); loadLikes(); loadMutualLikes(); }
+            else if (tabName === 'system') loadSystemInfo();
+            else if (tabName === 'params') { loadParams(); loadEducationOptions(); loadIncomeOptions(); loadMaritalOptions(); loadInterests(); loadActivityTypes(); }
+        }
+        
+        async function loadUsers() {
+            const userList = document.getElementById('userList');
+            userList.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: users, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    console.error('加载用户失败:', error);
+                    userList.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+                    return;
+                }
+                
+                allUsers = users || [];
+                
+                document.getElementById('totalUsers').textContent = allUsers.length;
+                document.getElementById('activeUsers').textContent = allUsers.filter(u => u.status === 'active').length;
+                document.getElementById('maleUsers').textContent = allUsers.filter(u => u.gender === '男').length;
+                document.getElementById('femaleUsers').textContent = allUsers.filter(u => u.gender === '女').length;
+                
+                renderUsers();
+            } catch (e) {
+                console.error('加载用户异常:', e);
+                userList.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
+            }
+        }
+        
+        function renderUsers() {
+            const keyword = document.getElementById('searchUser').value.trim();
+            const statusFilter = document.getElementById('userStatusFilter').value;
+            
+            let filtered = allUsers;
+            
+            if (keyword) {
+                filtered = filtered.filter(u => 
+                    (u.name && u.name.includes(keyword)) || 
+                    (u.phone && u.phone.includes(keyword))
+                );
+            }
+            
+            if (statusFilter) {
+                filtered = filtered.filter(u => u.status === statusFilter);
+            }
+            
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageUsers = filtered.slice(start, end);
+            
+            const userList = document.getElementById('userList');
+            
+            if (pageUsers.length === 0) {
+                userList.innerHTML = '<div class="empty">暂无数据</div>';
+                document.getElementById('userPagination').innerHTML = '';
+                return;
+            }
+            
+            userList.innerHTML = `
+                <table>
+                    <thead><tr><th>姓名</th><th>手机号</th><th>性别</th><th>年龄</th><th>现居地</th><th>状态</th><th>操作</th></tr></thead>
+                    <tbody>
+                        ${pageUsers.map(user => {
+                            const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
+                            return `
+                                <tr>
+                                    <td>${user.name || '-'}</td>
+                                    <td>${user.phone}</td>
+                                    <td>${user.gender || '-'}</td>
+                                    <td>${age}</td>
+                                    <td>${user.current_address || '-'}</td>
+                                    <td><span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">${user.status === 'active' ? '正常' : '禁用'}</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="showUserDetail('${user.id}')">详情</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="toggleUserStatus('${user.id}', '${user.status}')">${user.status === 'active' ? '禁用' : '启用'}</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            renderPagination(filtered.length, 'userPagination');
+        }
+        
+        function renderPagination(total, paginationId) {
+            const totalPages = Math.ceil(total / pageSize);
+            const pagination = document.getElementById(paginationId);
+            
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+            
+            let html = '';
+            for (let i = 1; i <= totalPages; i++) {
+                html += `<button ${i === currentPage ? 'class="active"' : ''} onclick="goToPage(${i})">${i}</button>`;
+            }
+            pagination.innerHTML = html;
+        }
+        
+        function goToPage(page) {
+            currentPage = page;
+            renderUsers();
+        }
+        
+        function searchUsers() {
+            currentPage = 1;
+            renderUsers();
+        }
+        
+        async function showUserDetail(userId) {
+            try {
+                const { data: user, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (error) throw error;
+                
+                const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
+                const userStatus = user.status === 'active' ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">禁用</span>';
+                const isAgencyUser = user.agency_id ? '<span class="badge badge-danger">中介录入</span>' : '<span class="badge badge-success">自主注册</span>';
+                
+                document.getElementById('modalTitle').textContent = user.name || '用户详情';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="print-header">
+                        <h1 style="font-size: 18pt; margin-bottom: 5px;">婚恋红娘系统 - 个人信息表</h1>
+                        <p style="font-size: 10pt; color: #666;">打印日期：${new Date().toLocaleDateString()}</p>
+                    </div>
+                    
+                    <table class="print-table">
+                        <tr><th style="width: 20%;">基本信息</th><td style="width: 80%;" colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 25%;"><strong>姓名：</strong>${user.name || '-'}</td>
+                                    <td style="border: none; width: 25%;"><strong>性别：</strong>${user.gender || '-'}</td>
+                                    <td style="border: none; width: 25%;"><strong>年龄：</strong>${age}岁</td>
+                                    <td style="border: none; width: 25%;"><strong>生日：</strong>${user.birthday || '-'}</td>
+                                </tr>
+                                <tr>
+                                    <td style="border: none;"><strong>身高：</strong>${user.height || '-'} cm</td>
+                                    <td style="border: none;"><strong>体重：</strong>${user.weight || '-'} kg</td>
+                                    <td style="border: none;"><strong>婚姻状况：</strong>${user.marital_status || '-'}</td>
+                                    <td style="border: none;"></td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>联系方式</th><td colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 50%;"><strong>手机号：</strong>${user.phone}</td>
+                                    <td style="border: none; width: 50%;"><strong>微信：</strong>${user.wechat || '-'}</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>现居地</th><td colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 50%;"><strong>户籍地：</strong>${user.hukou || '-'}</td>
+                                    <td style="border: none; width: 50%;"><strong>现居地：</strong>${user.current_address || '-'}</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>教育职业</th><td colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 50%;"><strong>学历：</strong>${user.education || '-'}</td>
+                                    <td style="border: none; width: 50%;"><strong>职业：</strong>${user.occupation || '-'}</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>经济状况</th><td colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 33%;"><strong>年收入：</strong>${user.income || '-'}</td>
+                                    <td style="border: none; width: 33%;"><strong>房产：</strong>${user.property || '-'}</td>
+                                    <td style="border: none; width: 34%;"><strong>车辆：</strong>${user.car || '-'}</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>生活习惯</th><td colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 33%;"><strong>吸烟：</strong>${user.smoking || '-'}</td>
+                                    <td style="border: none; width: 33%;"><strong>饮酒：</strong>${user.drinking || '-'}</td>
+                                    <td style="border: none; width: 34%;"><strong>宗教信仰：</strong>${user.religion || '-'}</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>性格标签</th><td colspan="3">${user.personality ? user.personality.split(',').map(p => `<span style="display: inline-block; background: #e8f4f8; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${p}</span>`).join('') : '-'}</td></tr>
+                        
+                        <tr><th>兴趣爱好</th><td colspan="3">${user.interests ? user.interests.split(',').map(i => `<span style="display: inline-block; background: #f0e8f4; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${i}</span>`).join('') : '-'}</td></tr>
+                        
+                        <tr><th>线下活动</th><td colspan="3">${user.activity_types ? user.activity_types.split(',').map(a => `<span style="display: inline-block; background: #e8f4e0; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${a}</span>`).join('') : '-'}</td></tr>
+                        
+                        <tr><th>宠物态度</th><td colspan="3">${user.accept_pet || '-'}</td></tr>
+                        
+                        <tr><th>作息习惯</th><td colspan="3">${user.schedule || '-'}</td></tr>
+                        
+                        <tr><th>婚恋观念</th><td colspan="3">
+                            <table style="width: 100%; border: none;">
+                                <tr>
+                                    <td style="border: none; width: 33%;"><strong>财务看法：</strong>${user.finance_view || '-'}</td>
+                                    <td style="border: none; width: 33%;"><strong>与父母同住：</strong>${user.live_with_parents || '-'}</td>
+                                    <td style="border: none; width: 34%;"><strong>期望孩子数：</strong>${user.expected_children || '-'}</td>
+                                </tr>
+                            </table>
+                        </td></tr>
+                        
+                        <tr><th>自我描述</th><td colspan="3">${user.self_description || '暂无'}</td></tr>
+                        
+                        <tr><th>婚恋宣言</th><td colspan="3">${user.declaration || '暂无'}</td></tr>
+                        
+                        <tr><th>注册时间</th><td colspan="3">${user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</td></tr>
+                    </table>
+                    
+                    <div class="print-footer">
+                        <p>婚恋红娘系统 - 个人信息表</p>
+                    </div>
+                    
+                    <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
+                        <button class="btn btn-primary" onclick="window.print()">🖨️ 打印</button>
+                        <button class="btn btn-secondary" onclick="copyUserId('${user.id}')">📋 复制ID</button>
+                        <button class="btn btn-secondary modal-close" onclick="closeModal()">关闭</button>
+                    </div>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
+            }
+        }
+        
+        function copyUserId(userId) {
+            navigator.clipboard.writeText(userId).then(() => {
+                showAlert('用户ID已复制到剪贴板', 'success');
+            }).catch(() => {
+                showAlert('复制失败', 'error');
+            });
+        }
+        
+        async function toggleUserStatus(userId, currentStatus) {
+            try {
+                const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+                
+                const { error } = await supabaseClient
+                    .from('users')
+                    .update({ status: newStatus })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
+                loadUsers();
+            } catch (e) {
+                showAlert('操作失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadAgencies() {
+            const agencyList = document.getElementById('agencyList');
+            agencyList.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: agencies, error } = await supabaseClient
+                    .from('agencies')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    agencyList.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+                    return;
+                }
+                
+                document.getElementById('totalAgencies').textContent = agencies?.length || 0;
+                document.getElementById('activeAgencies').textContent = agencies?.filter(a => a.status === 'active').length || 0;
+                
+                if (!agencies || agencies.length === 0) {
+                    agencyList.innerHTML = '<div class="empty">暂无中介</div>';
+                    return;
+                }
+                
+                agencyList.innerHTML = `
+                    <table>
+                        <thead><tr><th>用户名</th><th>名称</th><th>手机号</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${agencies.map(agency => `
+                                <tr>
+                                    <td>${agency.username}</td>
+                                    <td>${agency.name || '-'}</td>
+                                    <td>${agency.phone || '-'}</td>
+                                    <td><span class="badge ${agency.status === 'active' ? 'badge-success' : 'badge-danger'}">${agency.status === 'active' ? '正常' : '禁用'}</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="toggleAgencyStatus('${agency.id}', '${agency.status}')">${agency.status === 'active' ? '禁用' : '启用'}</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteAgency('${agency.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                agencyList.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
+            }
+        }
+        
+        function showAddAgencyModal() {
+            const password = Math.random().toString(36).substring(2, 8);
+            document.getElementById('modalTitle').textContent = '添加中介';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>用户名 *</label><input type="text" id="agencyUsername"></div>
+                <div class="form-group"><label>密码 *</label><input type="text" id="agencyPassword" value="${password}"></div>
+                <div class="form-group"><label>名称</label><input type="text" id="agencyName"></div>
+                <div class="form-group"><label>手机号</label><input type="tel" id="agencyPhone"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addAgency()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addAgency() {
+            const username = document.getElementById('agencyUsername').value.trim();
+            const password = document.getElementById('agencyPassword').value;
+            
+            if (!username || !password) {
+                showAlert('请填写用户名和密码', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('agencies')
+                    .insert([{
+                        username: username,
+                        password: password,
+                        name: document.getElementById('agencyName').value.trim(),
+                        phone: document.getElementById('agencyPhone').value.trim(),
+                        status: 'active'
+                    }]);
+                
+                if (error) throw error;
+                
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadAgencies();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function toggleAgencyStatus(agencyId, currentStatus) {
+            try {
+                const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+                
+                const { error } = await supabaseClient
+                    .from('agencies')
+                    .update({ status: newStatus })
+                    .eq('id', agencyId);
+                
+                if (error) throw error;
+                
+                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
+                loadAgencies();
+            } catch (e) {
+                showAlert('操作失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteAgency(agencyId) {
+            if (!confirm('确定删除该中介？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('agencies')
+                    .delete()
+                    .eq('id', agencyId);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadAgencies();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadAnnouncements() {
+            const announcementList = document.getElementById('announcementList');
+            announcementList.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: announcements, error } = await supabaseClient
+                    .from('announcements')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    announcementList.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!announcements || announcements.length === 0) {
+                    announcementList.innerHTML = '<div class="empty">暂无公告</div>';
+                    return;
+                }
+                
+                announcementList.innerHTML = `
+                    <table>
+                        <thead><tr><th>标题</th><th>置顶</th><th>发布时间</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${announcements.map(a => `
+                                <tr>
+                                    <td>${a.title}</td>
+                                    <td>${a.is_pinned ? '是' : '否'}</td>
+                                    <td>${new Date(a.created_at).toLocaleString()}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editAnnouncement('${a.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteAnnouncement('${a.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                announcementList.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
+            }
+        }
+        
+        function showAddAnnouncementModal() {
+            document.getElementById('modalTitle').textContent = '发布公告';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>标题 *</label><input type="text" id="announcementTitle"></div>
+                <div class="form-group"><label>内容 *</label><textarea id="announcementContent" rows="4"></textarea></div>
+                <div class="form-group"><label>置顶</label>
+                    <select id="announcementPinned">
+                        <option value="false">否</option>
+                        <option value="true">是</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addAnnouncement()">发布</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addAnnouncement() {
+            const title = document.getElementById('announcementTitle').value.trim();
+            const content = document.getElementById('announcementContent').value.trim();
+            
+            if (!title || !content) {
+                showAlert('请填写标题和内容', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('announcements')
+                    .insert([{
+                        title: title,
+                        content: content,
+                        is_pinned: document.getElementById('announcementPinned').value === 'true'
+                    }]);
+                
+                if (error) throw error;
+                
+                showAlert('发布成功', 'success');
+                closeModal();
+                loadAnnouncements();
+            } catch (e) {
+                showAlert('发布失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editAnnouncement(announcementId) {
+            try {
+                const { data: announcement, error } = await supabaseClient
+                    .from('announcements')
+                    .select('*')
+                    .eq('id', announcementId)
+                    .single();
+                
+                if (error) throw error;
+                
+                document.getElementById('modalTitle').textContent = '编辑公告';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>标题 *</label><input type="text" id="editAnnouncementTitle" value="${announcement.title}"></div>
+                    <div class="form-group"><label>内容 *</label><textarea id="editAnnouncementContent" rows="4">${announcement.content}</textarea></div>
+                    <div class="form-group"><label>置顶</label>
+                        <select id="editAnnouncementPinned">
+                            <option value="false" ${!announcement.is_pinned ? 'selected' : ''}>否</option>
+                            <option value="true" ${announcement.is_pinned ? 'selected' : ''}>是</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveAnnouncement('${announcementId}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveAnnouncement(announcementId) {
+            const title = document.getElementById('editAnnouncementTitle').value.trim();
+            const content = document.getElementById('editAnnouncementContent').value.trim();
+            
+            if (!title || !content) {
+                showAlert('请填写标题和内容', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('announcements')
+                    .update({
+                        title: title,
+                        content: content,
+                        is_pinned: document.getElementById('editAnnouncementPinned').value === 'true'
+                    })
+                    .eq('id', announcementId);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadAnnouncements();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteAnnouncement(announcementId) {
+            if (!confirm('确定删除该公告？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('announcements')
+                    .delete()
+                    .eq('id', announcementId);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadAnnouncements();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadActivities() {
+            const activityList = document.getElementById('activityList');
+            activityList.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: activities, error } = await supabaseClient
+                    .from('activities')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    activityList.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
+                    return;
+                }
+                
+                if (!activities || activities.length === 0) {
+                    activityList.innerHTML = '<div class="empty">暂无活动</div>';
+                    return;
+                }
+                
+                activityList.innerHTML = `
+                    <table>
+                        <thead><tr><th>活动名称</th><th>时间</th><th>地点</th><th>人数</th><th>状态</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${activities.map(a => `
+                                <tr>
+                                    <td>${a.title}</td>
+                                    <td>${a.activity_time ? new Date(a.activity_time).toLocaleString() : '-'}</td>
+                                    <td>${a.location || '-'}</td>
+                                    <td>${a.current_participants || 0}/${a.max_participants || '-'}</td>
+                                    <td><span class="badge ${a.status === 'active' ? 'badge-success' : 'badge-danger'}">${a.status === 'active' ? '进行中' : '已结束'}</span></td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editActivity('${a.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteActivity('${a.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                activityList.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
+            }
+        }
+        
+        function showAddActivityModal() {
+            document.getElementById('modalTitle').textContent = '创建活动';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>活动名称 *</label><input type="text" id="activityTitle"></div>
+                <div class="form-group"><label>活动时间</label><input type="datetime-local" id="activityTime"></input></div>
+                <div class="form-group"><label>活动地点</label><input type="text" id="activityLocation"></div>
+                <div class="form-group"><label>最大人数</label><input type="number" id="activityMaxParticipants" value="50"></div>
+                <div class="form-group"><label>报名截止</label><input type="datetime-local" id="activityDeadline"></input></div>
+                <div class="form-group"><label>活动描述</label><textarea id="activityDesc" rows="3"></textarea></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addActivity()">创建</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addActivity() {
+            const title = document.getElementById('activityTitle').value.trim();
+            
+            if (!title) {
+                showAlert('请填写活动名称', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('activities')
+                    .insert([{
+                        title: title,
+                        activity_time: document.getElementById('activityTime').value || null,
+                        location: document.getElementById('activityLocation').value.trim() || null,
+                        max_participants: parseInt(document.getElementById('activityMaxParticipants').value) || 50,
+                        deadline: document.getElementById('activityDeadline').value || null,
+                        description: document.getElementById('activityDesc').value.trim() || null,
+                        status: 'active',
+                        current_participants: 0
+                    }]);
+                
+                if (error) throw error;
+                
+                showAlert('创建成功', 'success');
+                closeModal();
+                loadActivities();
+            } catch (e) {
+                showAlert('创建失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editActivity(activityId) {
+            try {
+                const { data: activity, error } = await supabaseClient
+                    .from('activities')
+                    .select('*')
+                    .eq('id', activityId)
+                    .single();
+                
+                if (error) throw error;
+                
+                document.getElementById('modalTitle').textContent = '编辑活动';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>活动名称 *</label><input type="text" id="editActivityTitle" value="${activity.title}"></div>
+                    <div class="form-group"><label>活动时间</label><input type="datetime-local" id="editActivityTime" value="${activity.activity_time ? activity.activity_time.replace('T', ' ').substring(0, 16) : ''}"></div>
+                    <div class="form-group"><label>活动地点</label><input type="text" id="editActivityLocation" value="${activity.location || ''}"></div>
+                    <div class="form-group"><label>最大人数</label><input type="number" id="editActivityMaxParticipants" value="${activity.max_participants || 50}"></div>
+                    <div class="form-group"><label>报名截止</label><input type="datetime-local" id="editActivityDeadline" value="${activity.deadline ? activity.deadline.replace('T', ' ').substring(0, 16) : ''}"></div>
+                    <div class="form-group"><label>活动描述</label><textarea id="editActivityDesc" rows="3">${activity.description || ''}</textarea></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveActivity('${activityId}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveActivity(activityId) {
+            const title = document.getElementById('editActivityTitle').value.trim();
+            
+            if (!title) {
+                showAlert('请填写活动名称', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('activities')
+                    .update({
+                        title: title,
+                        activity_time: document.getElementById('editActivityTime').value || null,
+                        location: document.getElementById('editActivityLocation').value.trim() || null,
+                        max_participants: parseInt(document.getElementById('editActivityMaxParticipants').value) || 50,
+                        deadline: document.getElementById('editActivityDeadline').value || null,
+                        description: document.getElementById('editActivityDesc').value.trim() || null
+                    })
+                    .eq('id', activityId);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadActivities();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteActivity(activityId) {
+            if (!confirm('确定删除该活动？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('activities')
+                    .delete()
+                    .eq('id', activityId);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadActivities();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        async function loadMatchStats() {
+            const { count: totalLikes } = await supabaseClient
+                .from('likes')
+                .select('*', { count: 'exact', head: true });
+
+            const { count: totalMessages } = await supabaseClient
+                .from('messages')
+                .select('*', { count: 'exact', head: true });
+
+            const { data: allLikes } = await supabaseClient
+                .from('likes')
+                .select('from_user_id, to_user_id');
+
+            let mutualCount = 0;
+            if (allLikes && allLikes.length > 0) {
+                const likePairs = new Set(allLikes.map(l => `${l.from_user_id}-${l.to_user_id}`));
+                allLikes.forEach(l => {
+                    if (likePairs.has(`${l.to_user_id}-${l.from_user_id}`)) {
+                        mutualCount++;
+                    }
+                });
+            }
+            mutualCount = mutualCount / 2;
+
+            document.getElementById('totalLikes').textContent = totalLikes || 0;
+            document.getElementById('totalMutualLikes').textContent = mutualCount;
+            document.getElementById('totalMessages').textContent = totalMessages || 0;
+            document.getElementById('totalMatches').textContent = mutualCount;
+        }
+
+        async function loadUserMatchDetails() {
+            console.log('开始加载匹配详情...');
+            const detailsDiv = document.getElementById('userMatchDetails');
+            const userId = document.getElementById('searchMatchUserId').value.trim();
+
+            if (!userId) {
+                detailsDiv.innerHTML = '<div class="empty">请输入用户ID</div>';
+                return;
+            }
+
+            detailsDiv.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                console.log('查询用户信息...');
+                const { data: user, error: userError } = await supabaseClient
+                    .from('users')
+                    .select('id, name, gender, birthday, current_address')
+                    .eq('id', userId)
+                    .single();
+
+                if (userError || !user) {
+                    console.error('用户查询失败:', userError);
+                    detailsDiv.innerHTML = '<div class="empty">未找到该用户</div>';
+                    return;
+                }
+
+                console.log('用户信息:', user);
+                console.log('开始调用 findMatches...');
+                
+                if (typeof findMatches === 'undefined') {
+                    throw new Error('findMatches函数未定义');
+                }
+
+                const matches = await findMatches(userId, { minScore: 0, maxResults: 100 });
+                console.log('findMatches结果:', matches);
+
+                let html = `
+                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px;">用户信息：${user.name || '未命名'}（${user.gender || '未知'}）</h4>
+                        <p style="color: #666; font-size: 14px;">
+                            年龄：${user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) + '岁' : '未知'} |
+                            所在地：${user.current_address || '未填写'} |
+                            匹配数：${matches.length}
+                        </p>
+                    </div>
+                `;
+
+                if (matches.length === 0) {
+                    html += '<div class="empty">该用户暂无匹配对象</div>';
+                } else {
+                    html += `
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>序号</th>
+                                    <th>匹配用户</th>
+                                    <th>性别</th>
+                                    <th>年龄</th>
+                                    <th>所在地</th>
+                                    <th>学历</th>
+                                    <th>匹配得分</th>
+                                    <th>匹配等级</th>
+                                    <th>匹配原因</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+
+                    matches.forEach((match, index) => {
+                        const { user: targetUser, score, reasons, aToB, bToA } = match;
+                        const scoreClass = score >= 80 ? 'badge-success' : score >= 70 ? 'style="background: #cce5ff; color: #004085;"' : 'style="background: #fff3cd; color: #856404;"';
+                        const scoreLabel = score >= 80 ? '完美' : score >= 70 ? '优质' : score >= 50 ? '一般' : '偏低';
+                        const age = targetUser.birthday ? Math.floor((new Date() - new Date(targetUser.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
+
+                        html += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${targetUser.name || '未命名'}</td>
+                                <td>${targetUser.gender || '未知'}</td>
+                                <td>${age}</td>
+                                <td>${targetUser.current_address || '未填写'}</td>
+                                <td>${targetUser.education || '未知'}</td>
+                                <td><strong style="color: ${score >= 80 ? '#28a745' : score >= 70 ? '#007bff' : '#ffc107'};">${score}分</strong></td>
+                                <td><span class="badge ${score >= 80 ? 'badge-success' : ''}" ${scoreClass}>${scoreLabel}</span></td>
+                                <td style="font-size: 12px; color: #666;">${reasons.slice(0, 2).join('；') || '无'}</td>
+                            </tr>
+                        `;
+                    });
+
+                    html += '</tbody></table>';
+                }
+
+                detailsDiv.innerHTML = html;
+                console.log('匹配详情加载完成');
+            } catch (error) {
+                console.error('加载匹配详情失败:', error);
+                detailsDiv.innerHTML = `<div class="empty" style="color: #dc3545;">加载失败: ${error.message}</div>`;
+            }
+        }
+
+        async function loadLikes() {
+            const likesList = document.getElementById('likesList');
+            likesList.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const searchTerm = document.getElementById('searchLikeUser').value;
+
+                const { data: likes, error } = await supabaseClient
+                    .from('likes')
+                    .select('*, from_user:from_user_id(*), to_user:to_user_id(*)')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                let filteredLikes = likes || [];
+                if (searchTerm) {
+                    filteredLikes = filteredLikes.filter(l =>
+                        (l.from_user?.name && l.from_user.name.includes(searchTerm)) ||
+                        (l.to_user?.name && l.to_user.name.includes(searchTerm)) ||
+                        (l.from_user?.phone && l.from_user.phone.includes(searchTerm)) ||
+                        (l.to_user?.phone && l.to_user.phone.includes(searchTerm))
+                    );
+                }
+
+                if (filteredLikes.length === 0) {
+                    likesList.innerHTML = '<p class="empty">暂无记录</p>';
+                    return;
+                }
+
+                likesList.innerHTML = `
+                    <table>
+                        <thead><tr><th>点赞人</th><th>被点赞人</th><th>时间</th></tr></thead>
+                        <tbody>
+                            ${filteredLikes.map(l => `
+                                <tr>
+                                    <td>${l.from_user?.name || '匿名'} (${l.from_user?.phone || '-'})</td>
+                                    <td>${l.to_user?.name || '匿名'} (${l.to_user?.phone || '-'})</td>
+                                    <td>${new Date(l.created_at).toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                likesList.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+
+        async function loadMutualLikes() {
+            const list = document.getElementById('mutualLikesList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const { data: allLikes, error } = await supabaseClient
+                    .from('likes')
+                    .select('*, from_user:from_user_id(*), to_user:to_user_id(*)');
+
+                if (error) throw error;
+
+                if (!allLikes || allLikes.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无记录</p>';
+                    return;
+                }
+
+                const likePairs = new Set(allLikes.map(l => `${l.from_user_id}-${l.to_user_id}`));
+                const mutualPairs = [];
+
+                allLikes.forEach(l => {
+                    if (likePairs.has(`${l.to_user_id}-${l.from_user_id}`) && l.from_user_id < l.to_user_id) {
+                        mutualPairs.push(l);
+                    }
+                });
+
+                if (mutualPairs.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无互相喜欢的记录</p>';
+                    return;
+                }
+
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>用户A</th><th>用户B</th><th>匹配时间</th></tr></thead>
+                        <tbody>
+                            ${mutualPairs.map(l => `
+                                <tr>
+                                    <td>${l.from_user?.name || '匿名'} (${l.from_user?.phone || '-'})</td>
+                                    <td>${l.to_user?.name || '匿名'} (${l.to_user?.phone || '-'})</td>
+                                    <td>${new Date(l.created_at).toLocaleString()}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+
+        async function loadSystemInfo() {
+            document.getElementById('dbSize').textContent = '...';
+            document.getElementById('totalTables').textContent = '...';
+            document.getElementById('totalStorage').textContent = '...';
+            document.getElementById('apiRequests').textContent = '...';
+
+            loadSystemLogs();
+        }
+
+        async function loadSystemLogs() {
+            const list = document.getElementById('systemLogsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+
+            const logType = document.getElementById('logTypeFilter').value;
+
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>时间</th><th>类型</th><th>操作</th><th>详情</th></tr></thead>
+                    <tbody>
+                        <tr><td>${new Date().toLocaleString()}</td><td>系统</td><td>系统运行正常</td><td>所有服务正常</td></tr>
+                        <tr><td>${new Date().toLocaleString()}</td><td>管理员</td><td>admin登录</td><td>管理员后台登录</td></tr>
+                    </tbody>
+                </table>
+                <p style="color: #888; font-size: 12px; margin-top: 10px;">* 日志功能需要后端支持，当前显示示例数据</p>
+            `;
+        }
+
+        function optimizeDatabase() {
+            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在优化数据库...</p>';
+            setTimeout(() => {
+                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">数据库优化完成（需要后端支持）</p>';
+            }, 1000);
+        }
+
+        function vacuumDatabase() {
+            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在清理数据库...</p>';
+            setTimeout(() => {
+                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">数据库清理完成（需要后端支持）</p>';
+            }, 1000);
+        }
+
+        function backupDatabase() {
+            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在导出备份...</p>';
+            setTimeout(() => {
+                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">备份功能需要后端支持</p>';
+            }, 1000);
+        }
+
+        async function loadParams() {
+            const { data: configs } = await supabaseClient
+                .from('system_config')
+                .select('*');
+
+            if (configs) {
+                configs.forEach(c => {
+                    if (c.config_key === 'daily_like_limit') {
+                        document.getElementById('paramDailyLikeLimit').value = c.config_value || 10;
+                    } else if (c.config_key === 'min_password_length') {
+                        document.getElementById('paramMinPasswordLength').value = c.config_value || 6;
+                    }
+                });
+            }
+        }
+
+        async function updateParam(key) {
+            let value;
+            if (key === 'daily_like_limit') {
+                value = document.getElementById('paramDailyLikeLimit').value;
+            } else if (key === 'min_password_length') {
+                value = document.getElementById('paramMinPasswordLength').value;
+            } else if (key === 'default_user_status') {
+                value = document.getElementById('paramDefaultUserStatus').value;
+            }
+
+            const { error } = await supabaseClient
+                .from('system_config')
+                .upsert([{ config_key: key, config_value: value }], { onConflict: 'config_key' });
+
+            if (error) {
+                showAlert('更新失败: ' + error.message, 'error');
+            } else {
+                showAlert('更新成功', 'success');
+            }
+        }
+
+        async function loadEducationOptions() {
+            const list = document.getElementById('educationOptionsList');
+
+            const { data: options } = await supabaseClient
+                .from('education_options')
+                .select('*')
+                .order('sort_order');
+
+            if (!options || options.length === 0) {
+                list.innerHTML = '<p class="empty">暂无数据</p>';
+                return;
+            }
+
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>学历</th><th>排序</th><th>操作</th></tr></thead>
+                    <tbody>
+                        ${options.map(o => `
+                            <tr>
+                                <td>${o.name}</td>
+                                <td>${o.sort_order}</td>
+                                <td><button class="btn btn-danger btn-small" onclick="deleteEducationOption('${o.id}')">删除</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showAddEducationOptionModal() {
+            document.getElementById('modalTitle').textContent = '添加学历';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>学历名称</label><input type="text" id="newEducationName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="newEducationSort" value="0"></div>
+                <button class="btn btn-primary" onclick="addEducationOption()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        async function addEducationOption() {
+            const name = document.getElementById('newEducationName').value.trim();
+            const sort_order = parseInt(document.getElementById('newEducationSort').value) || 0;
+
+            if (!name) {
+                showAlert('请输入学历名称', 'error');
+                return;
+            }
+
+            const { error } = await supabaseClient
+                .from('education_options')
+                .insert([{ name, sort_order }]);
+
+            if (error) {
+                showAlert('添加失败: ' + error.message, 'error');
+            } else {
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadEducationOptions();
+            }
+        }
+
+        async function deleteEducationOption(id) {
+            if (!confirm('确定删除?')) return;
+
+            const { error } = await supabaseClient
+                .from('education_options')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showAlert('删除失败: ' + error.message, 'error');
+            } else {
+                showAlert('删除成功', 'success');
+                loadEducationOptions();
+            }
+        }
+
+        async function loadIncomeOptions() {
+            const list = document.getElementById('incomeOptionsList');
+
+            const { data: options } = await supabaseClient
+                .from('income_options')
+                .select('*')
+                .order('sort_order');
+
+            if (!options || options.length === 0) {
+                list.innerHTML = '<p class="empty">暂无数据</p>';
+                return;
+            }
+
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>收入区间</th><th>最小值</th><th>最大值</th><th>排序</th><th>操作</th></tr></thead>
+                    <tbody>
+                        ${options.map(o => `
+                            <tr>
+                                <td>${o.name}</td>
+                                <td>${o.min_value}</td>
+                                <td>${o.max_value}</td>
+                                <td>${o.sort_order}</td>
+                                <td><button class="btn btn-danger btn-small" onclick="deleteIncomeOption('${o.id}')">删除</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showAddIncomeOptionModal() {
+            document.getElementById('modalTitle').textContent = '添加收入区间';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>区间名称</label><input type="text" id="newIncomeName" placeholder="如: 5000-8000"></div>
+                <div class="form-group"><label>最小值</label><input type="number" id="newIncomeMin" value="0"></div>
+                <div class="form-group"><label>最大值</label><input type="number" id="newIncomeMax" value="0"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="newIncomeSort" value="0"></div>
+                <button class="btn btn-primary" onclick="addIncomeOption()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        async function addIncomeOption() {
+            const name = document.getElementById('newIncomeName').value.trim();
+            const min_value = parseInt(document.getElementById('newIncomeMin').value) || 0;
+            const max_value = parseInt(document.getElementById('newIncomeMax').value) || 0;
+            const sort_order = parseInt(document.getElementById('newIncomeSort').value) || 0;
+
+            const { error } = await supabaseClient
+                .from('income_options')
+                .insert([{ name, min_value, max_value, sort_order }]);
+
+            if (error) {
+                showAlert('添加失败: ' + error.message, 'error');
+            } else {
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadIncomeOptions();
+            }
+        }
+
+        async function deleteIncomeOption(id) {
+            if (!confirm('确定删除?')) return;
+
+            const { error } = await supabaseClient
+                .from('income_options')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showAlert('删除失败: ' + error.message, 'error');
+            } else {
+                showAlert('删除成功', 'success');
+                loadIncomeOptions();
+            }
+        }
+
+        async function loadMaritalOptions() {
+            const list = document.getElementById('maritalOptionsList');
+
+            const { data: options } = await supabaseClient
+                .from('marital_status_options')
+                .select('*')
+                .order('sort_order');
+
+            if (!options || options.length === 0) {
+                list.innerHTML = '<p class="empty">暂无数据</p>';
+                return;
+            }
+
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>婚姻状况</th><th>排序</th><th>操作</th></tr></thead>
+                    <tbody>
+                        ${options.map(o => `
+                            <tr>
+                                <td>${o.name}</td>
+                                <td>${o.sort_order}</td>
+                                <td><button class="btn btn-danger btn-small" onclick="deleteMaritalOption('${o.id}')">删除</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showAddMaritalOptionModal() {
+            document.getElementById('modalTitle').textContent = '添加婚姻状况';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>名称</label><input type="text" id="newMaritalName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="newMaritalSort" value="0"></div>
+                <button class="btn btn-primary" onclick="addMaritalOption()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        async function addMaritalOption() {
+            const name = document.getElementById('newMaritalName').value.trim();
+            const sort_order = parseInt(document.getElementById('newMaritalSort').value) || 0;
+
+            const { error } = await supabaseClient
+                .from('marital_status_options')
+                .insert([{ name, sort_order }]);
+
+            if (error) {
+                showAlert('添加失败: ' + error.message, 'error');
+            } else {
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadMaritalOptions();
+            }
+        }
+
+        async function deleteMaritalOption(id) {
+            if (!confirm('确定删除?')) return;
+
+            const { error } = await supabaseClient
+                .from('marital_status_options')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showAlert('删除失败: ' + error.message, 'error');
+            } else {
+                showAlert('删除成功', 'success');
+                loadMaritalOptions();
+            }
+        }
+
+        async function loadInterests() {
+            const list = document.getElementById('interestsList');
+
+            const { data: options } = await supabaseClient
+                .from('interests')
+                .select('*')
+                .order('sort_order');
+
+            if (!options || options.length === 0) {
+                list.innerHTML = '<p class="empty">暂无数据</p>';
+                return;
+            }
+
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>兴趣爱好</th><th>排序</th><th>操作</th></tr></thead>
+                    <tbody>
+                        ${options.map(o => `
+                            <tr>
+                                <td>${o.name}</td>
+                                <td>${o.sort_order}</td>
+                                <td><button class="btn btn-danger btn-small" onclick="deleteInterest('${o.id}')">删除</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showAddInterestModal() {
+            document.getElementById('modalTitle').textContent = '添加兴趣爱好';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>名称</label><input type="text" id="newInterestName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="newInterestSort" value="0"></div>
+                <button class="btn btn-primary" onclick="addInterest()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        async function addInterest() {
+            const name = document.getElementById('newInterestName').value.trim();
+            const sort_order = parseInt(document.getElementById('newInterestSort').value) || 0;
+
+            const { error } = await supabaseClient
+                .from('interests')
+                .insert([{ name, sort_order }]);
+
+            if (error) {
+                showAlert('添加失败: ' + error.message, 'error');
+            } else {
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadInterests();
+            }
+        }
+
+        async function deleteInterest(id) {
+            if (!confirm('确定删除?')) return;
+
+            const { error } = await supabaseClient
+                .from('interests')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showAlert('删除失败: ' + error.message, 'error');
+            } else {
+                showAlert('删除成功', 'success');
+                loadInterests();
+            }
+        }
+
+        async function loadActivityTypes() {
+            const list = document.getElementById('activityTypesList');
+
+            const { data: options } = await supabaseClient
+                .from('activity_types')
+                .select('*')
+                .order('sort_order');
+
+            if (!options || options.length === 0) {
+                list.innerHTML = '<p class="empty">暂无数据</p>';
+                return;
+            }
+
+            list.innerHTML = `
+                <table>
+                    <thead><tr><th>活动类型</th><th>排序</th><th>操作</th></tr></thead>
+                    <tbody>
+                        ${options.map(o => `
+                            <tr>
+                                <td>${o.name}</td>
+                                <td>${o.sort_order}</td>
+                                <td><button class="btn btn-danger btn-small" onclick="deleteActivityType('${o.id}')">删除</button></td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function showAddActivityTypeModal() {
+            document.getElementById('modalTitle').textContent = '添加活动类型';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>名称</label><input type="text" id="newActivityTypeName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="newActivityTypeSort" value="0"></div>
+                <button class="btn btn-primary" onclick="addActivityType()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+
+        async function addActivityType() {
+            const name = document.getElementById('newActivityTypeName').value.trim();
+            const sort_order = parseInt(document.getElementById('newActivityTypeSort').value) || 0;
+
+            const { error } = await supabaseClient
+                .from('activity_types')
+                .insert([{ name, sort_order }]);
+
+            if (error) {
+                showAlert('添加失败: ' + error.message, 'error');
+            } else {
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadActivityTypes();
+            }
+        }
+
+        async function deleteActivityType(id) {
+            if (!confirm('确定删除?')) return;
+
+            const { error } = await supabaseClient
+                .from('activity_types')
+                .delete()
+                .eq('id', id);
+
+            if (error) {
+                showAlert('删除失败: ' + error.message, 'error');
+            } else {
+                showAlert('删除成功', 'success');
+                loadActivityTypes();
+            }
+        }
+
+        // 页面加载时初始化应用
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>

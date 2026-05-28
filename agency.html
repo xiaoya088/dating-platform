@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 中介后台</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">💕 中介后台</div>
+        <ul class="navbar-nav">
+            <li><a href="#" onclick="showTab('clients')" class="active" id="navClients">客户管理</a></li>
+            <li><a href="#" onclick="showTab('requests')">联系请求</a></li>
+            <li><a href="#" onclick="logout()">退出</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="clients">客户管理</button>
+            <button class="tab-btn" data-tab="requests">联系请求</button>
+            <button class="tab-btn" data-tab="add">录入客户</button>
+        </div>
+        
+        <div id="clientsTab" class="tab-content active">
+            <div class="card">
+                <div class="card-header">我的客户</div>
+                
+                <div class="search-box">
+                    <input type="text" id="searchClient" placeholder="搜索姓名或手机号">
+                    <button class="btn btn-secondary" onclick="searchClients()">搜索</button>
+                </div>
+                
+                <div id="clientList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="requestsTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">联系请求</div>
+                
+                <div id="requestList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="addTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">录入新客户</div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>姓名 *</label>
+                        <input type="text" id="clientName">
+                    </div>
+                    <div class="form-group">
+                        <label>手机号 *</label>
+                        <input type="tel" id="clientPhone" maxlength="11">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>性别 *</label>
+                        <select id="clientGender">
+                            <option value="">请选择</option>
+                            <option value="男">男</option>
+                            <option value="女">女</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>生日 *</label>
+                        <input type="date" id="clientBirthday">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>身高 (cm)</label>
+                        <input type="number" id="clientHeight">
+                    </div>
+                    <div class="form-group">
+                        <label>体重 (kg)</label>
+                        <input type="number" id="clientWeight">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>学历</label>
+                        <select id="clientEducation">
+                            <option value="">请选择</option>
+                            <option value="小学">小学</option>
+                            <option value="初中">初中</option>
+                            <option value="高中">高中</option>
+                            <option value="大专">大专</option>
+                            <option value="本科">本科</option>
+                            <option value="硕士">硕士</option>
+                            <option value="博士">博士</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>职业</label>
+                        <input type="text" id="clientOccupation">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>收入</label>
+                        <select id="clientIncome">
+                            <option value="">请选择</option>
+                            <option value="3000以下">3000以下</option>
+                            <option value="3000-5000">3000-5000</option>
+                            <option value="5000-8000">5000-8000</option>
+                            <option value="8000-10000">8000-10000</option>
+                            <option value="10000-15000">10000-15000</option>
+                            <option value="15000-20000">15000-20000</option>
+                            <option value="20000-30000">20000-30000</option>
+                            <option value="30000以上">30000以上</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>婚姻状况</label>
+                        <select id="clientMaritalStatus">
+                            <option value="">请选择</option>
+                            <option value="未婚">未婚</option>
+                            <option value="离异">离异</option>
+                            <option value="丧偶">丧偶</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>常住地址</label>
+                    <div class="form-row-4">
+                        <select id="clientProvince" style="padding:8px;">
+                            <option value="">省</option>
+                        </select>
+                        <select id="clientCity" style="padding:8px;">
+                            <option value="">市</option>
+                        </select>
+                        <select id="clientDistrict" style="padding:8px;">
+                            <option value="">区</option>
+                        </select>
+                        <select id="clientStreet" style="padding:8px;">
+                            <option value="">街道</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>微信号</label>
+                        <input type="text" id="clientWechat">
+                    </div>
+                    <div class="form-group">
+                        <label>婚恋宣言</label>
+                        <textarea id="clientDeclaration" rows="2" maxlength="200"></textarea>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary btn-block" onclick="addClient()">录入客户</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="clientDetailModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <span id="modalTitle">客户详情</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <div id="alertBox" class="hidden"></div>
+    
+    <script>
+        const currentUser = getCurrentUser();
+        if (!currentUser || currentUser.role !== 'agency') {
+            window.location.href = 'index.html';
+        }
+        
+        const provinceData = {
+            "北京": ["北京市"],
+            "上海": ["上海市"],
+            "广东": ["广州市", "深圳市", "东莞市", "佛山市", "珠海市", "中山市"],
+            "浙江": ["杭州市", "宁波市", "温州市"],
+            "江苏": ["南京市", "苏州市", "无锡市", "常州市"],
+            "四川": ["成都市"],
+            "湖北": ["武汉市"],
+            "天津": ["天津市"],
+            "重庆": ["重庆市"],
+            "湖南": ["长沙市"],
+            "山东": ["济南市", "青岛市"],
+            "河南": ["郑州市"],
+            "福建": ["福州市", "厦门市"],
+            "安徽": ["合肥市"],
+            "辽宁": ["沈阳市", "大连市"],
+            "陕西": ["西安市"],
+            "江西": ["南昌市"],
+            "云南": ["昆明市"],
+            "贵州": ["贵阳市"],
+            "海南": ["海口市", "三亚市"]
+        };
+        
+        function initProvinceSelect() {
+            const provinceSelect = document.getElementById('clientProvince');
+            provinceSelect.innerHTML = '<option value="">请选择省份</option>';
+            
+            for (const province of Object.keys(provinceData)) {
+                const option = document.createElement('option');
+                option.value = province;
+                option.textContent = province;
+                provinceSelect.appendChild(option);
+            }
+            
+            provinceSelect.addEventListener('change', function() {
+                const citySelect = document.getElementById('clientCity');
+                citySelect.innerHTML = '<option value="">请选择城市</option>';
+                document.getElementById('clientDistrict').innerHTML = '<option value="">请选择区</option>';
+                document.getElementById('clientStreet').innerHTML = '<option value="">请选择街道</option>';
+                
+                const province = this.value;
+                if (province) {
+                    for (const city of provinceData[province]) {
+                        const option = document.createElement('option');
+                        option.value = city;
+                        option.textContent = city;
+                        citySelect.appendChild(option);
+                    }
+                }
+            });
+        }
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+            });
+        });
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            
+            const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (tabBtn) tabBtn.classList.add('active');
+            
+            const tabContent = document.getElementById(tabName + 'Tab');
+            if (tabContent) tabContent.classList.remove('hidden');
+        }
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden');
+            
+            setTimeout(() => {
+                alertBox.classList.add('hidden');
+            }, 3000);
+        }
+        
+        function generatePassword() {
+            return Math.random().toString(36).substring(2, 8);
+        }
+        
+        async function loadClients() {
+            const supabase = getSupabase();
+            
+            const { data: clients } = await supabase
+                .from('users')
+                .select('*')
+                .eq('agency_id', currentUser.id)
+                .order('created_at', { ascending: false });
+            
+            const clientList = document.getElementById('clientList');
+            
+            if (!clients || clients.length === 0) {
+                clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无客户</p>';
+                return;
+            }
+            
+            clientList.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>手机号</th>
+                            <th>性别</th>
+                            <th>年龄</th>
+                            <th>所在地</th>
+                            <th>状态</th>
+                            <th>密码</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clients.map(client => {
+                            const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
+                            return `
+                                <tr>
+                                    <td>${client.name || '-'}</td>
+                                    <td>${client.phone}</td>
+                                    <td>${client.gender || '-'}</td>
+                                    <td>${age}</td>
+                                    <td>${client.province || ''} ${client.city || ''}</td>
+                                    <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
+                                    <td>${client.password || '未设置'}</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
+                                        <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        async function searchClients() {
+            const keyword = document.getElementById('searchClient').value.trim();
+            
+            if (!keyword) {
+                loadClients();
+                return;
+            }
+            
+            const supabase = getSupabase();
+            
+            const { data: clients } = await supabase
+                .from('users')
+                .select('*')
+                .eq('agency_id', currentUser.id)
+                .or(`name.ilike.%${keyword}%,phone.ilike.%${keyword}%`);
+            
+            const clientList = document.getElementById('clientList');
+            
+            if (!clients || clients.length === 0) {
+                clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">未找到匹配客户</p>';
+                return;
+            }
+            
+            clientList.innerHTML = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>姓名</th>
+                            <th>手机号</th>
+                            <th>性别</th>
+                            <th>年龄</th>
+                            <th>所在地</th>
+                            <th>状态</th>
+                            <th>密码</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clients.map(client => {
+                            const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
+                            return `
+                                <tr>
+                                    <td>${client.name || '-'}</td>
+                                    <td>${client.phone}</td>
+                                    <td>${client.gender || '-'}</td>
+                                    <td>${age}</td>
+                                    <td>${client.province || ''} ${client.city || ''}</td>
+                                    <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
+                                    <td>${client.password || '未设置'}</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
+                                        <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        async function showClientDetail(clientId) {
+            const supabase = getSupabase();
+            
+            const { data: client } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', clientId)
+                .single();
+            
+            if (!client) return;
+            
+            document.getElementById('modalTitle').textContent = client.name || '客户详情';
+            document.getElementById('modalBody').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <p><strong>姓名：</strong>${client.name || '-'}</p>
+                        <p><strong>手机号：</strong>${client.phone}</p>
+                        <p><strong>性别：</strong>${client.gender || '-'}</p>
+                        <p><strong>生日：</strong>${client.birthday || '-'}</p>
+                        <p><strong>身高：</strong>${client.height || '-'} cm</p>
+                        <p><strong>体重：</strong>${client.weight || '-'} kg</p>
+                        <p><strong>学历：</strong>${client.education || '-'}</p>
+                        <p><strong>职业：</strong>${client.occupation || '-'}</p>
+                        <p><strong>收入：</strong>${client.income || '-'}</p>
+                        <p><strong>婚姻状况：</strong>${client.marital_status || '-'}</p>
+                        <p><strong>所在地：</strong>${client.province || ''} ${client.city || ''} ${client.district || ''}</p>
+                        <p><strong>微信：</strong>${client.wechat || '-'}</p>
+                        <p><strong>密码：</strong>${client.password || '未设置'}</p>
+                    </div>
+                    <div>
+                        <p><strong>婚恋宣言：</strong></p>
+                        <p style="color: #666;">${client.declaration || '暂无'}</p>
+                        <p style="margin-top: 20px;"><strong>照片：</strong></p>
+                        <div class="photo-grid" style="grid-template-columns: repeat(2, 1fr);">
+                            ${(client.photos || []).map(p => `<img src="${p}" style="width: 100%; border-radius: 8px;">`).join('')}
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="editClient('${clientId}')">编辑</button>
+                    <button class="btn btn-secondary" onclick="resetPassword('${clientId}')">重置密码</button>
+                </div>
+            `;
+            
+            document.getElementById('clientDetailModal').classList.remove('hidden');
+        }
+        
+        function closeModal() {
+            document.getElementById('clientDetailModal').classList.add('hidden');
+        }
+        
+        async function toggleClientStatus(clientId, currentStatus) {
+            const supabase = getSupabase();
+            
+            const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+            
+            const { error } = await supabase
+                .from('users')
+                .update({ status: newStatus })
+                .eq('id', clientId);
+            
+            if (error) {
+                showAlert('操作失败', 'error');
+            } else {
+                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
+                loadClients();
+            }
+        }
+        
+        async function resetPassword(clientId) {
+            const newPassword = generatePassword();
+            const supabase = getSupabase();
+            
+            const { error } = await supabase
+                .from('users')
+                .update({ password: newPassword })
+                .eq('id', clientId);
+            
+            if (error) {
+                showAlert('重置失败', 'error');
+            } else {
+                showAlert(`新密码: ${newPassword}`, 'success');
+                loadClients();
+            }
+        }
+        
+        async function addClient() {
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const gender = document.getElementById('clientGender').value;
+            const birthday = document.getElementById('clientBirthday').value;
+            
+            if (!name || !phone || !gender || !birthday) {
+                showAlert('请填写必填项', 'error');
+                return;
+            }
+            
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                showAlert('手机号格式不正确', 'error');
+                return;
+            }
+            
+            const supabase = getSupabase();
+            
+            const { data: existing } = await supabase
+                .from('users')
+                .select('id')
+                .eq('phone', phone)
+                .single();
+            
+            if (existing) {
+                showAlert('该手机号已存在', 'error');
+                return;
+            }
+            
+            const password = generatePassword();
+            
+            const { error } = await supabase
+                .from('users')
+                .insert([{
+                    name: name,
+                    phone: phone,
+                    password: password,
+                    gender: gender,
+                    birthday: birthday,
+                    height: parseInt(document.getElementById('clientHeight').value) || null,
+                    weight: parseInt(document.getElementById('clientWeight').value) || null,
+                    education: document.getElementById('clientEducation').value,
+                    occupation: document.getElementById('clientOccupation').value,
+                    income: document.getElementById('clientIncome').value,
+                    marital_status: document.getElementById('clientMaritalStatus').value,
+                    province: document.getElementById('clientProvince').value,
+                    city: document.getElementById('clientCity').value,
+                    district: document.getElementById('clientDistrict').value,
+                    street: document.getElementById('clientStreet').value,
+                    wechat: document.getElementById('clientWechat').value,
+                    declaration: document.getElementById('clientDeclaration').value,
+                    agency_id: currentUser.id,
+                    status: 'active'
+                }]);
+            
+            if (error) {
+                showAlert('录入失败：' + error.message, 'error');
+            } else {
+                showAlert(`录入成功！密码: ${password}`, 'success');
+                
+                document.getElementById('clientName').value = '';
+                document.getElementById('clientPhone').value = '';
+                document.getElementById('clientGender').value = '';
+                document.getElementById('clientBirthday').value = '';
+                document.getElementById('clientHeight').value = '';
+                document.getElementById('clientWeight').value = '';
+                document.getElementById('clientEducation').value = '';
+                document.getElementById('clientOccupation').value = '';
+                document.getElementById('clientIncome').value = '';
+                document.getElementById('clientMaritalStatus').value = '';
+                document.getElementById('clientProvince').value = '';
+                document.getElementById('clientCity').value = '';
+                document.getElementById('clientDistrict').value = '';
+                document.getElementById('clientStreet').value = '';
+                document.getElementById('clientWechat').value = '';
+                document.getElementById('clientDeclaration').value = '';
+                
+                showTab('clients');
+                loadClients();
+            }
+        }
+        
+        async function loadRequests() {
+            const supabase = getSupabase();
+            
+            const { data: requests } = await supabase
+                .from('agency_requests')
+                .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
+                .eq('agency_id', currentUser.id)
+                .eq('status', 'pending')
+                .order('created_at', { ascending: false });
+            
+            const requestList = document.getElementById('requestList');
+            
+            if (!requests || requests.length === 0) {
+                requestList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无联系请求</p>';
+                return;
+            }
+            
+            requestList.innerHTML = requests.map(req => `
+                <div class="message-item">
+                    <img class="message-avatar" src="${req.from_user?.photos?.[0] || 'https://via.placeholder.com/40'}">
+                    <div class="message-content">
+                        <div style="font-weight: 600;">${req.from_user?.name || '匿名用户'} (${req.from_user?.phone})</div>
+                        <div style="color: #888; margin-top: 5px;">${req.message || '希望与您联系'}</div>
+                        <div class="message-time">${new Date(req.created_at).toLocaleString()}</div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-primary btn-small" onclick="handleRequest('${req.id}', 'accepted')">接受</button>
+                        <button class="btn btn-danger btn-small" onclick="handleRequest('${req.id}', 'rejected')">拒绝</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        async function handleRequest(requestId, status) {
+            const supabase = getSupabase();
+            
+            const { error } = await supabase
+                .from('agency_requests')
+                .update({ status: status })
+                .eq('id', requestId);
+            
+            if (error) {
+                showAlert('操作失败', 'error');
+            } else {
+                showAlert(status === 'accepted' ? '已接受' : '已拒绝', 'success');
+                loadRequests();
+            }
+        }
+        
+        initProvinceSelect();
+        loadClients();
+        loadRequests();
+    </script>
+</body>
+</html>

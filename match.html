@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 匹配推荐</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/match.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <ul class="navbar-nav">
+            <li><a href="match.html" class="active">匹配推荐</a></li>
+            <li><a href="messages.html">私信</a></li>
+            <li><a href="activities.html">线下活动</a></li>
+            <li><a href="profile.html">个人资料</a></li>
+            <li><a href="#" onclick="logout()">退出</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <div class="card">
+            <div class="card-header">
+                <span>智能匹配推荐</span>
+                <div style="float: right; font-size: 14px; color: #666;">
+                    <span id="matchCount">0</span> 位潜在匹配
+                </div>
+            </div>
+
+            <div class="search-box">
+                <select id="genderFilter">
+                    <option value="">全部性别</option>
+                    <option value="男">男</option>
+                    <option value="女">女</option>
+                </select>
+                <select id="provinceFilter">
+                    <option value="">全部地区</option>
+                </select>
+                <select id="minScoreFilter">
+                    <option value="0" selected>不限匹配度</option>
+                    <option value="50">50%以上</option>
+                    <option value="70">70%以上(推荐)</option>
+                    <option value="80">80%以上</option>
+                </select>
+                <button class="btn btn-secondary" onclick="filterMatches()">筛选</button>
+                <button class="btn btn-primary" onclick="refreshMatches()">刷新匹配</button>
+            </div>
+
+            <div id="matchList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>正在计算匹配度，请稍候...</p>
+                </div>
+            </div>
+
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <div id="userDetailModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <span id="modalTitle">用户详情</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <div id="alertBox" class="hidden"></div>
+
+    <script>
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+
+        let allMatches = [];
+        let currentPage = 1;
+        const pageSize = 10;
+
+        const provinceData = {
+            "北京": ["北京市"], "上海": ["上海市"],
+            "广东": ["广州市", "深圳市", "东莞市", "佛山市", "珠海市", "中山市"],
+            "浙江": ["杭州市", "宁波市", "温州市"],
+            "江苏": ["南京市", "苏州市", "无锡市", "常州市"],
+            "四川": ["成都市"], "湖北": ["武汉市"],
+            "天津": ["天津市"], "重庆": ["重庆市"],
+            "湖南": ["长沙市"], "山东": ["济南市", "青岛市"],
+            "河南": ["郑州市"], "福建": ["福州市", "厦门市"],
+            "安徽": ["合肥市"], "辽宁": ["沈阳市", "大连市"],
+            "陕西": ["西安市"], "江西": ["南昌市"],
+            "云南": ["昆明市"], "贵州": ["贵阳市"],
+            "海南": ["海口市", "三亚市"]
+        };
+
+        function initProvinceFilter() {
+            const select = document.getElementById('provinceFilter');
+            for (const province of Object.keys(provinceData)) {
+                const option = document.createElement('option');
+                option.value = province;
+                option.textContent = province;
+                select.appendChild(option);
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden');
+            setTimeout(() => alertBox.classList.add('hidden'), 3000);
+        }
+
+        async function loadMatches() {
+            const matchList = document.getElementById('matchList');
+            matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在计算匹配度，请稍候...</p></div>';
+
+            try {
+                const genderFilter = document.getElementById('genderFilter').value || null;
+                const provinceFilter = document.getElementById('provinceFilter').value || null;
+                const minScoreFilter = parseInt(document.getElementById('minScoreFilter').value) || 0;
+
+                const matches = await findMatches(currentUser.id, {
+                    minScore: minScoreFilter,
+                    maxResults: 100,
+                    gender: genderFilter,
+                    province: provinceFilter
+                });
+
+                allMatches = matches;
+                document.getElementById('matchCount').textContent = matches.length;
+
+                renderMatches();
+            } catch (error) {
+                console.error('加载匹配失败:', error);
+                matchList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ${error.message}</p>`;
+                showAlert('加载匹配列表失败: ' + error.message, 'error');
+            }
+        }
+
+        function renderMatches() {
+            const matchList = document.getElementById('matchList');
+
+            if (allMatches.length === 0) {
+                matchList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无匹配结果，请尝试调整筛选条件或完善您的择偶要求</p>';
+                return;
+            }
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const pageMatches = allMatches.slice(start, end);
+
+            matchList.innerHTML = pageMatches.map(match => {
+                const { user, score, reasons, userType } = match;
+                const card = formatMatchCard(match);
+
+                const scoreClass = score >= 80 ? 'score-excellent' : score >= 70 ? 'score-good' : 'score-normal';
+                const scoreLabel = score >= 80 ? '完美' : score >= 70 ? '优质' : score >= 50 ? '一般' : '偏低';
+
+                let actionButtons = '';
+                if (userType === 'normal' || userType === 'agency_public') {
+                    actionButtons = `
+                        <button class="btn btn-primary btn-small like-btn" onclick="event.stopPropagation(); likeUser('${user.id}')">
+                            <span>💕</span> 点赞
+                        </button>
+                        <button class="btn btn-secondary btn-small message-btn" onclick="event.stopPropagation(); sendMessage('${user.id}')">
+                            <span>💬</span> 私信
+                        </button>
+                    `;
+                } else if (userType === 'agency_private') {
+                    actionButtons = `
+                        <button class="btn btn-warning btn-small agency-btn" onclick="event.stopPropagation(); requestAgencyContact('${user.id}')">
+                            <span>🏢</span> 联系中介
+                        </button>
+                    `;
+                }
+
+                return `
+                    <div class="match-card" onclick="showUserDetail('${user.id}')">
+                        <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/100?text=无头像'">
+                        <div class="match-info">
+                            <div class="match-name">
+                                ${card.displayInfo.name}
+                                ${card.badge}
+                            </div>
+                            <div class="match-meta">
+                                ${card.displayInfo.age}岁 | ${card.displayInfo.height}cm | ${card.displayInfo.province} ${card.displayInfo.city}
+                            </div>
+                            <div class="match-education">${card.displayInfo.education || '学历未填写'}</div>
+                            ${card.displayInfo.declaration ? `<div class="match-declaration">"${card.displayInfo.declaration}"</div>` : ''}
+                            <div class="match-tags">
+                                ${reasons.slice(0, 3).map(r => `<span class="tag tag-success">${r}</span>`).join('')}
+                            </div>
+                        </div>
+                        <div class="match-score-container">
+                            <div class="match-score ${scoreClass}">${score}%</div>
+                            <div class="match-score-label">${scoreLabel}</div>
+                        </div>
+                        <div class="match-actions">
+                            ${actionButtons}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            renderPagination(allMatches.length);
+        }
+
+        function renderPagination(total) {
+            const totalPages = Math.ceil(total / pageSize);
+            const pagination = document.getElementById('pagination');
+
+            if (totalPages <= 1) {
+                pagination.innerHTML = '';
+                return;
+            }
+
+            let html = '';
+            const maxVisiblePages = 5;
+            let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+            let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+            if (endPage - startPage < maxVisiblePages - 1) {
+                startPage = Math.max(1, endPage - maxVisiblePages + 1);
+            }
+
+            if (startPage > 1) {
+                html += `<button onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) html += `<span style="padding: 0 5px;">...</span>`;
+            }
+
+            for (let i = startPage; i <= endPage; i++) {
+                html += `<button class="${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+            }
+
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) html += `<span style="padding: 0 5px;">...</span>`;
+                html += `<button onclick="goToPage(${totalPages})">${totalPages}</button>`;
+            }
+
+            pagination.innerHTML = html;
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderMatches();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function filterMatches() {
+            currentPage = 1;
+            loadMatches();
+        }
+
+        function refreshMatches() {
+            loadMatches();
+        }
+
+        async function showUserDetail(userId) {
+            try {
+                const details = await getMatchDetails(currentUser.id, userId);
+                const { user, score, reasons, userType } = details;
+
+                const modalTitle = document.getElementById('modalTitle');
+                const modalBody = document.getElementById('modalBody');
+
+                modalTitle.textContent = details.targetProfile.name || '匿名用户';
+
+                const card = formatMatchCard(details);
+
+                let contactSection = '';
+                if (userType === 'normal' || userType === 'agency_public') {
+                    contactSection = `
+                        <div style="margin-top: 20px; display: flex; gap: 10px;">
+                            <button class="btn btn-primary like-btn" onclick="likeUser('${userId}')"><span>💕</span> 点赞</button>
+                            <button class="btn btn-secondary message-btn" onclick="sendMessage('${userId}')"><span>💬</span> 私信</button>
+                            <button class="btn btn-danger" onclick="blockUser('${userId}')"><span>🚫</span> 加入黑名单</button>
+                        </div>
+                    `;
+                } else {
+                    contactSection = `
+                        <div style="margin-top: 20px;">
+                            <div class="alert alert-warning">该用户由中介录入，需要通过中介联系</div>
+                            <button class="btn btn-warning agency-btn" onclick="requestAgencyContact('${userId}')"><span>🏢</span> 联系中介</button>
+                            <button class="btn btn-danger" onclick="blockUser('${userId}')"><span>🚫</span> 加入黑名单</button>
+                        </div>
+                    `;
+                }
+
+                modalBody.innerHTML = `
+                    <div style="display: flex; gap: 20px;">
+                        <div style="width: 200px;">
+                            <img src="${card.displayInfo.avatar}" style="width: 100%; border-radius: 8px;" onerror="this.src='https://via.placeholder.com/200?text=无头像'">
+                            ${user.photos?.slice(1, 4).map(p => `<img src="${p}" style="width: 60px; height: 60px; border-radius: 4px; margin-top: 5px;">`).join('')}
+                        </div>
+                        <div style="flex: 1;">
+                            <div style="margin-bottom: 15px;">
+                                <span style="font-size: 24px; font-weight: bold;">${card.displayInfo.name}</span>
+                                ${card.badge}
+                            </div>
+                            <p><strong>年龄：</strong>${details.targetProfile.age || '未填写'}岁</p>
+                            <p><strong>身高：</strong>${details.targetProfile.height || '未填写'}cm</p>
+                            <p><strong>学历：</strong>${details.targetProfile.education || '未填写'}</p>
+                            <p><strong>职业：</strong>${user.occupation || '未填写'}</p>
+                            <p><strong>收入：</strong>${details.targetProfile.income || '未填写'}</p>
+                            <p><strong>婚姻状况：</strong>${details.targetProfile.maritalStatus || '未填写'}</p>
+                            <p><strong>所在地：</strong>${user.province || ''} ${user.city || ''}</p>
+                            <p><strong>微信：</strong>${user.wechat_visible ? user.wechat || '未填写' : '未公开'}</p>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                        <h4 style="margin-bottom: 10px;">匹配分析</h4>
+                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                                <div style="font-size: 28px; font-weight: bold; color: #e74c3c;">${score}%</div>
+                                <div style="font-size: 12px; color: #888;">综合匹配度</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                                <div style="font-size: 28px; font-weight: bold; color: #27ae60;">${details.aToB.score}%</div>
+                                <div style="font-size: 12px; color: #888;">您满足对方</div>
+                            </div>
+                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
+                                <div style="font-size: 28px; font-weight: bold; color: #3498db;">${details.bToA.score}%</div>
+                                <div style="font-size: 12px; color: #888;">对方满足您</div>
+                            </div>
+                        </div>
+                        ${details.interestBonus > 0 ? `<p style="color: #27ae60; font-size: 13px;">✓ 兴趣标签加成：+${details.interestBonus}分</p>` : ''}
+                        ${details.activityBonus > 0 ? `<p style="color: #27ae60; font-size: 13px;">✓ 线下活动契合度加成：+${details.activityBonus}分</p>` : ''}
+                        ${reasons.length > 0 ? `
+                            <div style="margin-top: 10px;">
+                                <p><strong>匹配亮点：</strong></p>
+                                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
+                                    ${reasons.map(r => `<span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 15px; font-size: 12px;">${r}</span>`).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    ${details.targetProfile.interests && details.targetProfile.interests.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <strong>兴趣爱好：</strong>
+                            <div class="match-tags">
+                                ${details.targetProfile.interests.map(i => `<span class="tag">${i}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${details.targetProfile.activities && details.targetProfile.activities.length > 0 ? `
+                        <div style="margin-top: 15px;">
+                            <strong>喜欢的活动：</strong>
+                            <div class="match-tags">
+                                ${details.targetProfile.activities.map(a => `<span class="tag tag-info">${a}</span>`).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <p style="margin-top: 15px;"><strong>婚恋宣言：</strong></p>
+                    <p style="color: #666;">${card.displayInfo.declaration || '暂无描述'}</p>
+
+                    ${contactSection}
+                `;
+
+                document.getElementById('userDetailModal').classList.remove('hidden');
+            } catch (error) {
+                console.error('获取用户详情失败:', error);
+                showAlert('获取用户详情失败', 'error');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('userDetailModal').classList.add('hidden');
+        }
+
+        async function likeUser(targetId) {
+            const supabase = getSupabase();
+
+            const { data: existing } = await supabase
+                .from('likes')
+                .select('id')
+                .eq('from_user_id', currentUser.id)
+                .eq('to_user_id', targetId)
+                .single();
+
+            if (existing) {
+                showAlert('您已经点赞过该用户', 'info');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('likes')
+                .insert([{
+                    from_user_id: currentUser.id,
+                    to_user_id: targetId
+                }]);
+
+            if (error) {
+                showAlert('点赞失败', 'error');
+            } else {
+                showAlert('点赞成功', 'success');
+            }
+        }
+
+        async function sendMessage(targetId) {
+            const supabase = getSupabase();
+
+            const { data: targetPrivacy } = await supabase
+                .from('user_privacy')
+                .select('contact_visibility')
+                .eq('user_id', targetId)
+                .single();
+
+            if (targetPrivacy?.contact_visibility === 'agency_only') {
+                showAlert('该用户仅通过中介联系，请点击"联系中介"', 'info');
+                return;
+            }
+
+            window.location.href = `messages.html?to=${targetId}`;
+        }
+
+        async function requestAgencyContact(targetId) {
+            const supabase = getSupabase();
+
+            const { data: target } = await supabase
+                .from('users')
+                .select('id, agency_id')
+                .eq('id', targetId)
+                .single();
+
+            if (!target || !target.agency_id) {
+                showAlert('无法获取中介信息', 'error');
+                return;
+            }
+
+            const { error } = await supabase
+                .from('agency_requests')
+                .insert([{
+                    from_user_id: currentUser.id,
+                    to_user_id: targetId,
+                    agency_id: target.agency_id,
+                    status: 'pending'
+                }]);
+
+            if (error) {
+                showAlert('申请失败', 'error');
+            } else {
+                showAlert('已提交申请，中介将尽快联系您', 'success');
+                closeModal();
+            }
+        }
+
+        async function blockUser(targetId) {
+            const supabase = getSupabase();
+
+            const { error } = await supabase
+                .from('blacklist')
+                .insert([{
+                    user_id: currentUser.id,
+                    blocked_user_id: targetId
+                }]);
+
+            if (error) {
+                showAlert('操作失败', 'error');
+            } else {
+                showAlert('已加入黑名单', 'success');
+                closeModal();
+                refreshMatches();
+            }
+        }
+
+        function logout() {
+            clearCurrentUser();
+            window.location.href = 'index.html';
+        }
+
+        initProvinceFilter();
+        loadMatches();
+    </script>
+
+    <style>
+        .match-card {
+            display: flex;
+            align-items: flex-start;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .match-card:hover {
+            background: #f8f9fa;
+        }
+        .match-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 15px;
+        }
+        .match-info {
+            flex: 1;
+        }
+        .match-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .match-meta {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .match-education {
+            color: #888;
+            font-size: 13px;
+            margin-bottom: 5px;
+        }
+        .match-declaration {
+            color: #999;
+            font-size: 13px;
+            font-style: italic;
+            margin: 5px 0;
+        }
+        .match-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .tag {
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #e9ecef;
+            color: #495057;
+        }
+        .tag-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .tag-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .match-score-container {
+            text-align: center;
+            margin: 0 15px;
+        }
+        .match-score {
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .score-excellent { color: #e74c3c; }
+        .score-good { color: #f39c12; }
+        .score-normal { color: #95a5a6; }
+        .match-score-label {
+            font-size: 12px;
+            color: #888;
+        }
+        .match-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .badge {
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            margin-left: 8px;
+        }
+        .badge-info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        .badge-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</body>
+</html>

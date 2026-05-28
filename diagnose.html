@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统诊断</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .info { background-color: #d1ecf1; color: #0c5460; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>系统诊断工具</h1>
+    
+    <button onclick="checkSupabase()">检查 Supabase 连接</button>
+    <button onclick="checkTables()">检查数据表</button>
+    <button onclick="testAdminLogin()">测试管理员登录</button>
+    <button onclick="testAgencyLogin()">测试中介登录</button>
+    <button onclick="testUserLogin()">测试用户登录</button>
+    
+    <div id="results"></div>
+    
+    <script>
+        function addResult(message, type) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+        
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+        
+        async function checkSupabase() {
+            clearResults();
+            try {
+                const client = getSupabase();
+                if (!client) {
+                    addResult('❌ Supabase 客户端未初始化', 'error');
+                    return;
+                }
+                addResult('✅ Supabase 客户端已初始化', 'success');
+                
+                const { data, error } = await client.from('users').select('id').limit(1);
+                if (error) {
+                    addResult(`❌ 数据库查询失败: ${error.message}`, 'error');
+                } else {
+                    addResult('✅ 数据库连接正常', 'success');
+                }
+            } catch (e) {
+                addResult(`❌ 错误: ${e.message}`, 'error');
+            }
+        }
+        
+        async function checkTables() {
+            clearResults();
+            const tables = ['users', 'agencies', 'admins'];
+            const client = getSupabase();
+            
+            for (const table of tables) {
+                try {
+                    const { data, error, count } = await client.from(table).select('*', { count: 'exact' }).limit(0);
+                    if (error) {
+                        addResult(`❌ 表 ${table} 不存在或无法访问: ${error.message}`, 'error');
+                    } else {
+                        addResult(`✅ 表 ${table} 存在`, 'success');
+                    }
+                } catch (e) {
+                    addResult(`❌ 表 ${table} 检查失败: ${e.message}`, 'error');
+                }
+            }
+        }
+        
+        async function testAdminLogin() {
+            clearResults();
+            try {
+                const user = await adminSignIn('admin', 'admin123');
+                addResult(`✅ 管理员登录成功: ${JSON.stringify(user)}`, 'success');
+            } catch (e) {
+                addResult(`❌ 管理员登录失败: ${e.message}`, 'error');
+            }
+        }
+        
+        async function testAgencyLogin() {
+            clearResults();
+            try {
+                const user = await agencySignIn('agency', 'agency123');
+                addResult(`✅ 中介登录成功: ${JSON.stringify(user)}`, 'success');
+            } catch (e) {
+                addResult(`❌ 中介登录失败: ${e.message}`, 'error');
+            }
+        }
+        
+        async function testUserLogin() {
+            clearResults();
+            try {
+                const user = await signIn('13812345678', '123456');
+                addResult(`✅ 用户登录成功: ${JSON.stringify(user)}`, 'success');
+            } catch (e) {
+                addResult(`❌ 用户登录失败: ${e.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

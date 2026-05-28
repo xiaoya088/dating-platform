@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 私信</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <ul class="navbar-nav">
+            <li><a href="match.html">匹配推荐</a></li>
+            <li><a href="messages.html" class="active">私信</a></li>
+            <li><a href="activities.html">线下活动</a></li>
+            <li><a href="profile.html">个人资料</a></li>
+            <li><a href="#" onclick="logout()">退出</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <div class="card">
+            <div class="card-header">私信</div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="list">消息列表</button>
+                <button class="tab-btn" data-tab="chat">聊天</button>
+            </div>
+            
+            <div id="listTab" class="tab-content active">
+                <div id="messageList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="chatTab" class="tab-content hidden">
+                <div id="chatHeader" style="display: flex; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <img id="chatAvatar" class="match-avatar" style="width: 50px; height: 50px;" src="">
+                    <div>
+                        <div id="chatName" style="font-weight: 600;"></div>
+                        <div id="chatMeta" style="color: #888; font-size: 14px;"></div>
+                    </div>
+                    <button class="btn btn-secondary btn-small" onclick="backToList()">返回列表</button>
+                </div>
+                
+                <div id="chatMessages" style="height: 400px; overflow-y: auto; border: 1px solid #e1e5eb; border-radius: 8px; padding: 15px; background: #f8f9fa;"></div>
+                
+                <div style="margin-top: 15px; display: flex; gap: 10px;">
+                    <input type="text" id="messageInput" placeholder="输入消息..." style="flex: 1;">
+                    <button class="btn btn-primary" onclick="sendChatMessage()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="alertBox" class="hidden"></div>
+    
+    <script>
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+        
+        let currentChatUserId = null;
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+            });
+        });
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden');
+            
+            setTimeout(() => {
+                alertBox.classList.add('hidden');
+            }, 3000);
+        }
+        
+        async function loadMessageList() {
+            const supabase = getSupabase();
+            
+            const { data: messages } = await supabase
+                .from('messages')
+                .select('*')
+                .or(`from_user_id.eq.${currentUser.id},to_user_id.eq.${currentUser.id}`)
+                .order('created_at', { ascending: false });
+            
+            if (!messages || messages.length === 0) {
+                document.getElementById('messageList').innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无私信记录</p>';
+                return;
+            }
+            
+            const userIds = new Set();
+            messages.forEach(m => {
+                if (m.from_user_id !== currentUser.id) userIds.add(m.from_user_id);
+                if (m.to_user_id !== currentUser.id) userIds.add(m.to_user_id);
+            });
+            
+            const { data: users } = await supabase
+                .from('users')
+                .select('id, name, photos, province, city')
+                .in('id', Array.from(userIds));
+            
+            const userMap = {};
+            users?.forEach(u => userMap[u.id] = u);
+            
+            const conversations = {};
+            messages.forEach(m => {
+                const otherId = m.from_user_id === currentUser.id ? m.to_user_id : m.from_user_id;
+                if (!conversations[otherId]) {
+                    conversations[otherId] = {
+                        user: userMap[otherId],
+                        lastMessage: m,
+                        unreadCount: 0
+                    };
+                }
+                
+                if (m.to_user_id === currentUser.id && !m.is_read) {
+                    conversations[otherId].unreadCount++;
+                }
+            });
+            
+            const convList = Object.values(conversations).sort((a, b) => 
+                new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
+            );
+            
+            document.getElementById('messageList').innerHTML = convList.map(conv => `
+                <div class="message-item" onclick="openChat('${conv.user?.id || conv.lastMessage.from_user_id}')">
+                    <img class="message-avatar" src="${conv.user?.photos?.[0] || 'https://via.placeholder.com/40'}">
+                    <div class="message-content">
+                        <div style="font-weight: 600;">${conv.user?.name || '匿名用户'}</div>
+                        <div style="color: #888; font-size: 14px; margin-top: 5px;">${conv.lastMessage.content?.substring(0, 50) || '[图片]'}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div class="message-time">${formatTime(conv.lastMessage.created_at)}</div>
+                        ${conv.unreadCount > 0 ? `<span class="unread-badge">${conv.unreadCount}</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return '刚刚';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+            return date.toLocaleDateString();
+        }
+        
+        async function openChat(userId) {
+            const supabase = getSupabase();
+            currentChatUserId = userId;
+            
+            const { data: user } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            
+            if (user) {
+                document.getElementById('chatAvatar').src = user.photos?.[0] || 'https://via.placeholder.com/50';
+                document.getElementById('chatName').textContent = user.name || '匿名用户';
+                document.getElementById('chatMeta').textContent = `${user.province || ''} ${user.city || ''}`;
+            }
+            
+            await loadChatMessages();
+            
+            document.querySelector('[data-tab="list"]').classList.remove('active');
+            document.querySelector('[data-tab="chat"]').classList.add('active');
+            document.getElementById('listTab').classList.add('hidden');
+            document.getElementById('chatTab').classList.remove('hidden');
+            
+            await supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq('from_user_id', userId)
+                .eq('to_user_id', currentUser.id)
+                .eq('is_read', false);
+        }
+        
+        async function loadChatMessages() {
+            const supabase = getSupabase();
+            
+            const { data: messages } = await supabase
+                .from('messages')
+                .select('*')
+                .or(`and(from_user_id.eq.${currentUser.id},to_user_id.eq.${currentChatUserId}),and(from_user_id.eq.${currentChatUserId},to_user_id.eq.${currentUser.id}))`)
+                .order('created_at', { ascending: true });
+            
+            const chatMessages = document.getElementById('chatMessages');
+            
+            if (!messages || messages.length === 0) {
+                chatMessages.innerHTML = '<p style="text-align: center; color: #888;">暂无消息</p>';
+                return;
+            }
+            
+            chatMessages.innerHTML = messages.map(m => {
+                const isMine = m.from_user_id === currentUser.id;
+                return `
+                    <div style="display: flex; justify-content: ${isMine ? 'flex-end' : 'flex-start'}; margin-bottom: 10px;">
+                        <div style="max-width: 70%; padding: 10px 15px; border-radius: 8px; background: ${isMine ? '#667eea' : '#e1e5eb'}; color: ${isMine ? 'white' : '#333'};">
+                            ${m.content || `<img src="${m.image_url}" style="max-width: 100%;">`}
+                            <div style="font-size: 12px; color: ${isMine ? 'rgba(255,255,255,0.7)' : '#888'}; margin-top: 5px;">${formatTime(m.created_at)}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+        
+        async function sendChatMessage() {
+            const content = document.getElementById('messageInput').value.trim();
+            
+            if (!content) {
+                showAlert('请输入消息内容', 'error');
+                return;
+            }
+            
+            const supabase = getSupabase();
+            
+            const { error } = await supabase
+                .from('messages')
+                .insert([{
+                    from_user_id: currentUser.id,
+                    to_user_id: currentChatUserId,
+                    content: content
+                }]);
+            
+            if (error) {
+                showAlert('发送失败', 'error');
+            } else {
+                document.getElementById('messageInput').value = '';
+                await loadChatMessages();
+            }
+        }
+        
+        function backToList() {
+            document.querySelector('[data-tab="chat"]').classList.remove('active');
+            document.querySelector('[data-tab="list"]').classList.add('active');
+            document.getElementById('chatTab').classList.add('hidden');
+            document.getElementById('listTab').classList.remove('hidden');
+            
+            loadMessageList();
+        }
+        
+        const params = new URLSearchParams(window.location.search);
+        const toUserId = params.get('to');
+        
+        if (toUserId) {
+            openChat(toUserId);
+        } else {
+            loadMessageList();
+        }
+    </script>
+</body>
+</html>

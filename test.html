@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录测试</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <h2>登录测试</h2>
+    <button onclick="testConnection()">测试数据库连接</button>
+    <button onclick="testAdminLogin()">测试管理员登录</button>
+    <div id="result"></div>
+
+    <script>
+        async function testConnection() {
+            const result = document.getElementById('result');
+            try {
+                console.log('1. 检查 supabase 对象:', typeof supabase);
+                const client = ensureSupabase();
+                console.log('2. Supabase 客户端:', client);
+                
+                const { data, error } = await client.from('admins').select('*');
+                console.log('3. 查询结果:', data, error);
+                
+                if (error) {
+                    result.innerHTML = `<p style="color:red">连接失败: ${error.message}</p>`;
+                } else {
+                    result.innerHTML = `<p style="color:green">连接成功！管理员数量: ${data.length}</p>`;
+                    console.log('管理员列表:', data);
+                }
+            } catch (e) {
+                console.error('测试错误:', e);
+                result.innerHTML = `<p style="color:red">错误: ${e.message}</p>`;
+            }
+        }
+
+        async function testAdminLogin() {
+            const result = document.getElementById('result');
+            try {
+                const admin = await adminSignIn('admin', 'admin123');
+                console.log('登录成功:', admin);
+                result.innerHTML = `<p style="color:green">登录成功！管理员信息: ${JSON.stringify(admin)}</p>`;
+            } catch (e) {
+                console.error('登录失败:', e);
+                result.innerHTML = `<p style="color:red">登录失败: ${e.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 线下活动</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/supabase.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <ul class="navbar-nav">
+            <li><a href="match.html">匹配推荐</a></li>
+            <li><a href="messages.html">私信</a></li>
+            <li><a href="activities.html" class="active">线下活动</a></li>
+            <li><a href="profile.html">个人资料</a></li>
+            <li><a href="#" onclick="logout()">退出</a></li>
+        </ul>
+    </nav>
+    
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="available">可报名活动</button>
+            <button class="tab-btn" data-tab="registered">已报名活动</button>
+        </div>
+        
+        <div id="availableTab" class="tab-content active">
+            <div id="activityList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="registeredTab" class="tab-content hidden">
+            <div id="registeredList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="activityDetailModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span id="modalTitle">活动详情</span>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <div id="alertBox" class="hidden"></div>
+    
+    <script>
+        const currentUser = getCurrentUser();
+        if (!currentUser) {
+            window.location.href = 'index.html';
+        }
+        
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                this.classList.add('active');
+                document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+                
+                if (this.dataset.tab === 'registered') {
+                    loadRegisteredActivities();
+                }
+            });
+        });
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type}`;
+            alertBox.textContent = message;
+            alertBox.classList.remove('hidden');
+            
+            setTimeout(() => {
+                alertBox.classList.add('hidden');
+            }, 3000);
+        }
+        
+        async function loadActivities() {
+            const supabase = getSupabase();
+            
+            const { data: activities } = await supabase
+                .from('activities')
+                .select('*')
+                .eq('status', 'active')
+                .gte('deadline', new Date().toISOString())
+                .order('activity_time', { ascending: true });
+            
+            const { data: registered } = await supabase
+                .from('activity_registrations')
+                .select('activity_id')
+                .eq('user_id', currentUser.id);
+            
+            const registeredIds = registered?.map(r => r.activity_id) || [];
+            
+            const activityList = document.getElementById('activityList');
+            
+            if (!activities || activities.length === 0) {
+                activityList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无可报名活动</p>';
+                return;
+            }
+            
+            activityList.innerHTML = activities.map(activity => {
+                const isRegistered = registeredIds.includes(activity.id);
+                const remaining = activity.max_participants - activity.current_participants;
+                
+                return `
+                    <div class="activity-card">
+                        <div class="activity-title">${activity.title}</div>
+                        <div class="activity-meta">
+                            📅 ${new Date(activity.activity_time).toLocaleString()} | 📍 ${activity.location} | 👥 剩余名额: ${remaining}
+                        </div>
+                        <div class="activity-description">${activity.description || '暂无详细描述'}</div>
+                        <div class="activity-footer">
+                            <div>
+                                报名截止: ${new Date(activity.deadline).toLocaleString()}
+                            </div>
+                            <div>
+                                ${isRegistered 
+                                    ? '<span class="badge badge-success">已报名</span>'
+                                    : remaining > 0 
+                                        ? `<button class="btn btn-primary btn-small" onclick="registerActivity('${activity.id}')">报名</button>`
+                                        : '<span class="badge badge-warning">已满</span>'
+                                }
+                                <button class="btn btn-secondary btn-small" onclick="showActivityDetail('${activity.id}')">详情</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function loadRegisteredActivities() {
+            const supabase = getSupabase();
+            
+            const { data: registrations } = await supabase
+                .from('activity_registrations')
+                .select('activity_id, registered_at, activities(*)')
+                .eq('user_id', currentUser.id)
+                .order('registered_at', { ascending: false });
+            
+            const registeredList = document.getElementById('registeredList');
+            
+            if (!registrations || registrations.length === 0) {
+                registeredList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无已报名活动</p>';
+                return;
+            }
+            
+            registeredList.innerHTML = registrations.map(reg => {
+                const activity = reg.activities;
+                return `
+                    <div class="activity-card">
+                        <div class="activity-title">${activity?.title || '活动已取消'}</div>
+                        <div class="activity-meta">
+                            📅 ${activity ? new Date(activity.activity_time).toLocaleString() : '-'} | 📍 ${activity?.location || '-'}
+                        </div>
+                        <div class="activity-footer">
+                            <div>
+                                报名时间: ${new Date(reg.registered_at).toLocaleString()}
+                            </div>
+                            <div>
+                                ${activity?.status === 'active' 
+                                    ? `<button class="btn btn-danger btn-small" onclick="cancelRegistration('${activity.id}')">取消报名</button>`
+                                    : '<span class="badge badge-danger">已取消</span>'
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        async function showActivityDetail(activityId) {
+            const supabase = getSupabase();
+            
+            const { data: activity } = await supabase
+                .from('activities')
+                .select('*')
+                .eq('id', activityId)
+                .single();
+            
+            if (!activity) return;
+            
+            document.getElementById('modalTitle').textContent = activity.title;
+            document.getElementById('modalBody').innerHTML = `
+                <div style="margin-bottom: 20px;">
+                    <p><strong>活动时间：</strong>${new Date(activity.activity_time).toLocaleString()}</p>
+                    <p><strong>活动地点：</strong>${activity.location}</p>
+                    <p><strong>报名人数：</strong>${activity.current_participants}/${activity.max_participants}</p>
+                    <p><strong>报名截止：</strong>${new Date(activity.deadline).toLocaleString()}</p>
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <strong>活动详情：</strong>
+                    <p style="color: #666; margin-top: 10px;">${activity.description || '暂无详细描述'}</p>
+                </div>
+            `;
+            
+            document.getElementById('activityDetailModal').classList.remove('hidden');
+        }
+        
+        function closeModal() {
+            document.getElementById('activityDetailModal').classList.add('hidden');
+        }
+        
+        async function registerActivity(activityId) {
+            const supabase = getSupabase();
+            
+            const { data: existing } = await supabase
+                .from('activity_registrations')
+                .select('id')
+                .eq('activity_id', activityId)
+                .eq('user_id', currentUser.id)
+                .single();
+            
+            if (existing) {
+                showAlert('您已报名该活动', 'info');
+                return;
+            }
+            
+            const { data: activity } = await supabase
+                .from('activities')
+                .select('current_participants, max_participants')
+                .eq('id', activityId)
+                .single();
+            
+            if (activity.current_participants >= activity.max_participants) {
+                showAlert('活动名额已满', 'error');
+                return;
+            }
+            
+            const { error: regError } = await supabase
+                .from('activity_registrations')
+                .insert([{
+                    activity_id: activityId,
+                    user_id: currentUser.id
+                }]);
+            
+            if (regError) {
+                showAlert('报名失败', 'error');
+                return;
+            }
+            
+            await supabase
+                .from('activities')
+                .update({ current_participants: activity.current_participants + 1 })
+                .eq('id', activityId);
+            
+            showAlert('报名成功', 'success');
+            loadActivities();
+        }
+        
+        async function cancelRegistration(activityId) {
+            const supabase = getSupabase();
+            
+            const { error: deleteError } = await supabase
+                .from('activity_registrations')
+                .delete()
+                .eq('activity_id', activityId)
+                .eq('user_id', currentUser.id);
+            
+            if (deleteError) {
+                showAlert('取消失败', 'error');
+                return;
+            }
+            
+            const { data: activity } = await supabase
+                .from('activities')
+                .select('current_participants')
+                .eq('id', activityId)
+                .single();
+            
+            if (activity) {
+                await supabase
+                    .from('activities')
+                    .update({ current_participants: activity.current_participants - 1 })
+                    .eq('id', activityId);
+            }
+            
+            showAlert('已取消报名', 'success');
+            loadRegisteredActivities();
+            loadActivities();
+        }
+        
+        loadActivities();
+    </script>
+</body>
+</html>
