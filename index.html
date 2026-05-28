@@ -94,11 +94,14 @@
                     if (!saved) {
                         throw new Error('用户信息保存失败');
                     }
-                        console.log('已设置当前用户到 localStorage');
-                        
+                        const userDataStr = JSON.stringify({ ...user, role: 'user' });
+                        const encodedData = encodeURIComponent(userDataStr);
+                        console.log('用户数据已编码，长度:', encodedData.length);
+
                         showAlert('登录成功', 'success');
                         setTimeout(() => {
-                            window.location.href = user.name ? 'match.html' : 'profile.html';
+                            alert("即将跳转到首页...");
+                            window.location.href = (user.name ? 'match.html' : 'profile.html') + '?user=' + encodedData;
                         }, 2000);
                         return;
                     } catch (e) {
@@ -110,18 +113,15 @@
                 try {
                     user = await agencySignIn(account, password);
                     console.log('中介登录成功，用户数据:', user);
-                    
-                    localStorage.setItem('currentUser', JSON.stringify({ ...user, role: 'agency' }));
-                    const saved = localStorage.getItem('currentUser');
-                    console.log('保存后验证:', saved ? '成功' : '失败');
-                    if (!saved) {
-                        throw new Error('用户信息保存失败');
-                    }
-                    console.log('已设置当前用户到 localStorage');
-                    
+
+                    const userDataStr = JSON.stringify({ ...user, role: 'agency' });
+                    const encodedData = encodeURIComponent(userDataStr);
+                    console.log('用户数据已编码，长度:', encodedData.length);
+
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
-                        window.location.href = 'agency.html';
+                        alert("即将跳转到中介后台...");
+                        window.location.href = 'agency.html?user=' + encodedData;
                     }, 2000);
                     return;
                 } catch (e) {
