@@ -133,19 +133,26 @@ function getCurrentUser() {
 
 function setCurrentUser(user) {
     try {
-        const userStr = JSON.stringify(user);
-        localStorage.setItem('currentUser', userStr);
-        console.log('setCurrentUser:', user);
+        console.log('setCurrentUser 开始, user:', JSON.stringify(user).substring(0, 100));
         
-        // 验证写入是否成功
+        const userStr = JSON.stringify(user);
+        console.log('JSON.stringify 成功, 长度:', userStr.length);
+        
+        localStorage.setItem('currentUser', userStr);
+        console.log('localStorage.setItem 成功');
+        
         const saved = localStorage.getItem('currentUser');
+        console.log('验证读取结果:', saved ? '成功' : '失败');
+        
         if (!saved) {
-            console.error('localStorage 写入失败');
+            console.error('localStorage 验证失败');
             return false;
         }
+        
+        console.log('setCurrentUser 完成');
         return true;
     } catch (e) {
-        console.error('setCurrentUser 错误:', e);
+        console.error('setCurrentUser 异常:', e.message);
         return false;
     }
 }
