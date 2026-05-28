@@ -328,7 +328,7 @@
     <script src="js/supabase.js"></script>
     <script src="js/match.js"></script>
     <script>
-        const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+        const currentUser = getCurrentUser();
         
         if (!currentUser || currentUser.role !== 'admin') {
             window.location.href = 'index.html';

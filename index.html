@@ -87,10 +87,16 @@
                     try {
                         user = await signIn(account, password);
                         setCurrentUser({ ...user, role: 'user' });
+                        
+                        const savedUser = getCurrentUser();
+                        if (!savedUser) {
+                            throw new Error('用户信息保存失败');
+                        }
+                        
                         showAlert('登录成功', 'success');
                         setTimeout(() => {
                             window.location.href = user.name ? 'match.html' : 'profile.html';
-                        }, 1000);
+                        }, 1500);
                         return;
                     } catch (e) {
                         lastError = e;
@@ -101,10 +107,16 @@
                 try {
                     user = await agencySignIn(account, password);
                     setCurrentUser({ ...user, role: 'agency' });
+                    
+                    const savedUser = getCurrentUser();
+                    if (!savedUser) {
+                        throw new Error('用户信息保存失败');
+                    }
+                    
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
                         window.location.href = 'agency.html';
-                    }, 1000);
+                    }, 1500);
                     return;
                 } catch (e) {
                     lastError = e;
@@ -114,10 +126,16 @@
                 try {
                     user = await adminSignIn(account, password);
                     setCurrentUser({ ...user, role: 'admin' });
+                    
+                    const savedUser = getCurrentUser();
+                    if (!savedUser) {
+                        throw new Error('用户信息保存失败');
+                    }
+                    
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
                         window.location.href = 'admin.html';
-                    }, 1000);
+                    }, 1500);
                     return;
                 } catch (e) {
                     lastError = e;
