@@ -498,69 +498,77 @@
                 return;
             }
             
-            const supabase = getSupabase();
+            const supabase = ensureSupabase();
             
-            const { data: existing } = await supabase
-                .from('users')
-                .select('id')
-                .eq('phone', phone)
-                .single();
-            
-            if (existing) {
-                showAlert('该手机号已存在', 'error');
-                return;
-            }
-            
-            const password = generatePassword();
-            
-            const { error } = await supabase
-                .from('users')
-                .insert([{
-                    name: name,
-                    phone: phone,
-                    password: password,
-                    gender: gender,
-                    birthday: birthday,
-                    height: parseInt(document.getElementById('clientHeight').value) || null,
-                    weight: parseInt(document.getElementById('clientWeight').value) || null,
-                    education: document.getElementById('clientEducation').value,
-                    occupation: document.getElementById('clientOccupation').value,
-                    income: document.getElementById('clientIncome').value,
-                    marital_status: document.getElementById('clientMaritalStatus').value,
-                    province: document.getElementById('clientProvince').value,
-                    city: document.getElementById('clientCity').value,
-                    district: document.getElementById('clientDistrict').value,
-                    street: document.getElementById('clientStreet').value,
-                    wechat: document.getElementById('clientWechat').value,
-                    declaration: document.getElementById('clientDeclaration').value,
-                    agency_id: currentUser.id,
-                    status: 'active'
-                }]);
-            
-            if (error) {
-                showAlert('录入失败：' + error.message, 'error');
-            } else {
-                showAlert(`录入成功！密码: ${password}`, 'success');
+            try {
+                const { data: existing, error: checkError } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('phone', phone)
+                    .single();
                 
-                document.getElementById('clientName').value = '';
-                document.getElementById('clientPhone').value = '';
-                document.getElementById('clientGender').value = '';
-                document.getElementById('clientBirthday').value = '';
-                document.getElementById('clientHeight').value = '';
-                document.getElementById('clientWeight').value = '';
-                document.getElementById('clientEducation').value = '';
-                document.getElementById('clientOccupation').value = '';
-                document.getElementById('clientIncome').value = '';
-                document.getElementById('clientMaritalStatus').value = '';
-                document.getElementById('clientProvince').value = '';
-                document.getElementById('clientCity').value = '';
-                document.getElementById('clientDistrict').value = '';
-                document.getElementById('clientStreet').value = '';
-                document.getElementById('clientWechat').value = '';
-                document.getElementById('clientDeclaration').value = '';
+                if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                    throw checkError;
+                }
                 
-                showTab('clients');
-                loadClients();
+                if (existing) {
+                    showAlert('该手机号已存在', 'error');
+                    return;
+                }
+                
+                const password = generatePassword();
+                
+                const { error } = await supabase
+                    .from('users')
+                    .insert([{
+                        name: name,
+                        phone: phone,
+                        password: password,
+                        gender: gender,
+                        birthday: birthday,
+                        height: parseInt(document.getElementById('clientHeight').value) || null,
+                        weight: parseInt(document.getElementById('clientWeight').value) || null,
+                        education: document.getElementById('clientEducation').value,
+                        occupation: document.getElementById('clientOccupation').value,
+                        income: document.getElementById('clientIncome').value,
+                        marital_status: document.getElementById('clientMaritalStatus').value,
+                        province: document.getElementById('clientProvince').value,
+                        city: document.getElementById('clientCity').value,
+                        district: document.getElementById('clientDistrict').value,
+                        street: document.getElementById('clientStreet').value,
+                        wechat: document.getElementById('clientWechat').value,
+                        declaration: document.getElementById('clientDeclaration').value,
+                        agency_id: currentUser.id,
+                        status: 'active'
+                    }]);
+                
+                if (error) {
+                    showAlert('录入失败：' + error.message, 'error');
+                } else {
+                    showAlert(`录入成功！密码: ${password}`, 'success');
+                    
+                    document.getElementById('clientName').value = '';
+                    document.getElementById('clientPhone').value = '';
+                    document.getElementById('clientGender').value = '';
+                    document.getElementById('clientBirthday').value = '';
+                    document.getElementById('clientHeight').value = '';
+                    document.getElementById('clientWeight').value = '';
+                    document.getElementById('clientEducation').value = '';
+                    document.getElementById('clientOccupation').value = '';
+                    document.getElementById('clientIncome').value = '';
+                    document.getElementById('clientMaritalStatus').value = '';
+                    document.getElementById('clientProvince').value = '';
+                    document.getElementById('clientCity').value = '';
+                    document.getElementById('clientDistrict').value = '';
+                    document.getElementById('clientStreet').value = '';
+                    document.getElementById('clientWechat').value = '';
+                    document.getElementById('clientDeclaration').value = '';
+                    
+                    showTab('clients');
+                    loadClients();
+                }
+            } catch (e) {
+                showAlert('录入失败：' + e.message, 'error');
             }
         }
         
