@@ -507,13 +507,20 @@
         }
 
         function updateNavLinks() {
+            console.log("updateNavLinks() 被调用");
+            console.log("currentUser:", currentUser);
             const links = document.querySelectorAll('a[href="profile.html"]');
+            console.log("找到的链接数量:", links.length);
             if (links.length > 0 && currentUser) {
                 const userDataStr = JSON.stringify(currentUser);
                 const encodedData = encodeURIComponent(userDataStr);
+                console.log("生成的链接:", "profile.html?user=" + encodedData.substring(0, 50) + "...");
                 links.forEach(link => {
                     link.href = 'profile.html?user=' + encodedData;
                 });
+                console.log("链接已更新");
+            } else {
+                console.log("未更新链接，原因:", !links.length ? "没有找到链接" : !currentUser ? "currentUser 为空" : "未知");
             }
         }
 

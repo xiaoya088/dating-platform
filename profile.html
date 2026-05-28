@@ -673,6 +673,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const encodedUser = urlParams.get('user');
 
+        console.log("profile.html 页面加载");
+        console.log("URL 参数 user:", encodedUser ? "存在" : "不存在");
+
         if (encodedUser) {
             console.log("从 URL 获取到用户数据");
             try {
@@ -684,9 +687,12 @@
             } catch (e) {
                 console.error("解码用户数据失败:", e);
             }
-        } else {
+        } 
+
+        if (!currentUser) {
             console.log("从 localStorage 获取用户数据");
             currentUser = getCurrentUser();
+            console.log("localStorage 中的用户数据:", currentUser);
         }
 
         if (!currentUser) {
@@ -757,7 +763,7 @@
             }
             
             try {
-                const supabase = getSupabase();
+                const supabase = ensureSupabase();
                 const { error } = await supabase
                     .from('users')
                     .update({
@@ -790,7 +796,7 @@
             }
             
             try {
-                const supabase = getSupabase();
+                const supabase = ensureSupabase();
                 const { error } = await supabase
                     .from('users')
                     .update({
@@ -1080,7 +1086,7 @@
         
         async function savePersonalityInfo() {
             try {
-                const supabase = getSupabase();
+                const supabase = ensureSupabase();
                 
                 const personalityValues = Array.from(document.querySelectorAll('#personalityList input:checked')).map(el => el.value);
                 const interestsValues = Array.from(document.querySelectorAll('#interestsList input:checked')).map(el => el.value);
@@ -1108,7 +1114,7 @@
         
         async function saveValuesInfo() {
             try {
-                const supabase = getSupabase();
+                const supabase = ensureSupabase();
                 const selfDescription = document.getElementById('selfDescription').value.trim();
                 
                 if (selfDescription.length > 500) {
@@ -1138,7 +1144,7 @@
         
         async function saveRequirements() {
             try {
-                const supabase = getSupabase();
+                const supabase = ensureSupabase();
                 
                 const educationValues = Array.from(document.querySelectorAll('#reqEducation input:checked')).map(el => el.value);
                 const maritalValues = Array.from(document.querySelectorAll('#reqMarital input:checked')).map(el => el.value);
