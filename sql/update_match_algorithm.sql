@@ -9,6 +9,15 @@ ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS marital_status_importance
 ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS province_importance VARCHAR(20) DEFAULT 'normal';
 ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS min_interest_overlap INTEGER DEFAULT 0;
 ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS min_activity_overlap INTEGER DEFAULT 0;
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS scheme_type VARCHAR(20) DEFAULT 'standard';
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS body_type VARCHAR(20);
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS smoking VARCHAR(20);
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS drinking VARCHAR(20);
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS personality TEXT[];
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS personality_importance VARCHAR(20) DEFAULT 'normal';
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS activities TEXT[];
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS values VARCHAR(20);
+ALTER TABLE user_requirements ADD COLUMN IF NOT EXISTS province VARCHAR(50);
 
 -- 为 users 表添加更多信息
 ALTER TABLE users ADD COLUMN IF NOT EXISTS personality TEXT[];

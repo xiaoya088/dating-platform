@@ -71,15 +71,44 @@ CREATE TABLE users (
 CREATE TABLE user_requirements (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    scheme_type VARCHAR(20) DEFAULT 'standard',
+    -- 年龄要求
     min_age INTEGER,
     max_age INTEGER,
+    age_importance VARCHAR(20) DEFAULT 'normal',
+    -- 身高要求
     min_height INTEGER,
     max_height INTEGER,
+    height_importance VARCHAR(20) DEFAULT 'normal',
+    -- 学历要求
     education TEXT[],
+    education_importance VARCHAR(20) DEFAULT 'normal',
+    -- 收入要求
     min_income VARCHAR(50),
     max_income VARCHAR(50),
+    income_importance VARCHAR(20) DEFAULT 'normal',
+    -- 婚姻状况要求
     marital_status TEXT[],
-    provinces TEXT[],
+    marital_importance VARCHAR(20) DEFAULT 'normal',
+    -- 地区要求
+    province VARCHAR(50),
+    province_importance VARCHAR(20) DEFAULT 'normal',
+    -- 体型要求
+    body_type VARCHAR(20),
+    -- 生活习惯要求
+    smoking VARCHAR(20),
+    drinking VARCHAR(20),
+    -- 性格偏好
+    personality TEXT[],
+    personality_importance VARCHAR(20) DEFAULT 'normal',
+    -- 兴趣重合要求
+    min_interest_overlap INTEGER DEFAULT 0,
+    -- 活动偏好
+    activities TEXT[],
+    min_activity_overlap INTEGER DEFAULT 0,
+    -- 价值观要求
+    values VARCHAR(20),
+    -- 房产车辆要求
     house_required VARCHAR(20),
     car_required VARCHAR(20),
     created_at TIMESTAMP DEFAULT NOW(),

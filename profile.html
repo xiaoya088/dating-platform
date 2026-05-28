@@ -594,9 +594,24 @@
                     </div>
                 </div>
                 
-                <div class="form-group">
-                    <label>兴趣重合度要求（最低几项）</label>
-                    <input type="number" id="reqMinInterestOverlap" placeholder="如: 2" value="2">
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>性格重要程度</label>
+                            <select id="personalityImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal" selected>一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>兴趣重合度要求（最低几项）</label>
+                            <input type="number" id="reqMinInterestOverlap" placeholder="如: 2" value="2">
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="form-group">
@@ -1158,9 +1173,9 @@
                     min_height: document.getElementById('reqMinHeight').value ? parseInt(document.getElementById('reqMinHeight').value) : null,
                     max_height: document.getElementById('reqMaxHeight').value ? parseInt(document.getElementById('reqMaxHeight').value) : null,
                     height_importance: document.getElementById('heightImportance').value,
-                    education: educationValues.length > 0 ? educationValues.join(',') : null,
+                    education: educationValues.length > 0 ? educationValues : null,
                     education_importance: document.getElementById('educationImportance').value,
-                    marital_status: maritalValues.length > 0 ? maritalValues.join(',') : null,
+                    marital_status: maritalValues.length > 0 ? maritalValues : null,
                     marital_importance: document.getElementById('maritalImportance').value,
                     province: document.getElementById('reqProvince').value.trim(),
                     province_importance: document.getElementById('provinceImportance').value,
@@ -1168,9 +1183,10 @@
                     min_income: document.getElementById('reqMinIncome').value ? parseInt(document.getElementById('reqMinIncome').value) : null,
                     smoking: document.getElementById('reqSmoking').value,
                     drinking: document.getElementById('reqDrinking').value,
-                    personality: personalityValues.length > 0 ? personalityValues.join(',') : null,
+                    personality: personalityValues.length > 0 ? personalityValues : null,
+                    personality_importance: document.getElementById('personalityImportance')?.value || 'normal',
                     min_interest_overlap: document.getElementById('reqMinInterestOverlap').value ? parseInt(document.getElementById('reqMinInterestOverlap').value) : null,
-                    activities: activityValues.length > 0 ? activityValues.join(',') : null,
+                    activities: activityValues.length > 0 ? activityValues : null,
                     min_activity_overlap: document.getElementById('reqMinActivityOverlap').value ? parseInt(document.getElementById('reqMinActivityOverlap').value) : null,
                     values: document.getElementById('reqValues').value,
                     scheme_type: currentSchemeType || 'standard',
