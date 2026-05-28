@@ -848,19 +848,28 @@
                 if (data.personality) {
                     data.personality.split(',').forEach(val => {
                         const el = document.querySelector(`#personalityList input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.parentElement.classList.add('selected');
+                        }
                     });
                 }
                 if (data.interests) {
                     data.interests.split(',').forEach(val => {
                         const el = document.querySelector(`#interestsList input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.parentElement.classList.add('selected');
+                        }
                     });
                 }
                 if (data.activity_types) {
                     data.activity_types.split(',').forEach(val => {
                         const el = document.querySelector(`#activityTypes input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.parentElement.classList.add('selected');
+                        }
                     });
                 }
                 document.getElementById('acceptPet').value = data.accept_pet || '';
@@ -1557,9 +1566,27 @@
             }
         }
 
+        // 初始化复选框点击事件
+        function initCheckboxEvents() {
+            document.querySelectorAll('.checkbox-item').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    const checkbox = this.querySelector('input[type="checkbox"]');
+                    if (checkbox) {
+                        checkbox.checked = !checkbox.checked;
+                        if (checkbox.checked) {
+                            this.classList.add('selected');
+                        } else {
+                            this.classList.remove('selected');
+                        }
+                    }
+                });
+            });
+        }
+
         if (currentUser) {
             loadUserData();
             loadAnnouncement();
+            initCheckboxEvents();
         }
     </script>
 </body>

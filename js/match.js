@@ -110,12 +110,24 @@ async function fetchUserData(userId) {
         console.warn('Error fetching requirements:', reqError);
     }
 
+    // 获取用户照片
+    const { data: photos, error: photosError } = await supabase
+        .from('user_photos')
+        .select('photo_url')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: true });
+
+    if (photosError) {
+        console.warn('Error fetching photos:', photosError);
+    }
+
     return {
         ...user,
         requirements: requirements || {},
         interests: user.interests ? user.interests.split(',').filter(Boolean) : [],
         activity_types: user.activity_types ? user.activity_types.split(',').filter(Boolean) : [],
-        personality: user.personality ? user.personality.split(',').filter(Boolean) : []
+        personality: user.personality ? user.personality.split(',').filter(Boolean) : [],
+        photos: photos ? photos.map(p => p.photo_url) : []
     };
 }
 
