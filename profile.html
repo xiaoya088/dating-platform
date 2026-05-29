@@ -49,7 +49,10 @@
     <nav class="navbar">
         <a href="match.html" class="back-link">← 返回</a>
         <span class="navbar-brand">💕 个人资料</span>
-        <a href="#" onclick="logout()" class="back-link">退出</a>
+        <div>
+            <a href="messages.html" class="back-link">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px;">0</span></a>
+            <a href="#" onclick="logout()" class="back-link">退出</a>
+        </div>
     </nav>
     
     <div class="container">
@@ -713,6 +716,10 @@
         if (!currentUser) {
             console.log('用户未登录，重定向到登录页');
             window.location.href = 'index.html';
+        } else {
+            if (typeof initMessageNotification === 'function') {
+                initMessageNotification(currentUser.id);
+            }
         }
         
         document.querySelectorAll('.tab-btn').forEach(btn => {

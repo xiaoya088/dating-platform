@@ -648,7 +648,9 @@ if (typeof module !== 'undefined' && module.exports) {
         getMatchDetails,
         formatMatchCard,
         fetchUserData,
-        calculateAge
+        calculateAge,
+        checkUnreadMessages,
+        initMessageNotification
     };
 } else {
     window.findMatches = findMatches;
@@ -657,4 +659,98 @@ if (typeof module !== 'undefined' && module.exports) {
     window.formatMatchCard = formatMatchCard;
     window.fetchUserData = fetchUserData;
     window.calculateAge = calculateAge;
+    window.checkUnreadMessages = checkUnreadMessages;
+    window.initMessageNotification = initMessageNotification;
+}
+
+let notificationInterval = null;
+let lastCheckedTime = null;
+
+async function checkUnreadMessages(userId) {
+    const supabase = getSupabaseClient();
+    if (!supabase || !userId) return 0;
+    
+    try {
+        const { data, error } = await supabase
+            .from('messages')
+            .select('id, sender_id, created_at')
+            .eq('receiver_id', userId)
+            .eq('is_read', false);
+        
+        if (error) {
+            console.error('检查未读消息失败:', error);
+            return 0;
+        }
+        
+        const count = data?.length || 0;
+        updateMessageBadge(count);
+        
+        if (count > 0 && lastCheckedTime) {
+            const newMessages = data.filter(m => new Date(m.created_at) > lastCheckedTime);
+            if (newMessages.length > 0) {
+                showBrowserNotification('💕 新私信', `您有 ${count} 条未读私信`);
+            }
+        }
+        
+        lastCheckedTime = new Date();
+        return count;
+    } catch (e) {
+        console.error('检查未读消息异常:', e);
+        return 0;
+    }
+}
+
+function updateMessageBadge(count) {
+    const badge = document.getElementById('msgBadge');
+    if (!badge) return;
+    
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'inline';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function showBrowserNotification(title, body) {
+    if (!('Notification' in window)) {
+        console.log('浏览器不支持通知');
+        return;
+    }
+    
+    if (Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: '💕',
+            tag: 'hongniang-message'
+        });
+    } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: '💕',
+                    tag: 'hongniang-message'
+                });
+            }
+        });
+    }
+}
+
+function initMessageNotification(userId) {
+    if (!userId) return;
+    
+    if (notificationInterval) {
+        clearInterval(notificationInterval);
+    }
+    
+    checkUnreadMessages(userId);
+    
+    notificationInterval = setInterval(() => {
+        checkUnreadMessages(userId);
+    }, 30000);
+}
+
+if (typeof module === 'undefined') {
+    window.initMessageNotification = initMessageNotification;
 }
