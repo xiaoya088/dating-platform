@@ -867,7 +867,8 @@
                 document.getElementById('declaration').value = data.declaration || '';
                 
                 if (data.personality) {
-                    data.personality.split(',').forEach(val => {
+                    const personalityArray = Array.isArray(data.personality) ? data.personality : data.personality.split(',');
+                    personalityArray.forEach(val => {
                         const el = document.querySelector(`#personalityList input[value="${val}"]`);
                         if (el) {
                             el.checked = true;
@@ -876,7 +877,8 @@
                     });
                 }
                 if (data.interests) {
-                    data.interests.split(',').forEach(val => {
+                    const interestsArray = Array.isArray(data.interests) ? data.interests : data.interests.split(',');
+                    interestsArray.forEach(val => {
                         const el = document.querySelector(`#interestsList input[value="${val}"]`);
                         if (el) {
                             el.checked = true;
@@ -885,7 +887,8 @@
                     });
                 }
                 if (data.activity_types) {
-                    data.activity_types.split(',').forEach(val => {
+                    const activityTypesArray = Array.isArray(data.activity_types) ? data.activity_types : data.activity_types.split(',');
+                    activityTypesArray.forEach(val => {
                         const el = document.querySelector(`#activityTypes input[value="${val}"]`);
                         if (el) {
                             el.checked = true;
@@ -1260,31 +1263,54 @@
                 document.getElementById('reqMinActivityOverlap').value = requirements.min_activity_overlap || '1';
                 document.getElementById('reqValues').value = requirements.values || '';
                 
+                // 先清空所有复选框
+                document.querySelectorAll('#reqEducation input').forEach(el => el.checked = false);
+                document.querySelectorAll('#reqMarital input').forEach(el => el.checked = false);
+                document.querySelectorAll('#reqPersonality input').forEach(el => el.checked = false);
+                document.querySelectorAll('#reqActivities input').forEach(el => el.checked = false);
+                
+                // 加载选中值 - 处理数组类型
                 if (requirements.education) {
-                    requirements.education.split(',').forEach(val => {
+                    const educationArray = Array.isArray(requirements.education) ? requirements.education : requirements.education.split(',');
+                    educationArray.forEach(val => {
                         const el = document.querySelector(`#reqEducation input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.closest('.checkbox-item').classList.add('selected');
+                        }
                     });
                 }
                 
                 if (requirements.marital_status) {
-                    requirements.marital_status.split(',').forEach(val => {
+                    const maritalArray = Array.isArray(requirements.marital_status) ? requirements.marital_status : requirements.marital_status.split(',');
+                    maritalArray.forEach(val => {
                         const el = document.querySelector(`#reqMarital input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.closest('.checkbox-item').classList.add('selected');
+                        }
                     });
                 }
                 
                 if (requirements.personality) {
-                    requirements.personality.split(',').forEach(val => {
+                    const personalityArray = Array.isArray(requirements.personality) ? requirements.personality : requirements.personality.split(',');
+                    personalityArray.forEach(val => {
                         const el = document.querySelector(`#reqPersonality input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.closest('.checkbox-item').classList.add('selected');
+                        }
                     });
                 }
                 
                 if (requirements.activities) {
-                    requirements.activities.split(',').forEach(val => {
+                    const activitiesArray = Array.isArray(requirements.activities) ? requirements.activities : requirements.activities.split(',');
+                    activitiesArray.forEach(val => {
                         const el = document.querySelector(`#reqActivities input[value="${val}"]`);
-                        if (el) el.checked = true;
+                        if (el) {
+                            el.checked = true;
+                            el.closest('.checkbox-item').classList.add('selected');
+                        }
                     });
                 }
                 
@@ -1313,10 +1339,22 @@
             document.getElementById('reqMinActivityOverlap').value = '1';
             document.getElementById('reqValues').value = '';
             
-            document.querySelectorAll('#reqEducation input').forEach(el => el.checked = false);
-            document.querySelectorAll('#reqMarital input').forEach(el => el.checked = false);
-            document.querySelectorAll('#reqPersonality input').forEach(el => el.checked = false);
-            document.querySelectorAll('#reqActivities input').forEach(el => el.checked = false);
+            document.querySelectorAll('#reqEducation input').forEach(el => {
+                el.checked = false;
+                el.closest('.checkbox-item').classList.remove('selected');
+            });
+            document.querySelectorAll('#reqMarital input').forEach(el => {
+                el.checked = false;
+                el.closest('.checkbox-item').classList.remove('selected');
+            });
+            document.querySelectorAll('#reqPersonality input').forEach(el => {
+                el.checked = false;
+                el.closest('.checkbox-item').classList.remove('selected');
+            });
+            document.querySelectorAll('#reqActivities input').forEach(el => {
+                el.checked = false;
+                el.closest('.checkbox-item').classList.remove('selected');
+            });
         }
         
         async function saveCurrentScheme() {
@@ -1591,17 +1629,22 @@
         // 初始化复选框点击事件
         function initCheckboxEvents() {
             document.querySelectorAll('.checkbox-item').forEach(item => {
-                item.addEventListener('click', function(e) {
-                    const checkbox = this.querySelector('input[type="checkbox"]');
-                    if (checkbox) {
-                        checkbox.checked = !checkbox.checked;
-                        if (checkbox.checked) {
-                            this.classList.add('selected');
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    // 只监听复选框的 change 事件，让浏览器处理点击
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            item.classList.add('selected');
                         } else {
-                            this.classList.remove('selected');
+                            item.classList.remove('selected');
                         }
+                    });
+                    
+                    // 初始化选中状态的样式
+                    if (checkbox.checked) {
+                        item.classList.add('selected');
                     }
-                });
+                }
             });
         }
 

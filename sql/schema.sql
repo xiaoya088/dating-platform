@@ -38,6 +38,8 @@ CREATE TABLE users (
     city VARCHAR(50),
     district VARCHAR(50),
     street VARCHAR(50),
+    hukou VARCHAR(100),
+    current_address VARCHAR(200),
     wechat VARCHAR(50),
     wechat_visible BOOLEAN DEFAULT false,
     avatar_url TEXT,
@@ -61,6 +63,7 @@ CREATE TABLE users (
     -- 生活习惯字段
     smoking VARCHAR(20),
     drinking VARCHAR(20),
+    religion VARCHAR(50),
     -- 资产信息
     property VARCHAR(20),
     car VARCHAR(20),
