@@ -333,7 +333,8 @@ function applyInterestCorrection(baseScore, myInterests, targetRequirements) {
     let bonus = 0;
     const minOverlap = parseInt(targetRequirements.min_interest_overlap) || 2;
     
-    const commonInterests = myInterests.filter(i => targetRequirements.interests?.includes(i));
+    const targetInterests = targetRequirements.interests ? (Array.isArray(targetRequirements.interests) ? targetRequirements.interests : targetRequirements.interests.split(',').filter(Boolean)) : [];
+    const commonInterests = myInterests.filter(i => targetInterests.includes(i));
     const overlapCount = commonInterests.length;
     
     bonus = Math.min(overlapCount * 2, 10);
