@@ -46,19 +46,19 @@
     </style>
 </head>
 <body>
-    <nav class="navbar">
+    <nav class="navbar" style="flex-wrap: wrap;">
         <a href="match.html" class="back-link">← 返回</a>
         <span class="navbar-brand">💕 个人资料</span>
         <div>
             <a href="messages.html" class="back-link">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px;">0</span></a>
             <a href="#" onclick="logout()" class="back-link">退出</a>
         </div>
+        <div id="announcementBanner" class="announcement-banner" style="display: none; width: 100%; background: linear-gradient(135deg, #ff6b6b, #ff8e53); color: white; padding: 8px 15px; border-radius: 8px; margin: 8px 0 0 0; font-size: 14px; text-align: center;">
+            <strong>📢 公告：</strong><span id="announcementText"></span>
+        </div>
     </nav>
     
     <div class="container">
-        <div id="announcementBanner" class="announcement-banner" style="display: none; background: linear-gradient(135deg, #ff6b6b, #ff8e53); color: white; padding: 12px 15px; border-radius: 10px; margin-bottom: 15px; font-size: 14px;">
-            <strong>📢 公告：</strong><span id="announcementText"></span>
-        </div>
         
         <div class="tabs">
             <button class="tab-btn active" data-tab="basic">基本信息</button>
@@ -71,6 +71,7 @@
         </div>
         
         <div id="basicTab" class="tab-content active">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">基本信息 ★ 必填项</div>
                 
@@ -138,6 +139,7 @@
         </div>
         
         <div id="photosTab" class="tab-content">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">照片管理 ★ 必填项（最多9张）</div>
                 <div id="photoGrid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
@@ -146,6 +148,7 @@
         </div>
         
         <div id="appearanceTab" class="tab-content">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">外貌生活</div>
                 
@@ -262,6 +265,7 @@
         </div>
         
         <div id="personalityTab" class="tab-content">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">性格与兴趣</div>
                 
@@ -353,6 +357,7 @@
         </div>
         
         <div id="valuesTab" class="tab-content">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">婚恋价值观</div>
                 
@@ -405,6 +410,7 @@
         </div>
         
         <div id="requirementsTab" class="tab-content">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">择偶要求</div>
                 
@@ -656,6 +662,7 @@
         </div>
         
         <div id="matchStatusTab" class="tab-content">
+            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">匹配情况</div>
                 <div id="matchStats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;"></div>
