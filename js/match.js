@@ -756,26 +756,31 @@ async function saveMatchResult(userId, targetUserId, matchResult) {
     if (!supabase) return;
     
     try {
+        const data = {
+            user_id: userId,
+            target_user_id: targetUserId,
+            score: matchResult.score || 0,
+            a_to_b_score: matchResult.aToB?.score,
+            b_to_a_score: matchResult.bToA?.score,
+            reasons: matchResult.reasons || [],
+            common_interests: matchResult.commonInterests || [],
+            common_activities: matchResult.commonActivities || [],
+            calculated_at: new Date().toISOString(),
+            is_filtered: matchResult.filtered || false,
+            filter_reason: matchResult.filtered ? (matchResult.reasons?.[0] || null) : null
+        };
+        
         const { error } = await supabase
             .from('match_results')
-            .upsert({
-                user_id: userId,
-                target_user_id: targetUserId,
-                score: matchResult.score,
-                a_to_b_score: matchResult.aToB?.score,
-                b_to_a_score: matchResult.bToA?.score,
-                reasons: matchResult.reasons,
-                common_interests: matchResult.interestBonus ? matchResult.commonInterests : null,
-                common_activities: matchResult.activityBonus ? matchResult.commonActivities : null,
-                calculated_at: new Date().toISOString(),
-                is_filtered: matchResult.filtered || false,
-                filter_reason: matchResult.filtered ? matchResult.reasons?.[0] : null
-            }, {
-                onConflict: 'user_id,target_user_id'
+            .upsert(data, { 
+                onConflict: 'user_id,target_user_id',
+                ignoreDuplicates: false
             });
         
         if (error) {
             console.error('保存匹配结果失败:', error);
+        } else {
+            console.log('匹配结果已保存:', targetUserId, '分数:', data.score);
         }
     } catch (e) {
         console.error('保存匹配结果异常:', e);
@@ -789,16 +794,7 @@ async function getCachedMatches(userId) {
     try {
         const { data, error } = await supabase
             .from('match_results')
-            .select(`
-                *,
-                target_user:users!match_results_target_user_id_fkey(
-                    id, name, gender, birthday, height, education, occupation, income,
-                    marital_status, current_address, declaration, photos, avatar_url,
-                    personality, interests, activity_types, smoking, drinking,
-                    religion, accept_pet, schedule, property, car, wechat,
-                    agency_id, agency_name, agency_info_public
-                )
-            `)
+            .select('*')
             .eq('user_id', userId)
             .eq('is_filtered', false)
             .order('score', { ascending: false })
@@ -809,8 +805,29 @@ async function getCachedMatches(userId) {
             return [];
         }
         
-        return data?.map(row => ({
-            user: row.target_user,
+        if (!data || data.length === 0) {
+            console.log('没有找到缓存的匹配结果');
+            return [];
+        }
+        
+        const targetIds = data.map(m => m.target_user_id);
+        
+        const { data: users, error: usersError } = await supabase
+            .from('users')
+            .select('*')
+            .in('id', targetIds)
+            .eq('status', 'active');
+        
+        if (usersError) {
+            console.error('获取用户数据失败:', usersError);
+            return [];
+        }
+        
+        const userMap = {};
+        users?.forEach(u => userMap[u.id] = u);
+        
+        return data.map(row => ({
+            user: userMap[row.target_user_id],
             score: row.score,
             aToB: { score: row.a_to_b_score },
             bToA: { score: row.b_to_a_score },
@@ -818,10 +835,10 @@ async function getCachedMatches(userId) {
             commonInterests: row.common_interests,
             commonActivities: row.common_activities,
             calculatedAt: row.calculated_at,
-            userType: row.target_user?.agency_id ? 
-                (row.target_user.agency_info_public ? 'agency_public' : 'agency_private') : 
+            userType: userMap[row.target_user_id]?.agency_id ?
+                (userMap[row.target_user_id].agency_info_public ? 'agency_public' : 'agency_private') :
                 'normal'
-        })) || [];
+        })).filter(m => m.user);
     } catch (e) {
         console.error('获取缓存匹配异常:', e);
         return [];
