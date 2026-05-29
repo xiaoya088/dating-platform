@@ -121,12 +121,18 @@ async function fetchUserData(userId) {
         console.warn('Error fetching photos:', photosError);
     }
 
+    const toArray = (val) => {
+        if (!val) return [];
+        if (Array.isArray(val)) return val;
+        return val.split(',').filter(Boolean);
+    };
+    
     return {
         ...user,
         requirements: requirements || {},
-        interests: user.interests ? user.interests.split(',').filter(Boolean) : [],
-        activity_types: user.activity_types ? user.activity_types.split(',').filter(Boolean) : [],
-        personality: user.personality ? user.personality.split(',').filter(Boolean) : [],
+        interests: toArray(user.interests),
+        activity_types: toArray(user.activity_types),
+        personality: toArray(user.personality),
         photos: photos ? photos.map(p => p.photo_url) : []
     };
 }
@@ -153,14 +159,14 @@ function hardFilter(myData, targetRequirements) {
     }
 
     if (targetRequirements.education_importance === 'must' && targetRequirements.education) {
-        const reqEdu = targetRequirements.education.split(',').filter(Boolean);
+        const reqEdu = Array.isArray(targetRequirements.education) ? targetRequirements.education : targetRequirements.education.split(',').filter(Boolean);
         if (reqEdu.length > 0 && !reqEdu.includes(myData.education)) {
             return { passed: false, reason: `学历不符合要求` };
         }
     }
 
     if (targetRequirements.marital_importance === 'must' && targetRequirements.marital_status) {
-        const reqMarital = targetRequirements.marital_status.split(',').filter(Boolean);
+        const reqMarital = Array.isArray(targetRequirements.marital_status) ? targetRequirements.marital_status : targetRequirements.marital_status.split(',').filter(Boolean);
         if (reqMarital.length > 0 && !reqMarital.includes(myData.marital_status)) {
             return { passed: false, reason: `婚姻状况不符合要求` };
         }
@@ -219,7 +225,7 @@ async function calculateWeightedScore(myData, targetRequirements) {
     }
 
     if (targetRequirements.education) {
-        const reqEdu = targetRequirements.education.split(',').filter(Boolean);
+        const reqEdu = Array.isArray(targetRequirements.education) ? targetRequirements.education : targetRequirements.education.split(',').filter(Boolean);
         const eduScore = calculateCategoryScore(myData.education, reqEdu);
         const eduWeight = getImportanceWeight(targetRequirements.education_importance);
         totalScore += eduScore * eduWeight;
@@ -233,7 +239,7 @@ async function calculateWeightedScore(myData, targetRequirements) {
     }
 
     if (targetRequirements.marital_status) {
-        const reqMarital = targetRequirements.marital_status.split(',').filter(Boolean);
+        const reqMarital = Array.isArray(targetRequirements.marital_status) ? targetRequirements.marital_status : targetRequirements.marital_status.split(',').filter(Boolean);
         const maritalScore = calculateCategoryScore(myData.marital_status, reqMarital);
         const maritalWeight = getImportanceWeight(targetRequirements.marital_importance);
         totalScore += maritalScore * maritalWeight;
@@ -279,7 +285,7 @@ async function calculateWeightedScore(myData, targetRequirements) {
     }
 
     if (targetRequirements.personality) {
-        const reqPersonality = targetRequirements.personality.split(',').filter(Boolean);
+        const reqPersonality = Array.isArray(targetRequirements.personality) ? targetRequirements.personality : targetRequirements.personality.split(',').filter(Boolean);
         const personalityScore = calculateMultiSelectScore(myData.personality, reqPersonality);
         totalScore += personalityScore * 1.0;
         totalWeight += 1.0;
@@ -359,7 +365,7 @@ function applyActivityBonus(scoreWithInterest, myActivities, targetRequirements)
     let bonus = 0;
     const minOverlap = parseInt(targetRequirements.min_activity_overlap) || 1;
     
-    const reqActivities = targetRequirements.activities ? targetRequirements.activities.split(',').filter(Boolean) : [];
+    const reqActivities = targetRequirements.activities ? (Array.isArray(targetRequirements.activities) ? targetRequirements.activities : targetRequirements.activities.split(',').filter(Boolean)) : [];
     const commonActivities = myActivities.filter(a => reqActivities.includes(a));
     const overlapCount = commonActivities.length;
     
