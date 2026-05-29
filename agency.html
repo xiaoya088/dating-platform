@@ -56,117 +56,562 @@
         
         <div id="addTab" class="tab-content hidden">
             <div class="card">
-                <div class="card-header">录入新客户</div>
+                <div class="card-header">录入新客户 ★ 必填项标记</div>
                 
+                <h4 style="margin: 15px 0 10px; color: #667eea;">登录信息</h4>
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>姓名 *</label>
-                        <input type="text" id="clientName">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>手机号（登录账号） *</label>
+                            <input type="tel" id="clientPhone" maxlength="11" placeholder="11位手机号">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>手机号 *</label>
-                        <input type="tel" id="clientPhone" maxlength="11">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>密码 *</label>
+                            <input type="text" id="clientPassword" placeholder="默认生成，可修改">
+                        </div>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #667eea;">基本信息</h4>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>姓名（展示昵称） *</label>
+                            <input type="text" id="clientName" placeholder="请输入姓名">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>性别 *</label>
+                            <select id="clientGender">
+                                <option value="">请选择</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>性别 *</label>
-                        <select id="clientGender">
-                            <option value="">请选择</option>
-                            <option value="男">男</option>
-                            <option value="女">女</option>
-                        </select>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>出生日期 *</label>
+                            <input type="date" id="clientBirthday">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>生日 *</label>
-                        <input type="date" id="clientBirthday">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>身高 (cm)</label>
-                        <input type="number" id="clientHeight">
-                    </div>
-                    <div class="form-group">
-                        <label>体重 (kg)</label>
-                        <input type="number" id="clientWeight">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>身高 (cm) *</label>
+                            <input type="number" id="clientHeight" placeholder="如: 175">
+                        </div>
                     </div>
                 </div>
                 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>学历</label>
-                        <select id="clientEducation">
-                            <option value="">请选择</option>
-                            <option value="小学">小学</option>
-                            <option value="初中">初中</option>
-                            <option value="高中">高中</option>
-                            <option value="大专">大专</option>
-                            <option value="本科">本科</option>
-                            <option value="硕士">硕士</option>
-                            <option value="博士">博士</option>
-                        </select>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>现居地 *</label>
+                            <input type="text" id="clientCurrentAddress" placeholder="如: 广东省深圳市南山区">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>职业</label>
-                        <input type="text" id="clientOccupation">
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>收入</label>
-                        <select id="clientIncome">
-                            <option value="">请选择</option>
-                            <option value="3000以下">3000以下</option>
-                            <option value="3000-5000">3000-5000</option>
-                            <option value="5000-8000">5000-8000</option>
-                            <option value="8000-10000">8000-10000</option>
-                            <option value="10000-15000">10000-15000</option>
-                            <option value="15000-20000">15000-20000</option>
-                            <option value="20000-30000">20000-30000</option>
-                            <option value="30000以上">30000以上</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label>婚姻状况</label>
-                        <select id="clientMaritalStatus">
-                            <option value="">请选择</option>
-                            <option value="未婚">未婚</option>
-                            <option value="离异">离异</option>
-                            <option value="丧偶">丧偶</option>
-                        </select>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>户籍地 *</label>
+                            <input type="text" id="clientHukou" placeholder="如: 北京市朝阳区">
+                        </div>
                     </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>常住地址</label>
-                    <div class="form-row-4">
-                        <select id="clientProvince" style="padding:8px;">
-                            <option value="">省</option>
-                        </select>
-                        <select id="clientCity" style="padding:8px;">
-                            <option value="">市</option>
-                        </select>
-                        <select id="clientDistrict" style="padding:8px;">
-                            <option value="">区</option>
-                        </select>
-                        <select id="clientStreet" style="padding:8px;">
-                            <option value="">街道</option>
-                        </select>
+                    <label>婚姻状况 *</label>
+                    <select id="clientMaritalStatus">
+                        <option value="">请选择</option>
+                        <option value="未婚">未婚</option>
+                        <option value="离异">离异</option>
+                        <option value="丧偶">丧偶</option>
+                    </select>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #667eea;">外貌生活</h4>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>学历 ★</label>
+                            <select id="clientEducation">
+                                <option value="">请选择</option>
+                                <option value="小学">小学</option>
+                                <option value="初中">初中</option>
+                                <option value="高中">高中</option>
+                                <option value="大专">大专</option>
+                                <option value="本科">本科</option>
+                                <option value="硕士">硕士</option>
+                                <option value="博士">博士</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>职业 ★</label>
+                            <input type="text" id="clientOccupation" placeholder="如: 程序员">
+                        </div>
                     </div>
                 </div>
                 
                 <div class="form-row">
-                    <div class="form-group">
-                        <label>微信号</label>
-                        <input type="text" id="clientWechat">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>体重 (kg)</label>
+                            <input type="number" id="clientWeight" placeholder="如: 65">
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label>婚恋宣言</label>
-                        <textarea id="clientDeclaration" rows="2" maxlength="200"></textarea>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>年收入</label>
+                            <select id="clientIncome">
+                                <option value="">请选择</option>
+                                <option value="3000以下">3000以下</option>
+                                <option value="3000-5000">3000-5000</option>
+                                <option value="5000-8000">5000-8000</option>
+                                <option value="8000-10000">8000-10000</option>
+                                <option value="10000-15000">10000-15000</option>
+                                <option value="15000-20000">15000-20000</option>
+                                <option value="20000-30000">20000-30000</option>
+                                <option value="30000以上">30000以上</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>房产</label>
+                            <select id="clientProperty">
+                                <option value="">请选择</option>
+                                <option value="有房">有房</option>
+                                <option value="无房">无房</option>
+                                <option value="与父母同住">与父母同住</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>车辆</label>
+                            <select id="clientCar">
+                                <option value="">请选择</option>
+                                <option value="有车">有车</option>
+                                <option value="无车">无车</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>吸烟</label>
+                            <select id="clientSmoking">
+                                <option value="">请选择</option>
+                                <option value="不吸烟">不吸烟</option>
+                                <option value="偶尔吸">偶尔吸</option>
+                                <option value="经常吸">经常吸</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>饮酒</label>
+                            <select id="clientDrinking">
+                                <option value="">请选择</option>
+                                <option value="不饮酒">不饮酒</option>
+                                <option value="偶尔喝">偶尔喝</option>
+                                <option value="经常喝">经常喝</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>宗教信仰</label>
+                            <input type="text" id="clientReligion" placeholder="如: 佛教、基督教等">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>微信号</label>
+                            <input type="text" id="clientWechat" placeholder="请输入微信号">
+                        </div>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #667eea;">性格与兴趣</h4>
+                <div class="form-group">
+                    <label>性格自评</label>
+                    <div class="checkbox-group" id="clientPersonality">
+                        <label class="checkbox-item"><input type="checkbox" value="开朗">开朗</label>
+                        <label class="checkbox-item"><input type="checkbox" value="内向">内向</label>
+                        <label class="checkbox-item"><input type="checkbox" value="稳重">稳重</label>
+                        <label class="checkbox-item"><input type="checkbox" value="活泼">活泼</label>
+                        <label class="checkbox-item"><input type="checkbox" value="幽默">幽默</label>
+                        <label class="checkbox-item"><input type="checkbox" value="细心">细心</label>
+                        <label class="checkbox-item"><input type="checkbox" value="体贴">体贴</label>
+                        <label class="checkbox-item"><input type="checkbox" value="独立">独立</label>
+                        <label class="checkbox-item"><input type="checkbox" value="随和">随和</label>
+                        <label class="checkbox-item"><input type="checkbox" value="上进">上进</label>
+                        <label class="checkbox-item"><input type="checkbox" value="乐观">乐观</label>
+                        <label class="checkbox-item"><input type="checkbox" value="真诚">真诚</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>兴趣爱好</label>
+                    <div class="checkbox-group" id="clientInterests">
+                        <label class="checkbox-item"><input type="checkbox" value="运动健身">运动健身</label>
+                        <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="阅读">阅读</label>
+                        <label class="checkbox-item"><input type="checkbox" value="音乐">音乐</label>
+                        <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
+                        <label class="checkbox-item"><input type="checkbox" value="美食">美食</label>
+                        <label class="checkbox-item"><input type="checkbox" value="摄影">摄影</label>
+                        <label class="checkbox-item"><input type="checkbox" value="游戏">游戏</label>
+                        <label class="checkbox-item"><input type="checkbox" value="宠物">宠物</label>
+                        <label class="checkbox-item"><input type="checkbox" value="手工">手工</label>
+                        <label class="checkbox-item"><input type="checkbox" value="绘画">绘画</label>
+                        <label class="checkbox-item"><input type="checkbox" value="舞蹈">舞蹈</label>
+                        <label class="checkbox-item"><input type="checkbox" value="瑜伽">瑜伽</label>
+                        <label class="checkbox-item"><input type="checkbox" value="钓鱼">钓鱼</label>
+                        <label class="checkbox-item"><input type="checkbox" value="园艺">园艺</label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>线下活动类型（多选）</label>
+                    <div class="checkbox-group" id="clientActivityTypes">
+                        <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
+                        <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
+                        <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
+                        <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
+                        <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
+                        <label class="checkbox-item"><input type="checkbox" value="露营">露营</label>
+                        <label class="checkbox-item"><input type="checkbox" value="看展">看展</label>
+                        <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
+                        <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="运动">运动</label>
+                        <label class="checkbox-item"><input type="checkbox" value="品茶">品茶</label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>是否接受宠物</label>
+                            <select id="clientAcceptPet">
+                                <option value="">请选择</option>
+                                <option value="是">是</option>
+                                <option value="否">否</option>
+                                <option value="无所谓">无所谓</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>作息习惯</label>
+                            <select id="clientSchedule">
+                                <option value="">请选择</option>
+                                <option value="早睡早起">早睡早起</option>
+                                <option value="规律作息">规律作息</option>
+                                <option value="夜猫子">夜猫子</option>
+                                <option value="弹性作息">弹性作息</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #667eea;">婚恋价值观</h4>
+                <div class="form-group">
+                    <label>婚后财务看法</label>
+                    <select id="clientFinanceView">
+                        <option value="">请选择</option>
+                        <option value="AA制">AA制</option>
+                        <option value="共同账户">共同账户</option>
+                        <option value="男方承担">男方承担</option>
+                        <option value="女方承担">女方承担</option>
+                        <option value="协商处理">协商处理</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>是否与父母同住</label>
+                    <select id="clientLiveWithParents">
+                        <option value="">请选择</option>
+                        <option value="愿意">愿意</option>
+                        <option value="不愿意">不愿意</option>
+                        <option value="视情况">视情况</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>期望孩子数</label>
+                    <select id="clientExpectedChildren">
+                        <option value="">请选择</option>
+                        <option value="0">丁克</option>
+                        <option value="1">1个</option>
+                        <option value="2">2个</option>
+                        <option value="3">3个及以上</option>
+                        <option value="不限">不限</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>自我描述（最多500字）</label>
+                    <textarea id="clientSelfDescription" rows="5" placeholder="描述自己的性格、爱好、婚恋观等（500字以内）" maxlength="500"></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>婚恋宣言</label>
+                    <textarea id="clientDeclaration" rows="3" placeholder="描述自己、感情观（200字以内）" maxlength="200"></textarea>
+                </div>
+                
+                <h4 style="margin: 15px 0 10px; color: #667eea;">择偶要求</h4>
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最小年龄</label>
+                            <input type="number" id="clientReqMinAge" placeholder="如: 25">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最大年龄</label>
+                            <input type="number" id="clientReqMaxAge" placeholder="如: 35">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>年龄重要程度</label>
+                            <select id="clientAgeImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最小身高 (cm)</label>
+                            <input type="number" id="clientReqMinHeight" placeholder="如: 160">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>最大身高 (cm)</label>
+                            <input type="number" id="clientReqMaxHeight" placeholder="如: 175">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>身高重要程度</label>
+                            <select id="clientHeightImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>学历要求</label>
+                            <div class="checkbox-group" id="clientReqEducation">
+                                <label class="checkbox-item"><input type="checkbox" value="大专">大专</label>
+                                <label class="checkbox-item"><input type="checkbox" value="本科">本科</label>
+                                <label class="checkbox-item"><input type="checkbox" value="硕士">硕士</label>
+                                <label class="checkbox-item"><input type="checkbox" value="博士">博士</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>学历重要程度</label>
+                            <select id="clientEducationImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>婚姻状况要求</label>
+                            <div class="checkbox-group" id="clientReqMarital">
+                                <label class="checkbox-item"><input type="checkbox" value="未婚">未婚</label>
+                                <label class="checkbox-item"><input type="checkbox" value="离异">离异</label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>婚姻重要程度</label>
+                            <select id="clientMaritalImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>现居地要求</label>
+                            <input type="text" id="clientReqProvince" placeholder="如: 北京市">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>地区重要程度</label>
+                            <select id="clientProvinceImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal">一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>体型偏好</label>
+                            <select id="clientReqBodyType">
+                                <option value="">不限</option>
+                                <option value="偏瘦">偏瘦</option>
+                                <option value="匀称">匀称</option>
+                                <option value="健壮">健壮</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>年收入下限</label>
+                            <select id="clientReqMinIncome">
+                                <option value="">不限</option>
+                                <option value="3000">3000</option>
+                                <option value="5000">5000</option>
+                                <option value="8000">8000</option>
+                                <option value="10000">10000</option>
+                                <option value="15000">15000</option>
+                                <option value="20000">20000</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>吸烟要求</label>
+                            <select id="clientReqSmoking">
+                                <option value="">不限</option>
+                                <option value="不吸烟">不吸烟</option>
+                                <option value="偶尔吸">偶尔吸</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>饮酒要求</label>
+                            <select id="clientReqDrinking">
+                                <option value="">不限</option>
+                                <option value="不饮酒">不饮酒</option>
+                                <option value="偶尔喝">偶尔喝</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>性格偏好</label>
+                    <div class="checkbox-group" id="clientReqPersonality">
+                        <label class="checkbox-item"><input type="checkbox" value="开朗">开朗</label>
+                        <label class="checkbox-item"><input type="checkbox" value="稳重">稳重</label>
+                        <label class="checkbox-item"><input type="checkbox" value="幽默">幽默</label>
+                        <label class="checkbox-item"><input type="checkbox" value="细心">细心</label>
+                        <label class="checkbox-item"><input type="checkbox" value="体贴">体贴</label>
+                        <label class="checkbox-item"><input type="checkbox" value="独立">独立</label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>性格重要程度</label>
+                            <select id="clientPersonalityImportance">
+                                <option value="must">必须满足</option>
+                                <option value="very_important">非常重要</option>
+                                <option value="normal" selected>一般</option>
+                                <option value="optional">可有可无</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>兴趣重合度要求（最低几项）</label>
+                            <input type="number" id="clientReqMinInterestOverlap" placeholder="如: 2" value="2">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>线下活动偏好（多选）</label>
+                    <div class="checkbox-group" id="clientReqActivities">
+                        <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
+                        <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
+                        <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
+                        <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
+                        <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
+                        <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
+                        <label class="checkbox-item"><input type="checkbox" value="露营">露营</label>
+                        <label class="checkbox-item"><input type="checkbox" value="看展">看展</label>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>活动最低重合数</label>
+                            <input type="number" id="clientReqMinActivityOverlap" placeholder="如: 1" value="1">
+                        </div>
+                    </div>
+                    <div class="form-col">
+                        <div class="form-group">
+                            <label>价值观要求</label>
+                            <select id="clientReqValues">
+                                <option value="">不限</option>
+                                <option value="传统">传统</option>
+                                <option value="现代">现代</option>
+                                <option value="自由">自由</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 
@@ -268,13 +713,23 @@
             });
         }
         
-        document.querySelectorAll('.tab-btn').forEach(btn => {
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        
+        tabBtns.forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                document.querySelectorAll('.tab-content').forEach(c => {
+                    c.classList.add('hidden');
+                    c.classList.remove('active');
+                });
                 
                 this.classList.add('active');
-                document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
+                const tabId = this.dataset.tab + 'Tab';
+                const tabContent = document.getElementById(tabId);
+                if (tabContent) {
+                    tabContent.classList.remove('hidden');
+                    tabContent.classList.add('active');
+                }
             });
         });
         
@@ -505,14 +960,26 @@
             }
         }
         
+        function getCheckboxValues(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return [];
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+        
         async function addClient() {
             const name = document.getElementById('clientName').value.trim();
             const phone = document.getElementById('clientPhone').value.trim();
+            const password = document.getElementById('clientPassword').value.trim();
             const gender = document.getElementById('clientGender').value;
             const birthday = document.getElementById('clientBirthday').value;
+            const height = parseInt(document.getElementById('clientHeight').value) || null;
+            const currentAddress = document.getElementById('clientCurrentAddress').value.trim();
+            const hukou = document.getElementById('clientHukou').value.trim();
+            const maritalStatus = document.getElementById('clientMaritalStatus').value;
             
-            if (!name || !phone || !gender || !birthday) {
-                showAlert('请填写必填项', 'error');
+            if (!name || !phone || !gender || !birthday || !height || !currentAddress || !hukou || !maritalStatus) {
+                showAlert('请填写所有必填项（带 * 标记）', 'error');
                 return;
             }
             
@@ -520,6 +987,8 @@
                 showAlert('手机号格式不正确', 'error');
                 return;
             }
+            
+            const finalPassword = password || generatePassword();
             
             const supabase = ensureSupabase();
             
@@ -530,7 +999,7 @@
                     .eq('phone', phone)
                     .single();
                 
-                if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "no rows returned"
+                if (checkError && checkError.code !== 'PGRST116') {
                     throw checkError;
                 }
                 
@@ -539,59 +1008,149 @@
                     return;
                 }
                 
-                const password = generatePassword();
+                const userData = {
+                    name: name,
+                    phone: phone,
+                    password: finalPassword,
+                    gender: gender,
+                    birthday: birthday,
+                    height: height,
+                    current_address: currentAddress,
+                    hukou: hukou,
+                    marital_status: maritalStatus,
+                    weight: parseInt(document.getElementById('clientWeight').value) || null,
+                    education: document.getElementById('clientEducation').value,
+                    occupation: document.getElementById('clientOccupation').value,
+                    income: document.getElementById('clientIncome').value,
+                    property: document.getElementById('clientProperty').value,
+                    car: document.getElementById('clientCar').value,
+                    smoking: document.getElementById('clientSmoking').value,
+                    drinking: document.getElementById('clientDrinking').value,
+                    religion: document.getElementById('clientReligion').value,
+                    wechat: document.getElementById('clientWechat').value,
+                    personality: getCheckboxValues('clientPersonality'),
+                    interests: getCheckboxValues('clientInterests'),
+                    activity_types: getCheckboxValues('clientActivityTypes'),
+                    accept_pet: document.getElementById('clientAcceptPet').value,
+                    schedule: document.getElementById('clientSchedule').value,
+                    finance_view: document.getElementById('clientFinanceView').value,
+                    live_with_parents: document.getElementById('clientLiveWithParents').value,
+                    expected_children: document.getElementById('clientExpectedChildren').value,
+                    self_description: document.getElementById('clientSelfDescription').value,
+                    declaration: document.getElementById('clientDeclaration').value,
+                    agency_id: currentUser.id,
+                    status: 'active'
+                };
                 
-                const { error } = await supabase
+                const { error: userError } = await supabase
                     .from('users')
-                    .insert([{
-                        name: name,
-                        phone: phone,
-                        password: password,
-                        gender: gender,
-                        birthday: birthday,
-                        height: parseInt(document.getElementById('clientHeight').value) || null,
-                        weight: parseInt(document.getElementById('clientWeight').value) || null,
-                        education: document.getElementById('clientEducation').value,
-                        occupation: document.getElementById('clientOccupation').value,
-                        income: document.getElementById('clientIncome').value,
-                        marital_status: document.getElementById('clientMaritalStatus').value,
-                        province: document.getElementById('clientProvince').value,
-                        city: document.getElementById('clientCity').value,
-                        district: document.getElementById('clientDistrict').value,
-                        street: document.getElementById('clientStreet').value,
-                        wechat: document.getElementById('clientWechat').value,
-                        declaration: document.getElementById('clientDeclaration').value,
-                        agency_id: currentUser.id,
-                        status: 'active'
-                    }]);
+                    .insert([userData]);
                 
-                if (error) {
-                    showAlert('录入失败：' + error.message, 'error');
-                } else {
-                    showAlert(`录入成功！密码: ${password}`, 'success');
-                    
-                    document.getElementById('clientName').value = '';
-                    document.getElementById('clientPhone').value = '';
-                    document.getElementById('clientGender').value = '';
-                    document.getElementById('clientBirthday').value = '';
-                    document.getElementById('clientHeight').value = '';
-                    document.getElementById('clientWeight').value = '';
-                    document.getElementById('clientEducation').value = '';
-                    document.getElementById('clientOccupation').value = '';
-                    document.getElementById('clientIncome').value = '';
-                    document.getElementById('clientMaritalStatus').value = '';
-                    document.getElementById('clientProvince').value = '';
-                    document.getElementById('clientCity').value = '';
-                    document.getElementById('clientDistrict').value = '';
-                    document.getElementById('clientStreet').value = '';
-                    document.getElementById('clientWechat').value = '';
-                    document.getElementById('clientDeclaration').value = '';
-                    
-                    showTab('clients');
-                    loadClients();
+                if (userError) {
+                    showAlert('录入失败：' + userError.message, 'error');
+                    return;
                 }
+                
+                const reqData = {
+                    min_age: parseInt(document.getElementById('clientReqMinAge').value) || null,
+                    max_age: parseInt(document.getElementById('clientReqMaxAge').value) || null,
+                    age_importance: document.getElementById('clientAgeImportance').value,
+                    min_height: parseInt(document.getElementById('clientReqMinHeight').value) || null,
+                    max_height: parseInt(document.getElementById('clientReqMaxHeight').value) || null,
+                    height_importance: document.getElementById('clientHeightImportance').value,
+                    education: getCheckboxValues('clientReqEducation'),
+                    education_importance: document.getElementById('clientEducationImportance').value,
+                    marital_status: getCheckboxValues('clientReqMarital'),
+                    marital_importance: document.getElementById('clientMaritalImportance').value,
+                    province: document.getElementById('clientReqProvince').value,
+                    province_importance: document.getElementById('clientProvinceImportance').value,
+                    body_type: document.getElementById('clientReqBodyType').value,
+                    min_income: document.getElementById('clientReqMinIncome').value,
+                    smoking: document.getElementById('clientReqSmoking').value,
+                    drinking: document.getElementById('clientReqDrinking').value,
+                    personality: getCheckboxValues('clientReqPersonality'),
+                    personality_importance: document.getElementById('clientPersonalityImportance').value,
+                    min_interest_overlap: parseInt(document.getElementById('clientReqMinInterestOverlap').value) || 2,
+                    activities: getCheckboxValues('clientReqActivities'),
+                    min_activity_overlap: parseInt(document.getElementById('clientReqMinActivityOverlap').value) || 1,
+                    values: document.getElementById('clientReqValues').value
+                };
+                
+                const { data: newUser } = await supabase
+                    .from('users')
+                    .select('id')
+                    .eq('phone', phone)
+                    .single();
+                
+                if (newUser) {
+                    await supabase
+                        .from('requirements')
+                        .insert([{ user_id: newUser.id, ...reqData }]);
+                }
+                
+                showAlert(`录入成功！账号: ${phone}，密码: ${finalPassword}`, 'success');
+                
+                clearClientForm();
+                showTab('clients');
+                loadClients();
             } catch (e) {
                 showAlert('录入失败：' + e.message, 'error');
+            }
+        }
+        
+        function clearClientForm() {
+            document.getElementById('clientPhone').value = '';
+            document.getElementById('clientPassword').value = '';
+            document.getElementById('clientName').value = '';
+            document.getElementById('clientGender').value = '';
+            document.getElementById('clientBirthday').value = '';
+            document.getElementById('clientHeight').value = '';
+            document.getElementById('clientCurrentAddress').value = '';
+            document.getElementById('clientHukou').value = '';
+            document.getElementById('clientMaritalStatus').value = '';
+            document.getElementById('clientWeight').value = '';
+            document.getElementById('clientEducation').value = '';
+            document.getElementById('clientOccupation').value = '';
+            document.getElementById('clientIncome').value = '';
+            document.getElementById('clientProperty').value = '';
+            document.getElementById('clientCar').value = '';
+            document.getElementById('clientSmoking').value = '';
+            document.getElementById('clientDrinking').value = '';
+            document.getElementById('clientReligion').value = '';
+            document.getElementById('clientWechat').value = '';
+            document.getElementById('clientAcceptPet').value = '';
+            document.getElementById('clientSchedule').value = '';
+            document.getElementById('clientFinanceView').value = '';
+            document.getElementById('clientLiveWithParents').value = '';
+            document.getElementById('clientExpectedChildren').value = '';
+            document.getElementById('clientSelfDescription').value = '';
+            document.getElementById('clientDeclaration').value = '';
+            
+            document.querySelectorAll('#addTab input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('#addTab .checkbox-item').forEach(item => item.classList.remove('selected'));
+            
+            document.getElementById('clientReqMinAge').value = '';
+            document.getElementById('clientReqMaxAge').value = '';
+            document.getElementById('clientAgeImportance').value = 'must';
+            document.getElementById('clientReqMinHeight').value = '';
+            document.getElementById('clientReqMaxHeight').value = '';
+            document.getElementById('clientHeightImportance').value = 'must';
+            document.getElementById('clientEducationImportance').value = 'must';
+            document.getElementById('clientMaritalImportance').value = 'must';
+            document.getElementById('clientReqProvince').value = '';
+            document.getElementById('clientProvinceImportance').value = 'must';
+            document.getElementById('clientReqBodyType').value = '';
+            document.getElementById('clientReqMinIncome').value = '';
+            document.getElementById('clientReqSmoking').value = '';
+            document.getElementById('clientReqDrinking').value = '';
+            document.getElementById('clientPersonalityImportance').value = 'normal';
+            document.getElementById('clientReqMinInterestOverlap').value = '2';
+            document.getElementById('clientReqMinActivityOverlap').value = '1';
+            document.getElementById('clientReqValues').value = '';
+            
+            const passwordInput = document.getElementById('clientPassword');
+            if (passwordInput) {
+                passwordInput.value = generatePassword();
             }
         }
         
@@ -644,7 +1203,33 @@
             }
         }
         
+        function initCheckboxEvents() {
+            document.querySelectorAll('.checkbox-item').forEach(item => {
+                const checkbox = item.querySelector('input[type="checkbox"]');
+                if (checkbox) {
+                    checkbox.addEventListener('change', function() {
+                        if (this.checked) {
+                            item.classList.add('selected');
+                        } else {
+                            item.classList.remove('selected');
+                        }
+                    });
+                    
+                    if (checkbox.checked) {
+                        item.classList.add('selected');
+                    }
+                }
+            });
+        }
+        
+        initCheckboxEvents();
         initProvinceSelect();
+        
+        const passwordInput = document.getElementById('clientPassword');
+        if (passwordInput) {
+            passwordInput.value = generatePassword();
+        }
+        
         loadClients();
         loadRequests();
     </script>
