@@ -24,29 +24,14 @@
     <div class="container">
         <div class="card">
             <div class="card-header">
-                <span>智能匹配推荐</span>
-                <div style="float: right; font-size: 14px; color: #666;">
-                    <span id="matchCount">0</span> 位潜在匹配
-                </div>
+                <span>💕 智能匹配推荐</span>
             </div>
 
-            <div class="search-box">
-                <select id="genderFilter">
-                    <option value="">全部性别</option>
-                    <option value="男">男</option>
-                    <option value="女">女</option>
-                </select>
-                <select id="provinceFilter">
-                    <option value="">全部地区</option>
-                </select>
-                <select id="minScoreFilter">
-                    <option value="0" selected>不限匹配度</option>
-                    <option value="50">50%以上</option>
-                    <option value="70">70%以上(推荐)</option>
-                    <option value="80">80%以上</option>
-                </select>
-                <button class="btn btn-secondary" onclick="filterMatches()">筛选</button>
-                <button class="btn btn-primary" onclick="refreshMatches()">刷新匹配</button>
+            <div class="search-box" style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size: 14px; color: #666;">
+                    共找到 <strong id="matchCount">0</strong> 位潜在匹配
+                </div>
+                <button class="btn btn-primary" onclick="refreshMatches()">🔄 刷新匹配</button>
             </div>
 
             <div id="matchList">
@@ -152,20 +137,17 @@
             matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在计算匹配度，请稍候...</p></div>';
 
             try {
-                const genderFilter = document.getElementById('genderFilter').value || null;
-                const provinceFilter = document.getElementById('provinceFilter').value || null;
-                const minScoreFilter = parseInt(document.getElementById('minScoreFilter').value) || 0;
-
                 const matches = await findMatches(currentUser.id, {
-                    minScore: minScoreFilter,
-                    maxResults: 100,
-                    gender: genderFilter,
-                    province: provinceFilter
+                    minScore: 0,
+                    maxResults: 100
                 });
+
+                matches.sort((a, b) => b.score - a.score);
 
                 allMatches = matches;
                 document.getElementById('matchCount').textContent = matches.length;
 
+                currentPage = 1;
                 renderMatches();
             } catch (error) {
                 console.error('加载匹配失败:', error);
@@ -281,11 +263,6 @@
             currentPage = page;
             renderMatches();
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function filterMatches() {
-            currentPage = 1;
-            loadMatches();
         }
 
         function refreshMatches() {
