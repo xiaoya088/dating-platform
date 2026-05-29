@@ -95,31 +95,6 @@
         let currentPage = 1;
         const pageSize = 10;
 
-        const provinceData = {
-            "北京": ["北京市"], "上海": ["上海市"],
-            "广东": ["广州市", "深圳市", "东莞市", "佛山市", "珠海市", "中山市"],
-            "浙江": ["杭州市", "宁波市", "温州市"],
-            "江苏": ["南京市", "苏州市", "无锡市", "常州市"],
-            "四川": ["成都市"], "湖北": ["武汉市"],
-            "天津": ["天津市"], "重庆": ["重庆市"],
-            "湖南": ["长沙市"], "山东": ["济南市", "青岛市"],
-            "河南": ["郑州市"], "福建": ["福州市", "厦门市"],
-            "安徽": ["合肥市"], "辽宁": ["沈阳市", "大连市"],
-            "陕西": ["西安市"], "江西": ["南昌市"],
-            "云南": ["昆明市"], "贵州": ["贵阳市"],
-            "海南": ["海口市", "三亚市"]
-        };
-
-        function initProvinceFilter() {
-            const select = document.getElementById('provinceFilter');
-            for (const province of Object.keys(provinceData)) {
-                const option = document.createElement('option');
-                option.value = province;
-                option.textContent = province;
-                select.appendChild(option);
-            }
-        }
-
         function showAlert(message, type) {
             const alertBox = document.getElementById('alertBox');
             alertBox.className = `alert alert-${type}`;
@@ -128,31 +103,56 @@
             setTimeout(() => alertBox.classList.add('hidden'), 3000);
         }
 
-        async function loadMatches() {
+        async function loadMatches(useCache = true) {
             if (!currentUser) {
                 console.log("用户未登录，无法加载匹配");
                 return;
             }
             const matchList = document.getElementById('matchList');
-            matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在计算匹配度，请稍候...</p></div>';
-
+            
+            if (useCache) {
+                matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在加载匹配列表...</p></div>';
+                
+                try {
+                    const matches = await getCachedMatches(currentUser.id);
+                    
+                    if (matches.length === 0) {
+                        console.log('缓存为空，执行首次计算...');
+                        matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>首次加载，正在计算匹配度...</p></div>';
+                        const freshMatches = await calculateAndCacheMatches(currentUser.id);
+                        allMatches = freshMatches;
+                    } else {
+                        console.log('从缓存加载匹配:', matches.length);
+                        allMatches = matches;
+                    }
+                    
+                    document.getElementById('matchCount').textContent = allMatches.length;
+                    currentPage = 1;
+                    renderMatches();
+                } catch (error) {
+                    console.error('加载匹配失败:', error);
+                    matchList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ${error.message}</p>`;
+                }
+            } else {
+                await refreshMatchesInternal();
+            }
+        }
+        
+        async function refreshMatchesInternal() {
+            const matchList = document.getElementById('matchList');
+            matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在重新计算匹配度，请稍候...</p></div>';
+            
             try {
-                const matches = await findMatches(currentUser.id, {
-                    minScore: 0,
-                    maxResults: 100
-                });
-
-                matches.sort((a, b) => b.score - a.score);
-
+                const matches = await calculateAndCacheMatches(currentUser.id);
                 allMatches = matches;
                 document.getElementById('matchCount').textContent = matches.length;
-
                 currentPage = 1;
                 renderMatches();
+                showAlert('匹配已更新！', 'success');
             } catch (error) {
-                console.error('加载匹配失败:', error);
-                matchList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ${error.message}</p>`;
-                showAlert('加载匹配列表失败: ' + error.message, 'error');
+                console.error('刷新匹配失败:', error);
+                matchList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">刷新失败: ${error.message}</p>`;
+                showAlert('刷新失败: ' + error.message, 'error');
             }
         }
 
@@ -266,7 +266,7 @@
         }
 
         function refreshMatches() {
-            loadMatches();
+            refreshMatchesInternal();
         }
 
         async function showUserDetail(userId) {
@@ -504,8 +504,8 @@
             }
         }
 
-        initProvinceFilter();
         loadMatches();
+        startPeriodicMatchCalculation(currentUser.id, 30);
         updateNavLinks();
     </script>
 

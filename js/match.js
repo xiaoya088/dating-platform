@@ -751,6 +751,159 @@ function initMessageNotification(userId) {
     }, 30000);
 }
 
+async function saveMatchResult(userId, targetUserId, matchResult) {
+    const supabase = getSupabaseClient();
+    if (!supabase) return;
+    
+    try {
+        const { error } = await supabase
+            .from('match_results')
+            .upsert({
+                user_id: userId,
+                target_user_id: targetUserId,
+                score: matchResult.score,
+                a_to_b_score: matchResult.aToB?.score,
+                b_to_a_score: matchResult.bToA?.score,
+                reasons: matchResult.reasons,
+                common_interests: matchResult.interestBonus ? matchResult.commonInterests : null,
+                common_activities: matchResult.activityBonus ? matchResult.commonActivities : null,
+                calculated_at: new Date().toISOString(),
+                is_filtered: matchResult.filtered || false,
+                filter_reason: matchResult.filtered ? matchResult.reasons?.[0] : null
+            }, {
+                onConflict: 'user_id,target_user_id'
+            });
+        
+        if (error) {
+            console.error('保存匹配结果失败:', error);
+        }
+    } catch (e) {
+        console.error('保存匹配结果异常:', e);
+    }
+}
+
+async function getCachedMatches(userId) {
+    const supabase = getSupabaseClient();
+    if (!supabase) return [];
+    
+    try {
+        const { data, error } = await supabase
+            .from('match_results')
+            .select(`
+                *,
+                target_user:users!match_results_target_user_id_fkey(
+                    id, name, gender, birthday, height, education, occupation, income,
+                    marital_status, current_address, declaration, photos, avatar_url,
+                    personality, interests, activity_types, smoking, drinking,
+                    religion, accept_pet, schedule, property, car, wechat,
+                    agency_id, agency_name, agency_info_public
+                )
+            `)
+            .eq('user_id', userId)
+            .eq('is_filtered', false)
+            .order('score', { ascending: false })
+            .limit(100);
+        
+        if (error) {
+            console.error('获取缓存匹配失败:', error);
+            return [];
+        }
+        
+        return data?.map(row => ({
+            user: row.target_user,
+            score: row.score,
+            aToB: { score: row.a_to_b_score },
+            bToA: { score: row.b_to_a_score },
+            reasons: row.reasons,
+            commonInterests: row.common_interests,
+            commonActivities: row.common_activities,
+            calculatedAt: row.calculated_at,
+            userType: row.target_user?.agency_id ? 
+                (row.target_user.agency_info_public ? 'agency_public' : 'agency_private') : 
+                'normal'
+        })) || [];
+    } catch (e) {
+        console.error('获取缓存匹配异常:', e);
+        return [];
+    }
+}
+
+async function calculateAndCacheMatches(userId, options = {}) {
+    const supabase = getSupabaseClient();
+    if (!supabase) return [];
+    
+    console.log('开始计算并缓存匹配结果:', userId);
+    
+    try {
+        const myData = await fetchUserData(userId);
+        if (!myData) throw new Error('无法获取当前用户数据');
+        
+        const { data: candidates } = await supabase
+            .from('users')
+            .select('*')
+            .eq('status', 'active')
+            .neq('id', userId);
+        
+        if (!candidates) return [];
+        
+        const { data: blocked } = await supabase
+            .from('blacklist')
+            .select('blocked_user_id')
+            .eq('user_id', userId);
+        
+        const blockedIds = blocked?.map(b => b.blocked_user_id) || [];
+        const filteredCandidates = candidates.filter(c => !blockedIds.includes(c.id));
+        
+        const savePromises = filteredCandidates.map(async (candidate) => {
+            try {
+                const matchResult = await calculateMatchScore(userId, candidate.id);
+                await saveMatchResult(userId, candidate.id, matchResult);
+                return matchResult;
+            } catch (e) {
+                console.error(`计算匹配失败 ${candidate.id}:`, e);
+                return null;
+            }
+        });
+        
+        await Promise.all(savePromises);
+        console.log('匹配结果缓存完成');
+        
+        return getCachedMatches(userId);
+    } catch (e) {
+        console.error('计算并缓存匹配失败:', e);
+        return [];
+    }
+}
+
+let matchCalculationInterval = null;
+
+function startPeriodicMatchCalculation(userId, intervalMinutes = 30) {
+    if (matchCalculationInterval) {
+        clearInterval(matchCalculationInterval);
+    }
+    
+    console.log(`开始定期匹配计算，间隔 ${intervalMinutes} 分钟`);
+    
+    calculateAndCacheMatches(userId);
+    
+    matchCalculationInterval = setInterval(() => {
+        console.log('执行定期匹配计算...');
+        calculateAndCacheMatches(userId);
+    }, intervalMinutes * 60 * 1000);
+}
+
+function stopPeriodicMatchCalculation() {
+    if (matchCalculationInterval) {
+        clearInterval(matchCalculationInterval);
+        matchCalculationInterval = null;
+        console.log('已停止定期匹配计算');
+    }
+}
+
 if (typeof module === 'undefined') {
     window.initMessageNotification = initMessageNotification;
+    window.getCachedMatches = getCachedMatches;
+    window.calculateAndCacheMatches = calculateAndCacheMatches;
+    window.startPeriodicMatchCalculation = startPeriodicMatchCalculation;
+    window.stopPeriodicMatchCalculation = stopPeriodicMatchCalculation;
 }
