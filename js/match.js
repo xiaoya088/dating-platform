@@ -403,6 +403,11 @@ async function calculateMatchScore(userId, targetId) {
         return { score: 0, filtered: true, reasons: ['无法获取用户数据'] };
     }
 
+    // 异性恋匹配：只匹配异性
+    if (myData.gender && targetData.gender && myData.gender === targetData.gender) {
+        return { score: 0, filtered: true, reasons: ['性别相同，仅匹配异性'] };
+    }
+
     const myFilterResult = hardFilter(myData, targetData.requirements);
     const targetFilterResult = hardFilter(targetData, myData.requirements);
 
