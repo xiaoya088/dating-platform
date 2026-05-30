@@ -50,11 +50,9 @@
         <a href="match.html" class="back-link">← 返回</a>
         <span class="navbar-brand">💕 个人资料</span>
         <div>
+            <a href="announcements.html" class="back-link">📢 公告</a>
             <a href="messages.html" class="back-link">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px;">0</span></a>
             <a href="#" onclick="logout()" class="back-link">退出</a>
-        </div>
-        <div id="announcementBanner" class="announcement-banner" style="display: none; width: 100%; background: linear-gradient(135deg, #ff6b6b, #ff8e53); color: white; padding: 8px 15px; border-radius: 8px; margin: 8px 0 0 0; font-size: 14px; text-align: center;">
-            <strong>📢 公告：</strong><span id="announcementText"></span>
         </div>
     </nav>
     
@@ -71,7 +69,6 @@
         </div>
         
         <div id="basicTab" class="tab-content active">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">基本信息 ★ 必填项</div>
                 
@@ -139,7 +136,6 @@
         </div>
         
         <div id="photosTab" class="tab-content">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">照片管理 ★ 必填项（最多9张）</div>
                 <div id="photoGrid" style="display: flex; flex-wrap: wrap; gap: 10px;"></div>
@@ -148,7 +144,6 @@
         </div>
         
         <div id="appearanceTab" class="tab-content">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">外貌生活</div>
                 
@@ -265,7 +260,6 @@
         </div>
         
         <div id="personalityTab" class="tab-content">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">性格与兴趣</div>
                 
@@ -357,7 +351,6 @@
         </div>
         
         <div id="valuesTab" class="tab-content">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">婚恋价值观</div>
                 
@@ -410,7 +403,6 @@
         </div>
         
         <div id="requirementsTab" class="tab-content">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">择偶要求</div>
                 
@@ -662,7 +654,6 @@
         </div>
         
         <div id="matchStatusTab" class="tab-content">
-            <a href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;" style="float:right; color:#667eea; font-size:13px;">↑ 返回顶部</a>
             <div class="card">
                 <div class="card-header">匹配情况</div>
                 <div id="matchStats" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;"></div>
@@ -751,32 +742,6 @@
             setTimeout(() => { alertBox.style.display = 'none'; }, 3000);
         }
         
-        async function loadAnnouncement() {
-            try {
-                const supabase = getSupabase();
-                const { data, error } = await supabase
-                    .from('announcements')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(1);
-                
-                if (error) {
-                    console.log('加载公告失败:', error.message);
-                    return;
-                }
-                
-                if (data && data.length > 0) {
-                    const announcement = data[0];
-                    if (!announcement.is_active || announcement.is_active === true) {
-                        document.getElementById('announcementText').textContent = announcement.content;
-                        document.getElementById('announcementBanner').style.display = 'block';
-                    }
-                }
-            } catch (e) {
-                console.log('加载公告失败:', e.message);
-            }
-        }
-
         async function saveBasicInfo() {
             const name = document.getElementById('name').value.trim();
             const gender = document.getElementById('gender').value;
@@ -1664,9 +1629,21 @@
 
         if (currentUser) {
             loadUserData();
-            loadAnnouncement();
             initCheckboxEvents();
         }
+    </script>
+    
+    <div id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:44px; height:44px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border-radius:50%; cursor:pointer; font-size:20px; line-height:44px; text-align:center; box-shadow:0 4px 15px rgba(102,126,234,0.4); z-index:999; transition:all 0.3s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(102,126,234,0.5)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(102,126,234,0.4)';">↑</div>
+    
+    <script>
+        window.addEventListener('scroll', function() {
+            var btn = document.getElementById('backToTop');
+            if (window.pageYOffset > 300) {
+                btn.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+            }
+        });
     </script>
 </body>
 </html>

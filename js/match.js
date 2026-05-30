@@ -892,20 +892,70 @@ async function calculateAndCacheMatches(userId, options = {}) {
     }
 }
 
+async function calculateMatchesForAllUsers() {
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+        console.error('Supabase 未初始化');
+        return;
+    }
+    
+    console.log('开始为所有用户计算匹配结果...');
+    
+    try {
+        const { data: allUsers, error: usersError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('status', 'active');
+        
+        if (usersError) {
+            console.error('获取用户列表失败:', usersError);
+            return;
+        }
+        
+        if (!allUsers || allUsers.length === 0) {
+            console.log('没有活跃用户');
+            return;
+        }
+        
+        console.log(`共有 ${allUsers.length} 位活跃用户需要计算匹配`);
+        
+        for (const user of allUsers) {
+            try {
+                console.log(`正在为用户 ${user.id} 计算匹配...`);
+                await calculateAndCacheMatches(user.id);
+            } catch (e) {
+                console.error(`为用户 ${user.id} 计算匹配失败:`, e);
+            }
+        }
+        
+        console.log('所有用户的匹配计算完成！');
+    } catch (e) {
+        console.error('批量计算匹配失败:', e);
+    }
+}
+
 let matchCalculationInterval = null;
 
-function startPeriodicMatchCalculation(userId, intervalMinutes = 30) {
+function startPeriodicMatchCalculation(userId, intervalMinutes = 30, forAllUsers = true) {
     if (matchCalculationInterval) {
         clearInterval(matchCalculationInterval);
     }
     
-    console.log(`开始定期匹配计算，间隔 ${intervalMinutes} 分钟`);
+    console.log(`开始定期匹配计算，间隔 ${intervalMinutes} 分钟${forAllUsers ? '（为所有用户计算）' : ''}`);
     
-    calculateAndCacheMatches(userId);
+    if (forAllUsers) {
+        calculateMatchesForAllUsers();
+    } else {
+        calculateAndCacheMatches(userId);
+    }
     
     matchCalculationInterval = setInterval(() => {
         console.log('执行定期匹配计算...');
-        calculateAndCacheMatches(userId);
+        if (forAllUsers) {
+            calculateMatchesForAllUsers();
+        } else {
+            calculateAndCacheMatches(userId);
+        }
     }, intervalMinutes * 60 * 1000);
 }
 
@@ -921,6 +971,7 @@ if (typeof module === 'undefined') {
     window.initMessageNotification = initMessageNotification;
     window.getCachedMatches = getCachedMatches;
     window.calculateAndCacheMatches = calculateAndCacheMatches;
+    window.calculateMatchesForAllUsers = calculateMatchesForAllUsers;
     window.startPeriodicMatchCalculation = startPeriodicMatchCalculation;
     window.stopPeriodicMatchCalculation = stopPeriodicMatchCalculation;
 }
