@@ -138,7 +138,17 @@
         <div id="addTab" class="tab-content hidden">
             <div class="card">
                 <div class="card-header">录入新客户</div>
-                
+
+                <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="margin: 0 0 10px; color: #667eea;">👥 客户管理</h4>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <input type="text" id="manageClientPhone" placeholder="输入手机号搜索" style="flex: 1; min-width: 150px; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <button type="button" class="btn btn-secondary" onclick="searchClientForManage()">搜索</button>
+                        <button type="button" class="btn btn-secondary" onclick="showAllClientsForManage()">显示全部</button>
+                    </div>
+                    <div id="manageClientResult" style="margin-top: 15px;"></div>
+                </div>
+
                 <form id="clientForm" onsubmit="addClient(event)">
                     <h4 style="margin: 15px 0 10px; color: #667eea;">登录信息</h4>
                     <div class="form-row">
@@ -1092,12 +1102,10 @@
                 
                 <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
                     <button class="btn btn-primary" onclick="window.print()">🖨️ 打印</button>
-                    <button class="btn btn-secondary" onclick="editClient('${clientId}')">编辑</button>
-                    <button class="btn btn-secondary" onclick="resetPassword('${clientId}')">重置密码</button>
                     <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
                 </div>
             `;
-            
+
             document.getElementById('clientDetailModal').classList.remove('hidden');
         }
 
@@ -1312,6 +1320,101 @@
                 showAlert('保存成功', 'success');
                 loadClients();
             }
+        }
+
+        // 搜索客户用于管理
+        async function searchClientForManage() {
+            const keyword = document.getElementById('manageClientPhone').value.trim();
+
+            if (!keyword) {
+                showAlert('请输入手机号', 'error');
+                return;
+            }
+
+            const supabase = getSupabase();
+            if (!supabase) {
+                showAlert('数据库未连接', 'error');
+                return;
+            }
+
+            const { data: clients, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('agency_id', currentUser.id)
+                .eq('phone', keyword);
+
+            if (error) {
+                showAlert('搜索失败', 'error');
+                return;
+            }
+
+            displayManageClientResult(clients);
+        }
+
+        // 显示全部客户用于管理
+        async function showAllClientsForManage() {
+            document.getElementById('manageClientPhone').value = '';
+
+            const supabase = getSupabase();
+            if (!supabase) {
+                showAlert('数据库未连接', 'error');
+                return;
+            }
+
+            const { data: clients, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('agency_id', currentUser.id)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                showAlert('加载失败', 'error');
+                return;
+            }
+
+            displayManageClientResult(clients);
+        }
+
+        // 显示管理客户结果
+        function displayManageClientResult(clients) {
+            const resultDiv = document.getElementById('manageClientResult');
+
+            if (!clients || clients.length === 0) {
+                resultDiv.innerHTML = '<p style="color: #888; text-align: center;">未找到客户</p>';
+                return;
+            }
+
+            resultDiv.innerHTML = `
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <thead>
+                        <tr style="background: #e8e8e8;">
+                            <th style="padding: 8px; border: 1px solid #ddd;">姓名</th>
+                            <th style="padding: 8px; border: 1px solid #ddd;">手机号</th>
+                            <th style="padding: 8px; border: 1px solid #ddd;">性别</th>
+                            <th style="padding: 8px; border: 1px solid #ddd;">状态</th>
+                            <th style="padding: 8px; border: 1px solid #ddd;">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${clients.map(client => `
+                            <tr>
+                                <td style="padding: 8px; border: 1px solid #ddd;">${client.name || '-'}</td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">${client.phone}</td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">${client.gender || '-'}</td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">
+                                    <span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">
+                                        ${client.status === 'active' ? '正常' : '禁用'}
+                                    </span>
+                                </td>
+                                <td style="padding: 8px; border: 1px solid #ddd;">
+                                    <button class="btn btn-secondary btn-small" onclick="editClient('${client.id}')">编辑</button>
+                                    <button class="btn btn-danger btn-small" onclick="resetPassword('${client.id}')">重置密码</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
         }
 
         // 加载联系请求
