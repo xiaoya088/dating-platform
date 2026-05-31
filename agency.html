@@ -137,7 +137,7 @@
         
         <div id="addTab" class="tab-content hidden">
             <div class="card">
-                <div class="card-header">录入新客户</div>
+                <div class="card-header" id="formTitle">录入新客户</div>
 
                 <div style="margin: 15px 0; padding: 15px; background: #f8f9fa; border-radius: 8px;">
                     <h4 style="margin: 0 0 10px; color: #667eea;">👥 客户管理</h4>
@@ -149,7 +149,12 @@
                     <div id="manageClientResult" style="margin-top: 15px;"></div>
                 </div>
 
-                <form id="clientForm" onsubmit="addClient(event)">
+                <div id="editStatusBar" class="hidden" style="margin: 15px 0; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>📝 当前正在编辑：<strong id="editingClientName"></strong>（<span id="editingClientPhone"></span>）</span>
+                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">取消编辑</button>
+                </div>
+
+                <form id="clientForm" onsubmit="submitClientForm(event)">
                     <h4 style="margin: 15px 0 10px; color: #667eea;">登录信息</h4>
                     <div class="form-row">
                         <div class="form-col">
@@ -688,8 +693,9 @@
                             </div>
                         </div>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">录入客户</button>
+
+                    <input type="hidden" id="editClientId" value="">
+                    <button type="submit" class="btn btn-primary" id="submitBtn" style="width: 100%; margin-top: 20px;">录入客户</button>
                 </form>
             </div>
         </div>
@@ -702,16 +708,6 @@
                 <button class="modal-close" onclick="closeModal()">×</button>
             </div>
             <div id="modalBody"></div>
-        </div>
-    </div>
-
-    <div id="clientEditModal" class="modal hidden">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <span id="editModalTitle">编辑客户</span>
-                <button class="modal-close" onclick="closeEditModal()">×</button>
-            </div>
-            <div id="editModalBody"></div>
         </div>
     </div>
 
@@ -1141,20 +1137,19 @@
             if (error) {
                 showAlert('重置失败', 'error');
             } else {
-                closeModal();
-                const confirmMsg = confirm(`密码已重置为: ${newPassword}\n\n是否复制新密码到剪贴板？`);
-                if (confirmMsg) {
-                    navigator.clipboard.writeText(newPassword).catch(() => {});
-                    showAlert('密码已复制', 'success');
-                }
-                loadClients();
+                showAlert(`密码已重置为: ${newPassword}`, 'success');
+                navigator.clipboard.writeText(newPassword).catch(() => {});
+
+                // 切换到录入标签并填充密码框
+                showTab('add');
+                document.getElementById('clientPassword').value = newPassword;
+                document.getElementById('clientPassword').focus();
+                document.getElementById('clientPassword').select();
             }
         }
 
-        // 编辑客户
+        // 编辑客户 - 直接在表单中编辑
         async function editClient(clientId) {
-            closeModal();
-
             const supabase = getSupabase();
 
             const { data: client, error } = await supabase
@@ -1168,157 +1163,136 @@
                 return;
             }
 
-            document.getElementById('editModalTitle').textContent = '编辑: ' + (client.name || '');
-            document.getElementById('editModalBody').innerHTML = `
-                <form id="editClientForm" style="padding: 20px;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">姓名</label>
-                            <input type="text" id="editName" value="${client.name || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">手机号</label>
-                            <input type="text" id="editPhone" value="${client.phone || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" readonly>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">性别</label>
-                            <select id="editGender" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                <option value="">请选择</option>
-                                <option value="male" ${client.gender === 'male' ? 'selected' : ''}>男</option>
-                                <option value="female" ${client.gender === 'female' ? 'selected' : ''}>女</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">生日</label>
-                            <input type="date" id="editBirthday" value="${client.birthday || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">身高 (cm)</label>
-                            <input type="number" id="editHeight" value="${client.height || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">体重 (kg)</label>
-                            <input type="number" id="editWeight" value="${client.weight || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">学历</label>
-                            <input type="text" id="editEducation" value="${client.education || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">职业</label>
-                            <input type="text" id="editOccupation" value="${client.occupation || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">年收入 (万元)</label>
-                            <input type="text" id="editIncome" value="${client.income || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">婚姻状况</label>
-                            <select id="editMaritalStatus" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                                <option value="">请选择</option>
-                                <option value="未婚" ${client.marital_status === '未婚' ? 'selected' : ''}>未婚</option>
-                                <option value="离异" ${client.marital_status === '离异' ? 'selected' : ''}>离异</option>
-                                <option value="丧偶" ${client.marital_status === '丧偶' ? 'selected' : ''}>丧偶</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">现居地</label>
-                            <input type="text" id="editCurrentAddress" value="${client.current_address || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">户籍地</label>
-                            <input type="text" id="editHukou" value="${client.hukou || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">房产</label>
-                            <input type="text" id="editProperty" value="${client.property || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">车辆</label>
-                            <input type="text" id="editCar" value="${client.car || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">微信</label>
-                            <input type="text" id="editWechat" value="${client.wechat || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">吸烟</label>
-                            <input type="text" id="editSmoking" value="${client.smoking || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">饮酒</label>
-                            <input type="text" id="editDrinking" value="${client.drinking || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">宗教</label>
-                            <input type="text" id="editReligion" value="${client.religion || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">宠物偏好</label>
-                            <input type="text" id="editAcceptPet" value="${client.accept_pet || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                        <div>
-                            <label style="display: block; margin-bottom: 5px; font-weight: bold;">作息习惯</label>
-                            <input type="text" id="editSchedule" value="${client.schedule || ''}" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                        </div>
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">自我描述</label>
-                        <textarea id="editSelfDescription" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">${client.self_description || ''}</textarea>
-                    </div>
-                    <div style="margin-top: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">婚恋宣言</label>
-                        <textarea id="editDeclaration" rows="3" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">${client.declaration || ''}</textarea>
-                    </div>
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button type="button" class="btn btn-primary" onclick="saveClientEdit('${clientId}')">保存</button>
-                        <button type="button" class="btn btn-secondary" onclick="closeEditModal()">取消</button>
-                    </div>
-                </form>
-            `;
+            // 切换到录入标签并填充表单
+            showTab('add');
 
-            document.getElementById('clientEditModal').classList.remove('hidden');
+            document.getElementById('formTitle').textContent = '编辑客户';
+            document.getElementById('editClientId').value = clientId;
+            document.getElementById('submitBtn').textContent = '保存修改';
+            document.getElementById('editStatusBar').classList.remove('hidden');
+            document.getElementById('editingClientName').textContent = client.name || '';
+            document.getElementById('editingClientPhone').textContent = client.phone;
+
+            // 填充表单数据
+            document.getElementById('clientPhone').value = client.phone || '';
+            document.getElementById('clientPhone').readOnly = true;
+            document.getElementById('clientPassword').value = client.password || '';
+            document.getElementById('clientName').value = client.name || '';
+            document.getElementById('clientGender').value = client.gender || '';
+            document.getElementById('clientBirthday').value = client.birthday || '';
+            document.getElementById('clientHeight').value = client.height || '';
+            document.getElementById('clientWeight').value = client.weight || '';
+            document.getElementById('clientEducation').value = client.education || '';
+            document.getElementById('clientOccupation').value = client.occupation || '';
+            document.getElementById('clientIncome').value = client.income || '';
+            document.getElementById('clientHukou').value = client.hukou || '';
+            document.getElementById('clientCurrentAddress').value = client.current_address || '';
+            document.getElementById('clientProperty').value = client.property || '';
+            document.getElementById('clientCar').value = client.car || '';
+            document.getElementById('clientWechat').value = client.wechat || '';
+            document.getElementById('clientMaritalStatus').value = client.marital_status || '';
+            document.getElementById('clientSmoking').value = client.smoking || '';
+            document.getElementById('clientDrinking').value = client.drinking || '';
+            document.getElementById('clientReligion').value = client.religion || '';
+            document.getElementById('clientAcceptPet').value = client.accept_pet || '';
+            document.getElementById('clientSchedule').value = client.schedule || '';
+            document.getElementById('clientInterests').value = Array.isArray(client.interests) ? client.interests.join(', ') : (client.interests || '');
+            document.getElementById('clientActivityTypes').value = Array.isArray(client.activity_types) ? client.activity_types.join(', ') : (client.activity_types || '');
+            document.getElementById('clientSelfDescription').value = client.self_description || '';
+            document.getElementById('clientDeclaration').value = client.declaration || '';
+
+            // 清除客户搜索结果
+            document.getElementById('manageClientResult').innerHTML = '';
         }
 
-        // 保存客户编辑
-        async function saveClientEdit(clientId) {
+        // 取消编辑
+        function cancelEdit() {
+            document.getElementById('formTitle').textContent = '录入新客户';
+            document.getElementById('editClientId').value = '';
+            document.getElementById('submitBtn').textContent = '录入客户';
+            document.getElementById('editStatusBar').classList.add('hidden');
+
+            // 重置表单
+            document.getElementById('clientForm').reset();
+            document.getElementById('clientPhone').readOnly = false;
+            document.getElementById('clientPassword').value = '';
+            selectedPhotos = [];
+        }
+
+        // 提交客户表单（新增或编辑）
+        async function submitClientForm(event) {
+            event.preventDefault();
+
+            const editClientId = document.getElementById('editClientId').value;
             const supabase = getSupabase();
 
-            const updateData = {
-                name: document.getElementById('editName').value.trim(),
-                gender: document.getElementById('editGender').value,
-                birthday: document.getElementById('editBirthday').value,
-                height: document.getElementById('editHeight').value ? parseInt(document.getElementById('editHeight').value) : null,
-                weight: document.getElementById('editWeight').value ? parseInt(document.getElementById('editWeight').value) : null,
-                education: document.getElementById('editEducation').value.trim(),
-                occupation: document.getElementById('editOccupation').value.trim(),
-                income: document.getElementById('editIncome').value.trim(),
-                marital_status: document.getElementById('editMaritalStatus').value,
-                current_address: document.getElementById('editCurrentAddress').value.trim(),
-                hukou: document.getElementById('editHukou').value.trim(),
-                property: document.getElementById('editProperty').value.trim(),
-                car: document.getElementById('editCar').value.trim(),
-                wechat: document.getElementById('editWechat').value.trim(),
-                smoking: document.getElementById('editSmoking').value.trim(),
-                drinking: document.getElementById('editDrinking').value.trim(),
-                religion: document.getElementById('editReligion').value.trim(),
-                accept_pet: document.getElementById('editAcceptPet').value.trim(),
-                schedule: document.getElementById('editSchedule').value.trim(),
-                self_description: document.getElementById('editSelfDescription').value.trim(),
-                declaration: document.getElementById('editDeclaration').value.trim()
+            const formData = {
+                name: document.getElementById('clientName').value.trim(),
+                phone: document.getElementById('clientPhone').value.trim(),
+                password: document.getElementById('clientPassword').value.trim(),
+                gender: document.getElementById('clientGender').value,
+                birthday: document.getElementById('clientBirthday').value,
+                height: document.getElementById('clientHeight').value ? parseInt(document.getElementById('clientHeight').value) : null,
+                weight: document.getElementById('clientWeight').value ? parseInt(document.getElementById('clientWeight').value) : null,
+                education: document.getElementById('clientEducation').value.trim(),
+                occupation: document.getElementById('clientOccupation').value.trim(),
+                income: document.getElementById('clientIncome').value.trim(),
+                hukou: document.getElementById('clientHukou').value.trim(),
+                current_address: document.getElementById('clientCurrentAddress').value.trim(),
+                property: document.getElementById('clientProperty').value.trim(),
+                car: document.getElementById('clientCar').value.trim(),
+                wechat: document.getElementById('clientWechat').value.trim(),
+                marital_status: document.getElementById('clientMaritalStatus').value,
+                smoking: document.getElementById('clientSmoking').value.trim(),
+                drinking: document.getElementById('clientDrinking').value.trim(),
+                religion: document.getElementById('clientReligion').value.trim(),
+                accept_pet: document.getElementById('clientAcceptPet').value.trim(),
+                schedule: document.getElementById('clientSchedule').value.trim(),
+                interests: document.getElementById('clientInterests').value.split(',').map(s => s.trim()).filter(s => s),
+                activity_types: document.getElementById('clientActivityTypes').value.split(',').map(s => s.trim()).filter(s => s),
+                self_description: document.getElementById('clientSelfDescription').value.trim(),
+                declaration: document.getElementById('clientDeclaration').value.trim()
             };
 
-            const { error } = await supabase
-                .from('users')
-                .update(updateData)
-                .eq('id', clientId);
+            if (selectedPhotos.length > 0) {
+                formData.photos = selectedPhotos;
+            }
 
-            if (error) {
-                showAlert('保存失败: ' + error.message, 'error');
+            if (editClientId) {
+                // 编辑模式
+                const { error } = await supabase
+                    .from('users')
+                    .update(formData)
+                    .eq('id', editClientId);
+
+                if (error) {
+                    showAlert('保存失败: ' + error.message, 'error');
+                } else {
+                    showAlert('保存成功', 'success');
+                    cancelEdit();
+                    showAllClientsForManage();
+                }
             } else {
-                closeEditModal();
-                showAlert('保存成功', 'success');
-                loadClients();
+                // 新增模式
+                if (!formData.phone || !formData.name) {
+                    showAlert('请填写必填项', 'error');
+                    return;
+                }
+
+                formData.agency_id = currentUser.id;
+                formData.status = 'active';
+
+                const { error } = await supabase
+                    .from('users')
+                    .insert([formData]);
+
+                if (error) {
+                    showAlert('录入失败: ' + error.message, 'error');
+                } else {
+                    showAlert('录入成功', 'success');
+                    document.getElementById('clientForm').reset();
+                    selectedPhotos = [];
+                }
             }
         }
 
