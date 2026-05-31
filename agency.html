@@ -12,11 +12,68 @@
     <nav class="navbar">
         <div class="navbar-brand">💕 中介后台</div>
         <ul class="navbar-nav">
-            <li><a href="#" onclick="showTab('clients')" class="active" id="navClients">客户管理</a></li>
-            <li><a href="#" onclick="showTab('requests')">联系请求</a></li>
-            <li><a href="#" onclick="logout()">退出</a></li>
+            <li><a href="#" onclick="showTab('clients'); return false;" class="active" id="navClients">客户管理</a></li>
+            <li><a href="#" onclick="showTab('requests'); return false;">联系请求</a></li>
+            <li><a href="#" onclick="logout(); return false;">退出</a></li>
         </ul>
     </nav>
+
+    <!-- 全局函数定义 - 必须在最前面 -->
+    <script>
+        // 全局函数定义
+        function showTab(tabName) {
+            console.log('切换到标签:', tabName);
+            
+            // 更新导航栏状态
+            document.querySelectorAll('.navbar-nav a').forEach(a => a.classList.remove('active'));
+            const navLink = document.getElementById('nav' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+            if (navLink) navLink.classList.add('active');
+            
+            // 更新标签按钮状态
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
+            if (tabBtn) tabBtn.classList.add('active');
+            
+            // 显示对应内容
+            document.querySelectorAll('.tab-content').forEach(c => {
+                c.classList.add('hidden');
+                c.classList.remove('active');
+            });
+            
+            const tabContent = document.getElementById(tabName + 'Tab');
+            if (tabContent) {
+                tabContent.classList.remove('hidden');
+                tabContent.classList.add('active');
+            }
+        }
+        
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+        
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            if (alertBox) {
+                alertBox.className = `alert alert-${type}`;
+                alertBox.textContent = message;
+                alertBox.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    alertBox.classList.add('hidden');
+                }, 3000);
+            }
+        }
+        
+        function closeModal() {
+            const modal = document.getElementById('clientDetailModal');
+            if (modal) modal.classList.add('hidden');
+        }
+        
+        function generatePassword() {
+            return Math.random().toString(36).substring(2, 8);
+        }
+    </script>
     
     <div class="container">
         <div class="tabs">
@@ -56,574 +113,550 @@
         
         <div id="addTab" class="tab-content hidden">
             <div class="card">
-                <div class="card-header">录入新客户 ★ 必填项标记</div>
+                <div class="card-header">录入新客户</div>
                 
-                <h4 style="margin: 15px 0 10px; color: #667eea;">登录信息</h4>
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>手机号（登录账号） *</label>
-                            <input type="tel" id="clientPhone" maxlength="11" placeholder="11位手机号">
+                <form id="clientForm" onsubmit="addClient(event)">
+                    <h4 style="margin: 15px 0 10px; color: #667eea;">登录信息</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>手机号（登录账号） *</label>
+                                <input type="tel" id="clientPhone" maxlength="11" placeholder="11位手机号">
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>密码 *</label>
-                            <input type="text" id="clientPassword" placeholder="默认生成，可修改">
-                        </div>
-                    </div>
-                </div>
-                
-                <h4 style="margin: 15px 0 10px; color: #667eea;">基本信息</h4>
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>姓名（展示昵称） *</label>
-                            <input type="text" id="clientName" placeholder="请输入姓名">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>性别 *</label>
-                            <select id="clientGender">
-                                <option value="">请选择</option>
-                                <option value="男">男</option>
-                                <option value="女">女</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>出生日期 *</label>
-                            <input type="date" id="clientBirthday">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>身高 (cm) *</label>
-                            <input type="number" id="clientHeight" placeholder="如: 175">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>现居地 *</label>
-                            <input type="text" id="clientCurrentAddress" placeholder="如: 广东省深圳市南山区">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>户籍地 *</label>
-                            <input type="text" id="clientHukou" placeholder="如: 北京市朝阳区">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>婚姻状况 *</label>
-                    <select id="clientMaritalStatus">
-                        <option value="">请选择</option>
-                        <option value="未婚">未婚</option>
-                        <option value="离异">离异</option>
-                        <option value="丧偶">丧偶</option>
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label>照片上传</label>
-                    <div id="photoPreview" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0;"></div>
-                    <input type="file" id="clientPhoto" accept="image/*" multiple onchange="handlePhotoSelect(this)">
-                    <button type="button" class="btn btn-secondary btn-small" onclick="clearPhotos()" style="margin-top: 5px;">清除照片</button>
-                    <p style="color: #888; font-size: 12px; margin-top: 5px;">支持 JPG、PNG 格式，可上传多张照片</p>
-                </div>
-
-                <h4 style="margin: 15px 0 10px; color: #667eea;">外貌生活</h4>
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>学历 ★</label>
-                            <select id="clientEducation">
-                                <option value="">请选择</option>
-                                <option value="小学">小学</option>
-                                <option value="初中">初中</option>
-                                <option value="高中">高中</option>
-                                <option value="大专">大专</option>
-                                <option value="本科">本科</option>
-                                <option value="硕士">硕士</option>
-                                <option value="博士">博士</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>职业 ★</label>
-                            <input type="text" id="clientOccupation" placeholder="如: 程序员">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>体重 (kg)</label>
-                            <input type="number" id="clientWeight" placeholder="如: 65">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>年收入</label>
-                            <select id="clientIncome">
-                                <option value="">请选择</option>
-                                <option value="3000以下">3000以下</option>
-                                <option value="3000-5000">3000-5000</option>
-                                <option value="5000-8000">5000-8000</option>
-                                <option value="8000-10000">8000-10000</option>
-                                <option value="10000-15000">10000-15000</option>
-                                <option value="15000-20000">15000-20000</option>
-                                <option value="20000-30000">20000-30000</option>
-                                <option value="30000以上">30000以上</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>房产</label>
-                            <select id="clientProperty">
-                                <option value="">请选择</option>
-                                <option value="有房">有房</option>
-                                <option value="无房">无房</option>
-                                <option value="与父母同住">与父母同住</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>车辆</label>
-                            <select id="clientCar">
-                                <option value="">请选择</option>
-                                <option value="有车">有车</option>
-                                <option value="无车">无车</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>吸烟</label>
-                            <select id="clientSmoking">
-                                <option value="">请选择</option>
-                                <option value="不吸烟">不吸烟</option>
-                                <option value="偶尔吸">偶尔吸</option>
-                                <option value="经常吸">经常吸</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>饮酒</label>
-                            <select id="clientDrinking">
-                                <option value="">请选择</option>
-                                <option value="不饮酒">不饮酒</option>
-                                <option value="偶尔喝">偶尔喝</option>
-                                <option value="经常喝">经常喝</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>宗教信仰</label>
-                            <input type="text" id="clientReligion" placeholder="如: 佛教、基督教等">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>微信号</label>
-                            <input type="text" id="clientWechat" placeholder="请输入微信号">
-                        </div>
-                    </div>
-                </div>
-                
-                <h4 style="margin: 15px 0 10px; color: #667eea;">性格与兴趣</h4>
-                <div class="form-group">
-                    <label>性格自评</label>
-                    <div class="checkbox-group" id="clientPersonality">
-                        <label class="checkbox-item"><input type="checkbox" value="开朗">开朗</label>
-                        <label class="checkbox-item"><input type="checkbox" value="内向">内向</label>
-                        <label class="checkbox-item"><input type="checkbox" value="稳重">稳重</label>
-                        <label class="checkbox-item"><input type="checkbox" value="活泼">活泼</label>
-                        <label class="checkbox-item"><input type="checkbox" value="幽默">幽默</label>
-                        <label class="checkbox-item"><input type="checkbox" value="细心">细心</label>
-                        <label class="checkbox-item"><input type="checkbox" value="体贴">体贴</label>
-                        <label class="checkbox-item"><input type="checkbox" value="独立">独立</label>
-                        <label class="checkbox-item"><input type="checkbox" value="随和">随和</label>
-                        <label class="checkbox-item"><input type="checkbox" value="上进">上进</label>
-                        <label class="checkbox-item"><input type="checkbox" value="乐观">乐观</label>
-                        <label class="checkbox-item"><input type="checkbox" value="真诚">真诚</label>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>兴趣爱好</label>
-                    <div class="checkbox-group" id="clientInterests">
-                        <label class="checkbox-item"><input type="checkbox" value="运动健身">运动健身</label>
-                        <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
-                        <label class="checkbox-item"><input type="checkbox" value="阅读">阅读</label>
-                        <label class="checkbox-item"><input type="checkbox" value="音乐">音乐</label>
-                        <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
-                        <label class="checkbox-item"><input type="checkbox" value="美食">美食</label>
-                        <label class="checkbox-item"><input type="checkbox" value="摄影">摄影</label>
-                        <label class="checkbox-item"><input type="checkbox" value="游戏">游戏</label>
-                        <label class="checkbox-item"><input type="checkbox" value="宠物">宠物</label>
-                        <label class="checkbox-item"><input type="checkbox" value="手工">手工</label>
-                        <label class="checkbox-item"><input type="checkbox" value="绘画">绘画</label>
-                        <label class="checkbox-item"><input type="checkbox" value="舞蹈">舞蹈</label>
-                        <label class="checkbox-item"><input type="checkbox" value="瑜伽">瑜伽</label>
-                        <label class="checkbox-item"><input type="checkbox" value="钓鱼">钓鱼</label>
-                        <label class="checkbox-item"><input type="checkbox" value="园艺">园艺</label>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>线下活动类型（多选）</label>
-                    <div class="checkbox-group" id="clientActivityTypes">
-                        <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
-                        <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
-                        <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
-                        <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
-                        <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
-                        <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
-                        <label class="checkbox-item"><input type="checkbox" value="露营">露营</label>
-                        <label class="checkbox-item"><input type="checkbox" value="看展">看展</label>
-                        <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
-                        <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
-                        <label class="checkbox-item"><input type="checkbox" value="运动">运动</label>
-                        <label class="checkbox-item"><input type="checkbox" value="品茶">品茶</label>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>是否接受宠物</label>
-                            <select id="clientAcceptPet">
-                                <option value="">请选择</option>
-                                <option value="是">是</option>
-                                <option value="否">否</option>
-                                <option value="无所谓">无所谓</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>作息习惯</label>
-                            <select id="clientSchedule">
-                                <option value="">请选择</option>
-                                <option value="早睡早起">早睡早起</option>
-                                <option value="规律作息">规律作息</option>
-                                <option value="夜猫子">夜猫子</option>
-                                <option value="弹性作息">弹性作息</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <h4 style="margin: 15px 0 10px; color: #667eea;">婚恋价值观</h4>
-                <div class="form-group">
-                    <label>婚后财务看法</label>
-                    <select id="clientFinanceView">
-                        <option value="">请选择</option>
-                        <option value="AA制">AA制</option>
-                        <option value="共同账户">共同账户</option>
-                        <option value="男方承担">男方承担</option>
-                        <option value="女方承担">女方承担</option>
-                        <option value="协商处理">协商处理</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>是否与父母同住</label>
-                    <select id="clientLiveWithParents">
-                        <option value="">请选择</option>
-                        <option value="愿意">愿意</option>
-                        <option value="不愿意">不愿意</option>
-                        <option value="视情况">视情况</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>期望孩子数</label>
-                    <select id="clientExpectedChildren">
-                        <option value="">请选择</option>
-                        <option value="0">丁克</option>
-                        <option value="1">1个</option>
-                        <option value="2">2个</option>
-                        <option value="3">3个及以上</option>
-                        <option value="不限">不限</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label>自我描述（最多500字）</label>
-                    <textarea id="clientSelfDescription" rows="5" placeholder="描述自己的性格、爱好、婚恋观等（500字以内）" maxlength="500"></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>婚恋宣言</label>
-                    <textarea id="clientDeclaration" rows="3" placeholder="描述自己、感情观（200字以内）" maxlength="200"></textarea>
-                </div>
-                
-                <h4 style="margin: 15px 0 10px; color: #667eea;">择偶要求</h4>
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>最小年龄</label>
-                            <input type="number" id="clientReqMinAge" placeholder="如: 25">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>最大年龄</label>
-                            <input type="number" id="clientReqMaxAge" placeholder="如: 35">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>年龄重要程度</label>
-                            <select id="clientAgeImportance">
-                                <option value="must">必须满足</option>
-                                <option value="very_important">非常重要</option>
-                                <option value="normal">一般</option>
-                                <option value="optional">可有可无</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>最小身高 (cm)</label>
-                            <input type="number" id="clientReqMinHeight" placeholder="如: 160">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>最大身高 (cm)</label>
-                            <input type="number" id="clientReqMaxHeight" placeholder="如: 175">
-                        </div>
-                    </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>身高重要程度</label>
-                            <select id="clientHeightImportance">
-                                <option value="must">必须满足</option>
-                                <option value="very_important">非常重要</option>
-                                <option value="normal">一般</option>
-                                <option value="optional">可有可无</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>学历要求</label>
-                            <div class="checkbox-group" id="clientReqEducation">
-                                <label class="checkbox-item"><input type="checkbox" value="大专">大专</label>
-                                <label class="checkbox-item"><input type="checkbox" value="本科">本科</label>
-                                <label class="checkbox-item"><input type="checkbox" value="硕士">硕士</label>
-                                <label class="checkbox-item"><input type="checkbox" value="博士">博士</label>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>密码 *</label>
+                                <input type="text" id="clientPassword" placeholder="默认生成，可修改">
                             </div>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>学历重要程度</label>
-                            <select id="clientEducationImportance">
-                                <option value="must">必须满足</option>
-                                <option value="very_important">非常重要</option>
-                                <option value="normal">一般</option>
-                                <option value="optional">可有可无</option>
-                            </select>
+                    
+                    <h4 style="margin: 15px 0 10px; color: #667eea;">基本信息</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>姓名（展示昵称） *</label>
+                                <input type="text" id="clientName" placeholder="请输入姓名">
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>婚姻状况要求</label>
-                            <div class="checkbox-group" id="clientReqMarital">
-                                <label class="checkbox-item"><input type="checkbox" value="未婚">未婚</label>
-                                <label class="checkbox-item"><input type="checkbox" value="离异">离异</label>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>性别 *</label>
+                                <select id="clientGender">
+                                    <option value="">请选择</option>
+                                    <option value="男">男</option>
+                                    <option value="女">女</option>
+                                </select>
                             </div>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>婚姻重要程度</label>
-                            <select id="clientMaritalImportance">
-                                <option value="must">必须满足</option>
-                                <option value="very_important">非常重要</option>
-                                <option value="normal">一般</option>
-                                <option value="optional">可有可无</option>
-                            </select>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>出生日期 *</label>
+                                <input type="date" id="clientBirthday">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>身高 (cm) *</label>
+                                <input type="number" id="clientHeight" placeholder="如: 175">
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>现居地要求</label>
-                            <input type="text" id="clientReqProvince" placeholder="如: 北京市">
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>现居地 *</label>
+                                <input type="text" id="clientCurrentAddress" placeholder="如: 广东省深圳市南山区">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>户籍地 *</label>
+                                <input type="text" id="clientHukou" placeholder="如: 北京市朝阳区">
+                            </div>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>地区重要程度</label>
-                            <select id="clientProvinceImportance">
-                                <option value="must">必须满足</option>
-                                <option value="very_important">非常重要</option>
-                                <option value="normal">一般</option>
-                                <option value="optional">可有可无</option>
-                            </select>
+                    
+                    <div class="form-group">
+                        <label>婚姻状况 *</label>
+                        <select id="clientMaritalStatus">
+                            <option value="">请选择</option>
+                            <option value="未婚">未婚</option>
+                            <option value="离异">离异</option>
+                            <option value="丧偶">丧偶</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>照片上传</label>
+                        <div id="photoPreview" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0;"></div>
+                        <input type="file" id="clientPhoto" accept="image/*" multiple onchange="handlePhotoSelect(this)">
+                        <button type="button" class="btn btn-secondary btn-small" onclick="clearPhotos()" style="margin-top: 5px;">清除照片</button>
+                        <p style="color: #888; font-size: 12px; margin-top: 5px;">支持 JPG、PNG 格式，可上传多张照片</p>
+                    </div>
+
+                    <h4 style="margin: 15px 0 10px; color: #667eea;">外貌生活</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>学历 ★</label>
+                                <select id="clientEducation">
+                                    <option value="">请选择</option>
+                                    <option value="小学">小学</option>
+                                    <option value="初中">初中</option>
+                                    <option value="高中">高中</option>
+                                    <option value="大专">大专</option>
+                                    <option value="本科">本科</option>
+                                    <option value="硕士">硕士</option>
+                                    <option value="博士">博士</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>职业 ★</label>
+                                <input type="text" id="clientOccupation" placeholder="如: 软件工程师">
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>体型偏好</label>
-                            <select id="clientReqBodyType">
-                                <option value="">不限</option>
-                                <option value="偏瘦">偏瘦</option>
-                                <option value="匀称">匀称</option>
-                                <option value="健壮">健壮</option>
-                            </select>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>年收入 (万元) ★</label>
+                                <select id="clientIncome">
+                                    <option value="">请选择</option>
+                                    <option value="5">5万以下</option>
+                                    <option value="5-10">5-10万</option>
+                                    <option value="10-20">10-20万</option>
+                                    <option value="20-50">20-50万</option>
+                                    <option value="50-100">50-100万</option>
+                                    <option value="100">100万以上</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>房产情况 ★</label>
+                                <select id="clientProperty">
+                                    <option value="">请选择</option>
+                                    <option value="无房产">无房产</option>
+                                    <option value="1套">1套</option>
+                                    <option value="2套">2套</option>
+                                    <option value="3套及以上">3套及以上</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>年收入下限</label>
-                            <select id="clientReqMinIncome">
-                                <option value="">不限</option>
-                                <option value="3000">3000</option>
-                                <option value="5000">5000</option>
-                                <option value="8000">8000</option>
-                                <option value="10000">10000</option>
-                                <option value="15000">15000</option>
-                                <option value="20000">20000</option>
-                            </select>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>车辆情况 ★</label>
+                                <select id="clientCar">
+                                    <option value="">请选择</option>
+                                    <option value="无车">无车</option>
+                                    <option value="1辆">1辆</option>
+                                    <option value="2辆及以上">2辆及以上</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>体重 (kg)</label>
+                                <input type="number" id="clientWeight" placeholder="如: 65">
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>吸烟要求</label>
-                            <select id="clientReqSmoking">
-                                <option value="">不限</option>
-                                <option value="不吸烟">不吸烟</option>
-                                <option value="偶尔吸">偶尔吸</option>
-                            </select>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>吸烟习惯</label>
+                                <select id="clientSmoking">
+                                    <option value="">请选择</option>
+                                    <option value="从不吸烟">从不吸烟</option>
+                                    <option value="偶尔吸烟">偶尔吸烟</option>
+                                    <option value="经常吸烟">经常吸烟</option>
+                                    <option value="已戒烟">已戒烟</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>饮酒习惯</label>
+                                <select id="clientDrinking">
+                                    <option value="">请选择</option>
+                                    <option value="从不饮酒">从不饮酒</option>
+                                    <option value="偶尔饮酒">偶尔饮酒</option>
+                                    <option value="经常饮酒">经常饮酒</option>
+                                    <option value="已戒酒">已戒酒</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>饮酒要求</label>
-                            <select id="clientReqDrinking">
-                                <option value="">不限</option>
-                                <option value="不饮酒">不饮酒</option>
-                                <option value="偶尔喝">偶尔喝</option>
-                            </select>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>宗教信仰</label>
+                                <select id="clientReligion">
+                                    <option value="">请选择</option>
+                                    <option value="无">无</option>
+                                    <option value="佛教">佛教</option>
+                                    <option value="基督教">基督教</option>
+                                    <option value="天主教">天主教</option>
+                                    <option value="伊斯兰教">伊斯兰教</option>
+                                    <option value="其他">其他</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>微信号</label>
+                                <input type="text" id="clientWechat" placeholder="微信号">
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>性格偏好</label>
-                    <div class="checkbox-group" id="clientReqPersonality">
-                        <label class="checkbox-item"><input type="checkbox" value="开朗">开朗</label>
-                        <label class="checkbox-item"><input type="checkbox" value="稳重">稳重</label>
-                        <label class="checkbox-item"><input type="checkbox" value="幽默">幽默</label>
-                        <label class="checkbox-item"><input type="checkbox" value="细心">细心</label>
-                        <label class="checkbox-item"><input type="checkbox" value="体贴">体贴</label>
-                        <label class="checkbox-item"><input type="checkbox" value="独立">独立</label>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>性格重要程度</label>
-                            <select id="clientPersonalityImportance">
-                                <option value="must">必须满足</option>
-                                <option value="very_important">非常重要</option>
-                                <option value="normal" selected>一般</option>
-                                <option value="optional">可有可无</option>
-                            </select>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>宠物偏好</label>
+                                <select id="clientAcceptPet">
+                                    <option value="">请选择</option>
+                                    <option value="喜欢">喜欢</option>
+                                    <option value="不喜欢">不喜欢</option>
+                                    <option value="无所谓">无所谓</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>作息习惯</label>
+                                <select id="clientSchedule">
+                                    <option value="">请选择</option>
+                                    <option value="早睡早起">早睡早起</option>
+                                    <option value="规律作息">规律作息</option>
+                                    <option value="夜猫子">夜猫子</option>
+                                    <option value="弹性作息">弹性作息</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>兴趣重合度要求（最低几项）</label>
-                            <input type="number" id="clientReqMinInterestOverlap" placeholder="如: 2" value="2">
+                    
+                    <h4 style="margin: 15px 0 10px; color: #667eea;">性格与兴趣</h4>
+                    <div class="form-group">
+                        <label>兴趣爱好</label>
+                        <div class="checkbox-group" id="clientInterests">
+                            <label class="checkbox-item"><input type="checkbox" value="运动健身">运动健身</label>
+                            <label class="checkbox-item"><input type="checkbox" value="旅游">旅游</label>
+                            <label class="checkbox-item"><input type="checkbox" value="阅读">阅读</label>
+                            <label class="checkbox-item"><input type="checkbox" value="音乐">音乐</label>
+                            <label class="checkbox-item"><input type="checkbox" value="电影">电影</label>
+                            <label class="checkbox-item"><input type="checkbox" value="美食">美食</label>
+                            <label class="checkbox-item"><input type="checkbox" value="摄影">摄影</label>
+                            <label class="checkbox-item"><input type="checkbox" value="游戏">游戏</label>
+                            <label class="checkbox-item"><input type="checkbox" value="宠物">宠物</label>
+                            <label class="checkbox-item"><input type="checkbox" value="手工">手工</label>
+                            <label class="checkbox-item"><input type="checkbox" value="绘画">绘画</label>
+                            <label class="checkbox-item"><input type="checkbox" value="舞蹈">舞蹈</label>
+                            <label class="checkbox-item"><input type="checkbox" value="瑜伽">瑜伽</label>
+                            <label class="checkbox-item"><input type="checkbox" value="钓鱼">钓鱼</label>
+                            <label class="checkbox-item"><input type="checkbox" value="园艺">园艺</label>
                         </div>
                     </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>线下活动偏好（多选）</label>
-                    <div class="checkbox-group" id="clientReqActivities">
-                        <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
-                        <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
-                        <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
-                        <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
-                        <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
-                        <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
-                        <label class="checkbox-item"><input type="checkbox" value="露营">露营</label>
-                        <label class="checkbox-item"><input type="checkbox" value="看展">看展</label>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>活动最低重合数</label>
-                            <input type="number" id="clientReqMinActivityOverlap" placeholder="如: 1" value="1">
+                    
+                    <div class="form-group">
+                        <label>线下活动类型（多选）</label>
+                        <div class="checkbox-group" id="clientActivityTypes">
+                            <label class="checkbox-item"><input type="checkbox" value="聚餐">聚餐</label>
+                            <label class="checkbox-item"><input type="checkbox" value="徒步">徒步</label>
+                            <label class="checkbox-item"><input type="checkbox" value="K歌">K歌</label>
+                            <label class="checkbox-item"><input type="checkbox" value="桌游">桌游</label>
+                            <label class="checkbox-item"><input type="checkbox" value="读书会">读书会</label>
+                            <label class="checkbox-item"><input type="checkbox" value="健身">健身</label>
+                            <label class="checkbox-item"><input type="checkbox" value="观影">观影</label>
+                            <label class="checkbox-item"><input type="checkbox" value="旅行">旅行</label>
                         </div>
                     </div>
-                    <div class="form-col">
-                        <div class="form-group">
-                            <label>价值观要求</label>
-                            <select id="clientReqValues">
-                                <option value="">不限</option>
-                                <option value="传统">传统</option>
-                                <option value="现代">现代</option>
-                                <option value="自由">自由</option>
-                            </select>
+                    
+                    <h4 style="margin: 15px 0 10px; color: #667eea;">婚恋价值观</h4>
+                    <div class="form-group">
+                        <label>婚后财务看法</label>
+                        <select id="clientFinanceView">
+                            <option value="">请选择</option>
+                            <option value="AA制">AA制</option>
+                            <option value="共同账户">共同账户</option>
+                            <option value="男方承担">男方承担</option>
+                            <option value="女方承担">女方承担</option>
+                            <option value="协商处理">协商处理</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>是否与父母同住</label>
+                        <select id="clientLiveWithParents">
+                            <option value="">请选择</option>
+                            <option value="愿意">愿意</option>
+                            <option value="不愿意">不愿意</option>
+                            <option value="视情况">视情况</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>期望孩子数</label>
+                        <select id="clientExpectedChildren">
+                            <option value="">请选择</option>
+                            <option value="0">不要孩子</option>
+                            <option value="1">1个</option>
+                            <option value="2">2个</option>
+                            <option value="3">3个及以上</option>
+                            <option value="不限">不限</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>自我描述（最多500字）</label>
+                        <textarea id="clientSelfDescription" rows="5" placeholder="描述自己的性格、爱好、婚恋观等（500字以内）" maxlength="500"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>婚恋宣言</label>
+                        <textarea id="clientDeclaration" rows="3" placeholder="描述自己、感情观（200字以内）" maxlength="200"></textarea>
+                    </div>
+                    
+                    <h4 style="margin: 15px 0 10px; color: #667eea;">择偶要求</h4>
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>最小年龄</label>
+                                <input type="number" id="clientReqMinAge" placeholder="如: 25">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>最大年龄</label>
+                                <input type="number" id="clientReqMaxAge" placeholder="如: 35">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>年龄重要程度</label>
+                                <select id="clientAgeImportance">
+                                    <option value="must">必须满足</option>
+                                    <option value="very_important">非常重要</option>
+                                    <option value="normal">一般</option>
+                                    <option value="optional">可有可无</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <button class="btn btn-primary btn-block" onclick="addClient()">录入客户</button>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>最小身高 (cm)</label>
+                                <input type="number" id="clientReqMinHeight" placeholder="如: 160">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>最大身高 (cm)</label>
+                                <input type="number" id="clientReqMaxHeight" placeholder="如: 180">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>身高重要程度</label>
+                                <select id="clientHeightImportance">
+                                    <option value="must">必须满足</option>
+                                    <option value="very_important">非常重要</option>
+                                    <option value="normal">一般</option>
+                                    <option value="optional">可有可无</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>学历要求</label>
+                                <div class="checkbox-group" id="clientReqEducation">
+                                    <label class="checkbox-item"><input type="checkbox" value="大专">大专</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="本科">本科</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="硕士">硕士</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="博士">博士</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>学历重要程度</label>
+                                <select id="clientEducationImportance">
+                                    <option value="must">必须满足</option>
+                                    <option value="very_important">非常重要</option>
+                                    <option value="normal">一般</option>
+                                    <option value="optional">可有可无</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>婚姻状况要求</label>
+                                <div class="checkbox-group" id="clientReqMarital">
+                                    <label class="checkbox-item"><input type="checkbox" value="未婚">未婚</label>
+                                    <label class="checkbox-item"><input type="checkbox" value="离异">离异</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>婚姻重要程度</label>
+                                <select id="clientMaritalImportance">
+                                    <option value="must">必须满足</option>
+                                    <option value="very_important">非常重要</option>
+                                    <option value="normal">一般</option>
+                                    <option value="optional">可有可无</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>现居地要求</label>
+                                <input type="text" id="clientReqProvince" placeholder="如: 北京市">
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>地区重要程度</label>
+                                <select id="clientProvinceImportance">
+                                    <option value="must">必须满足</option>
+                                    <option value="very_important">非常重要</option>
+                                    <option value="normal">一般</option>
+                                    <option value="optional">可有可无</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>体型偏好</label>
+                                <select id="clientReqBodyType">
+                                    <option value="">不限</option>
+                                    <option value="偏瘦">偏瘦</option>
+                                    <option value="匀称">匀称</option>
+                                    <option value="健壮">健壮</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>年收入下限</label>
+                                <select id="clientReqMinIncome">
+                                    <option value="">不限</option>
+                                    <option value="3000">3000</option>
+                                    <option value="5000">5000</option>
+                                    <option value="8000">8000</option>
+                                    <option value="10000">10000</option>
+                                    <option value="15000">15000</option>
+                                    <option value="20000">20000</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>收入重要程度</label>
+                                <select id="clientIncomeImportance">
+                                    <option value="must">必须满足</option>
+                                    <option value="very_important">非常重要</option>
+                                    <option value="normal">一般</option>
+                                    <option value="optional">可有可无</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>房产要求</label>
+                                <select id="clientReqProperty">
+                                    <option value="">不限</option>
+                                    <option value="有房产">有房产</option>
+                                    <option value="无房产">无房产</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>车辆要求</label>
+                                <select id="clientReqCar">
+                                    <option value="">不限</option>
+                                    <option value="有车">有车</option>
+                                    <option value="无车">无车</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>吸烟要求</label>
+                                <select id="clientReqSmoking">
+                                    <option value="">不限</option>
+                                    <option value="从不吸烟">从不吸烟</option>
+                                    <option value="偶尔吸烟">偶尔吸烟</option>
+                                    <option value="不吸烟">不吸烟</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>饮酒要求</label>
+                                <select id="clientReqDrinking">
+                                    <option value="">不限</option>
+                                    <option value="从不饮酒">从不饮酒</option>
+                                    <option value="偶尔饮酒">偶尔饮酒</option>
+                                    <option value="不饮酒">不饮酒</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>宗教信仰要求</label>
+                                <select id="clientReqReligion">
+                                    <option value="">不限</option>
+                                    <option value="无">无</option>
+                                    <option value="佛教">佛教</option>
+                                    <option value="基督教">基督教</option>
+                                    <option value="天主教">天主教</option>
+                                    <option value="伊斯兰教">伊斯兰教</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">录入客户</button>
+                </form>
             </div>
         </div>
     </div>
@@ -640,10 +673,13 @@
     
     <div id="alertBox" class="hidden"></div>
     
+    <!-- 主要脚本 -->
     <script>
-        console.log('agency.html 页面加载，开始检查用户登录状态');
-
+        console.log('========== 中介后台加载 ==========');
+        
+        // 用户信息
         let currentUser = null;
+        let selectedPhotos = [];
 
         const urlParams = new URLSearchParams(window.location.search);
         const encodedUser = urlParams.get('user');
@@ -664,361 +700,16 @@
             currentUser = getCurrentUser();
         }
 
+        // 检查登录状态
         if (!currentUser || currentUser.role !== 'agency') {
-            console.log('用户未登录或权限不足，重定向到登录页');
+            console.error('❌ 用户未登录或权限不足');
             window.location.href = 'index.html';
+            throw new Error('未登录'); // 阻止后续代码执行
         }
         
-        const provinceData = {
-            "北京": ["北京市"],
-            "上海": ["上海市"],
-            "广东": ["广州市", "深圳市", "东莞市", "佛山市", "珠海市", "中山市"],
-            "浙江": ["杭州市", "宁波市", "温州市"],
-            "江苏": ["南京市", "苏州市", "无锡市", "常州市"],
-            "四川": ["成都市"],
-            "湖北": ["武汉市"],
-            "天津": ["天津市"],
-            "重庆": ["重庆市"],
-            "湖南": ["长沙市"],
-            "山东": ["济南市", "青岛市"],
-            "河南": ["郑州市"],
-            "福建": ["福州市", "厦门市"],
-            "安徽": ["合肥市"],
-            "辽宁": ["沈阳市", "大连市"],
-            "陕西": ["西安市"],
-            "江西": ["南昌市"],
-            "云南": ["昆明市"],
-            "贵州": ["贵阳市"],
-            "海南": ["海口市", "三亚市"]
-        };
-        
-        function initProvinceSelect() {
-            const provinceSelect = document.getElementById('clientProvince');
-            provinceSelect.innerHTML = '<option value="">请选择省份</option>';
-            
-            for (const province of Object.keys(provinceData)) {
-                const option = document.createElement('option');
-                option.value = province;
-                option.textContent = province;
-                provinceSelect.appendChild(option);
-            }
-            
-            provinceSelect.addEventListener('change', function() {
-                const citySelect = document.getElementById('clientCity');
-                citySelect.innerHTML = '<option value="">请选择城市</option>';
-                document.getElementById('clientDistrict').innerHTML = '<option value="">请选择区</option>';
-                document.getElementById('clientStreet').innerHTML = '<option value="">请选择街道</option>';
-                
-                const province = this.value;
-                if (province) {
-                    for (const city of provinceData[province]) {
-                        const option = document.createElement('option');
-                        option.value = city;
-                        option.textContent = city;
-                        citySelect.appendChild(option);
-                    }
-                }
-            });
-        }
-        
-        const tabBtns = document.querySelectorAll('.tab-btn');
-        
-        tabBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => {
-                    c.classList.add('hidden');
-                    c.classList.remove('active');
-                });
-                
-                this.classList.add('active');
-                const tabId = this.dataset.tab + 'Tab';
-                const tabContent = document.getElementById(tabId);
-                if (tabContent) {
-                    tabContent.classList.remove('hidden');
-                    tabContent.classList.add('active');
-                }
-            });
-        });
-        
-        function showTab(tabName) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            
-            const tabBtn = document.querySelector(`[data-tab="${tabName}"]`);
-            if (tabBtn) tabBtn.classList.add('active');
-            
-            const tabContent = document.getElementById(tabName + 'Tab');
-            if (tabContent) tabContent.classList.remove('hidden');
-        }
-        
-        function showAlert(message, type) {
-            const alertBox = document.getElementById('alertBox');
-            alertBox.className = `alert alert-${type}`;
-            alertBox.textContent = message;
-            alertBox.classList.remove('hidden');
-            
-            setTimeout(() => {
-                alertBox.classList.add('hidden');
-            }, 3000);
-        }
-        
-        function generatePassword() {
-            return Math.random().toString(36).substring(2, 8);
-        }
-        
-        async function loadClients() {
-            console.log('📥 开始加载客户列表...');
-            
-            // 1. 检查 Supabase 是否加载
-            if (typeof window.supabase === 'undefined') {
-                console.error('❌ Supabase 库未加载');
-                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 库未加载，请刷新页面</p>';
-                return;
-            }
+        console.log('✅ 用户登录状态:', currentUser);
 
-            // 2. 获取 Supabase 客户端
-            const supabase = getSupabase();
-            if (!supabase) {
-                console.error('❌ Supabase 客户端未初始化');
-                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 客户端未初始化</p>';
-                return;
-            }
-
-            // 3. 检查用户信息
-            if (!currentUser || !currentUser.id) {
-                console.error('❌ 用户信息未初始化');
-                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：用户信息丢失，请重新登录</p>';
-                return;
-            }
-
-            console.log('🔍 查询 agency_id:', currentUser.id);
-
-            // 4. 查询数据
-            try {
-                const { data: clients, error } = await supabase
-                    .from('users')
-                    .select('*')
-                    .eq('agency_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-
-                console.log('📊 查询结果:', { 成功: !!clients, 数量: clients?.length, 错误: error });
-
-                const clientList = document.getElementById('clientList');
-
-                if (error) {
-                    console.error('❌ 查询失败:', error);
-                    clientList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + error.message + '</p>';
-                    return;
-                }
-
-                if (!clients || clients.length === 0) {
-                    clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无客户</p>';
-                    return;
-                }
-            
-            clientList.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>姓名</th>
-                            <th>手机号</th>
-                            <th>性别</th>
-                            <th>年龄</th>
-                            <th>所在地</th>
-                            <th>状态</th>
-                            <th>密码</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${clients.map(client => {
-                            const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
-                            return `
-                                <tr>
-                                    <td>${client.name || '-'}</td>
-                                    <td>${client.phone}</td>
-                                    <td>${client.gender || '-'}</td>
-                                    <td>${age}</td>
-                                    <td>${client.province || ''} ${client.city || ''}</td>
-                                    <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
-                                    <td>${client.password || '未设置'}</td>
-                                    <td>
-                                        <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
-                                        <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-        
-        async function searchClients() {
-            const keyword = document.getElementById('searchClient').value.trim();
-
-            if (!keyword) {
-                loadClients();
-                return;
-            }
-
-            const supabase = getSupabase();
-
-            if (!supabase) {
-                console.error('Supabase 客户端未初始化');
-                return;
-            }
-
-            console.log('searchClients: keyword:', keyword);
-
-            const { data: clients, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('agency_id', currentUser.id)
-                .or(`name.ilike.%${keyword}%,phone.ilike.%${keyword}%`);
-
-            console.log('searchClients result:', { clients, error });
-
-            const clientList = document.getElementById('clientList');
-
-            if (error) {
-                console.error('搜索客户失败:', error);
-                clientList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">搜索失败: ' + error.message + '</p>';
-                return;
-            }
-
-            if (!clients || clients.length === 0) {
-                clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">未找到匹配客户</p>';
-                return;
-            }
-            
-            clientList.innerHTML = `
-                <table>
-                    <thead>
-                        <tr>
-                            <th>姓名</th>
-                            <th>手机号</th>
-                            <th>性别</th>
-                            <th>年龄</th>
-                            <th>所在地</th>
-                            <th>状态</th>
-                            <th>密码</th>
-                            <th>操作</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${clients.map(client => {
-                            const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
-                            return `
-                                <tr>
-                                    <td>${client.name || '-'}</td>
-                                    <td>${client.phone}</td>
-                                    <td>${client.gender || '-'}</td>
-                                    <td>${age}</td>
-                                    <td>${client.province || ''} ${client.city || ''}</td>
-                                    <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
-                                    <td>${client.password || '未设置'}</td>
-                                    <td>
-                                        <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
-                                        <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
-                                    </td>
-                                </tr>
-                            `;
-                        }).join('')}
-                    </tbody>
-                </table>
-            `;
-        }
-        
-        async function showClientDetail(clientId) {
-            const supabase = getSupabase();
-            
-            const { data: client } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', clientId)
-                .single();
-            
-            if (!client) return;
-            
-            document.getElementById('modalTitle').textContent = client.name || '客户详情';
-            document.getElementById('modalBody').innerHTML = `
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                    <div>
-                        <p><strong>姓名：</strong>${client.name || '-'}</p>
-                        <p><strong>手机号：</strong>${client.phone}</p>
-                        <p><strong>性别：</strong>${client.gender || '-'}</p>
-                        <p><strong>生日：</strong>${client.birthday || '-'}</p>
-                        <p><strong>身高：</strong>${client.height || '-'} cm</p>
-                        <p><strong>体重：</strong>${client.weight || '-'} kg</p>
-                        <p><strong>学历：</strong>${client.education || '-'}</p>
-                        <p><strong>职业：</strong>${client.occupation || '-'}</p>
-                        <p><strong>收入：</strong>${client.income || '-'}</p>
-                        <p><strong>婚姻状况：</strong>${client.marital_status || '-'}</p>
-                        <p><strong>所在地：</strong>${client.province || ''} ${client.city || ''} ${client.district || ''}</p>
-                        <p><strong>微信：</strong>${client.wechat || '-'}</p>
-                        <p><strong>密码：</strong>${client.password || '未设置'}</p>
-                    </div>
-                    <div>
-                        <p><strong>婚恋宣言：</strong></p>
-                        <p style="color: #666;">${client.declaration || '暂无'}</p>
-                        <p style="margin-top: 20px;"><strong>照片：</strong></p>
-                        <div class="photo-grid" style="grid-template-columns: repeat(2, 1fr);">
-                            ${(client.photos || []).map(p => `<img src="${p}" style="width: 100%; border-radius: 8px;">`).join('')}
-                        </div>
-                    </div>
-                </div>
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button class="btn btn-primary" onclick="editClient('${clientId}')">编辑</button>
-                    <button class="btn btn-secondary" onclick="resetPassword('${clientId}')">重置密码</button>
-                </div>
-            `;
-            
-            document.getElementById('clientDetailModal').classList.remove('hidden');
-        }
-        
-        function closeModal() {
-            document.getElementById('clientDetailModal').classList.add('hidden');
-        }
-        
-        async function toggleClientStatus(clientId, currentStatus) {
-            const supabase = getSupabase();
-            
-            const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
-            
-            const { error } = await supabase
-                .from('users')
-                .update({ status: newStatus })
-                .eq('id', clientId);
-            
-            if (error) {
-                showAlert('操作失败', 'error');
-            } else {
-                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
-                loadClients();
-            }
-        }
-        
-        async function resetPassword(clientId) {
-            const newPassword = generatePassword();
-            const supabase = getSupabase();
-            
-            const { error } = await supabase
-                .from('users')
-                .update({ password: newPassword })
-                .eq('id', clientId);
-            
-            if (error) {
-                showAlert('重置失败', 'error');
-            } else {
-                showAlert(`新密码: ${newPassword}`, 'success');
-                loadClients();
-            }
-        }
-
-        let selectedPhotos = [];
-
+        // 照片处理函数
         function handlePhotoSelect(input) {
             const preview = document.getElementById('photoPreview');
             const files = input.files;
@@ -1068,139 +759,462 @@
             const checkboxes = container.querySelectorAll('input[type="checkbox"]:checked');
             return Array.from(checkboxes).map(cb => cb.value);
         }
-        
-        async function addClient() {
-            const name = document.getElementById('clientName').value.trim();
+
+        // 加载客户列表
+        async function loadClients() {
+            console.log('📥 开始加载客户列表...');
+            
+            if (typeof window.supabase === 'undefined') {
+                console.error('❌ Supabase 库未加载');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 库未加载，请刷新页面</p>';
+                return;
+            }
+
+            const supabase = getSupabase();
+            if (!supabase) {
+                console.error('❌ Supabase 客户端未初始化');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 客户端未初始化</p>';
+                return;
+            }
+
+            if (!currentUser || !currentUser.id) {
+                console.error('❌ 用户信息未初始化');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：用户信息丢失，请重新登录</p>';
+                return;
+            }
+
+            console.log('🔍 查询 agency_id:', currentUser.id);
+
+            try {
+                const { data: clients, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('agency_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                console.log('📊 查询结果:', { 成功: !!clients, 数量: clients?.length, 错误: error });
+
+                const clientList = document.getElementById('clientList');
+
+                if (error) {
+                    console.error('❌ 查询失败:', error);
+                    clientList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + error.message + '</p>';
+                    return;
+                }
+
+                if (!clients || clients.length === 0) {
+                    clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无客户</p>';
+                    return;
+                }
+
+                clientList.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>手机号</th>
+                                <th>性别</th>
+                                <th>年龄</th>
+                                <th>所在地</th>
+                                <th>状态</th>
+                                <th>密码</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${clients.map(client => {
+                                const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
+                                return `
+                                    <tr>
+                                        <td>${client.name || '-'}</td>
+                                        <td>${client.phone}</td>
+                                        <td>${client.gender || '-'}</td>
+                                        <td>${age}</td>
+                                        <td>${client.province || ''} ${client.city || ''}</td>
+                                        <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
+                                        <td>${client.password || '未设置'}</td>
+                                        <td>
+                                            <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
+                                            <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                console.error('❌ 加载异常:', e);
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载异常: ' + e.message + '</p>';
+            }
+        }
+
+        // 搜索客户
+        async function searchClients() {
+            const keyword = document.getElementById('searchClient').value.trim();
+
+            if (!keyword) {
+                loadClients();
+                return;
+            }
+
+            console.log('🔍 搜索关键词:', keyword);
+
+            const supabase = getSupabase();
+            if (!supabase) {
+                console.error('❌ Supabase 客户端未初始化');
+                return;
+            }
+
+            try {
+                const { data: clients, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('agency_id', currentUser.id)
+                    .or(`name.ilike.%${keyword}%,phone.ilike.%${keyword}%`);
+
+                console.log('📊 搜索结果:', { 成功: !!clients, 数量: clients?.length, 错误: error });
+
+                const clientList = document.getElementById('clientList');
+
+                if (error) {
+                    console.error('❌ 搜索失败:', error);
+                    clientList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">搜索失败: ' + error.message + '</p>';
+                    return;
+                }
+
+                if (!clients || clients.length === 0) {
+                    clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">未找到匹配客户</p>';
+                    return;
+                }
+
+                clientList.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>姓名</th>
+                                <th>手机号</th>
+                                <th>性别</th>
+                                <th>年龄</th>
+                                <th>所在地</th>
+                                <th>状态</th>
+                                <th>密码</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${clients.map(client => {
+                                const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
+                                return `
+                                    <tr>
+                                        <td>${client.name || '-'}</td>
+                                        <td>${client.phone}</td>
+                                        <td>${client.gender || '-'}</td>
+                                        <td>${age}</td>
+                                        <td>${client.province || ''} ${client.city || ''}</td>
+                                        <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
+                                        <td>${client.password || '未设置'}</td>
+                                        <td>
+                                            <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
+                                            <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
+                                        </td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                console.error('❌ 搜索异常:', e);
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">搜索异常: ' + e.message + '</p>';
+            }
+        }
+
+        // 显示客户详情
+        async function showClientDetail(clientId) {
+            const supabase = getSupabase();
+            
+            const { data: client, error } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', clientId)
+                .single();
+            
+            if (error || !client) {
+                showAlert('获取客户信息失败', 'error');
+                return;
+            }
+            
+            const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
+            
+            document.getElementById('modalTitle').textContent = client.name || '客户详情';
+            document.getElementById('modalBody').innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div>
+                        <p><strong>姓名：</strong>${client.name || '-'}</p>
+                        <p><strong>手机号：</strong>${client.phone}</p>
+                        <p><strong>性别：</strong>${client.gender || '-'}</p>
+                        <p><strong>年龄：</strong>${age}</p>
+                        <p><strong>身高：</strong>${client.height || '-'} cm</p>
+                        <p><strong>体重：</strong>${client.weight || '-'} kg</p>
+                        <p><strong>学历：</strong>${client.education || '-'}</p>
+                        <p><strong>职业：</strong>${client.occupation || '-'}</p>
+                        <p><strong>年收入：</strong>${client.income || '-'} 万元</p>
+                        <p><strong>婚姻状况：</strong>${client.marital_status || '-'}</p>
+                        <p><strong>现居地：</strong>${client.current_address || '-'}</p>
+                        <p><strong>户籍地：</strong>${client.hukou || '-'}</p>
+                    </div>
+                    <div>
+                        <p><strong>房产：</strong>${client.property || '-'}</p>
+                        <p><strong>车辆：</strong>${client.car || '-'}</p>
+                        <p><strong>吸烟：</strong>${client.smoking || '-'}</p>
+                        <p><strong>饮酒：</strong>${client.drinking || '-'}</p>
+                        <p><strong>宗教：</strong>${client.religion || '-'}</p>
+                        <p><strong>微信号：</strong>${client.wechat || '-'}</p>
+                        <p><strong>宠物偏好：</strong>${client.accept_pet || '-'}</p>
+                        <p><strong>作息习惯：</strong>${client.schedule || '-'}</p>
+                        <p><strong>兴趣爱好：</strong>${(client.interests || []).join(', ') || '-'}</p>
+                        <p><strong>活动类型：</strong>${(client.activity_types || []).join(', ') || '-'}</p>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px;">
+                    <p><strong>自我描述：</strong></p>
+                    <p style="background: #f5f5f5; padding: 10px; border-radius: 5px;">${client.self_description || '未填写'}</p>
+                    
+                    <p style="margin-top: 10px;"><strong>婚恋宣言：</strong></p>
+                    <p style="background: #f5f5f5; padding: 10px; border-radius: 5px;">${client.declaration || '未填写'}</p>
+                    
+                    <p style="margin-top: 20px;"><strong>照片：</strong></p>
+                    <div class="photo-grid" style="grid-template-columns: repeat(2, 1fr);">
+                        ${(client.photos || []).map(p => `<img src="${p}" style="width: 100%; border-radius: 8px;">`).join('')}
+                    </div>
+                </div>
+                
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="editClient('${clientId}')">编辑</button>
+                    <button class="btn btn-secondary" onclick="resetPassword('${clientId}')">重置密码</button>
+                </div>
+            `;
+            
+            document.getElementById('clientDetailModal').classList.remove('hidden');
+        }
+
+        // 切换客户状态
+        async function toggleClientStatus(clientId, currentStatus) {
+            const supabase = getSupabase();
+            
+            const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+            
+            const { error } = await supabase
+                .from('users')
+                .update({ status: newStatus })
+                .eq('id', clientId);
+            
+            if (error) {
+                showAlert('操作失败', 'error');
+            } else {
+                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
+                loadClients();
+            }
+        }
+
+        // 重置密码
+        async function resetPassword(clientId) {
+            const newPassword = generatePassword();
+            const supabase = getSupabase();
+            
+            const { error } = await supabase
+                .from('users')
+                .update({ password: newPassword })
+                .eq('id', clientId);
+            
+            if (error) {
+                showAlert('重置失败', 'error');
+            } else {
+                showAlert(`新密码: ${newPassword}`, 'success');
+                loadClients();
+            }
+        }
+
+        // 加载联系请求
+        async function loadRequests() {
+            console.log('📥 开始加载联系请求...');
+            
+            if (typeof window.supabase === 'undefined') {
+                console.error('❌ Supabase 库未加载');
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 库未加载，请刷新页面</p>';
+                return;
+            }
+
+            const supabase = getSupabase();
+            if (!supabase) {
+                console.error('❌ Supabase 客户端未初始化');
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 客户端未初始化</p>';
+                return;
+            }
+
+            if (!currentUser || !currentUser.id) {
+                console.error('❌ 用户信息未初始化');
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：用户信息丢失，请重新登录</p>';
+                return;
+            }
+
+            console.log('🔍 查询 agency_id:', currentUser.id);
+
+            try {
+                const { data: requests, error } = await supabase
+                    .from('agency_requests')
+                    .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
+                    .eq('agency_id', currentUser.id)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                console.log('📊 查询结果:', { 成功: !!requests, 数量: requests?.length, 错误: error });
+
+                const requestList = document.getElementById('requestList');
+                if (!requestList) return;
+
+                if (error) {
+                    console.error('❌ 查询失败:', error);
+                    requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + error.message + '</p>';
+                    return;
+                }
+
+                if (!requests || requests.length === 0) {
+                    requestList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无联系请求</p>';
+                    return;
+                }
+
+                requestList.innerHTML = requests.map(req => `
+                    <div class="message-item">
+                        <img class="message-avatar" src="${req.from_user?.photos?.[0] || 'https://via.placeholder.com/40'}">
+                        <div class="message-content">
+                            <div style="font-weight: 600;">${req.from_user?.name || '匿名用户'} (${req.from_user?.phone})</div>
+                            <div style="color: #888; margin-top: 5px;">${req.message || '希望与您联系'}</div>
+                            <div class="message-time">${new Date(req.created_at).toLocaleString()}</div>
+                        </div>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-primary btn-small" onclick="handleRequest('${req.id}', 'accepted')">接受</button>
+                            <button class="btn btn-danger btn-small" onclick="handleRequest('${req.id}', 'rejected')">拒绝</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('❌ 加载异常:', e);
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载异常: ' + e.message + '</p>';
+            }
+        }
+
+        // 处理联系请求
+        async function handleRequest(requestId, status) {
+            const supabase = getSupabase();
+            
+            const { error } = await supabase
+                .from('agency_requests')
+                .update({ status: status })
+                .eq('id', requestId);
+            
+            if (error) {
+                showAlert('操作失败', 'error');
+            } else {
+                showAlert(status === 'accepted' ? '已接受' : '已拒绝', 'success');
+                loadRequests();
+            }
+        }
+
+        // 添加客户
+        async function addClient(event) {
+            event.preventDefault();
+            
             const phone = document.getElementById('clientPhone').value.trim();
             const password = document.getElementById('clientPassword').value.trim();
+            const name = document.getElementById('clientName').value.trim();
             const gender = document.getElementById('clientGender').value;
             const birthday = document.getElementById('clientBirthday').value;
-            const height = parseInt(document.getElementById('clientHeight').value) || null;
+            const height = document.getElementById('clientHeight').value;
             const currentAddress = document.getElementById('clientCurrentAddress').value.trim();
             const hukou = document.getElementById('clientHukou').value.trim();
             const maritalStatus = document.getElementById('clientMaritalStatus').value;
             
-            if (!name || !phone || !gender || !birthday || !height || !currentAddress || !hukou || !maritalStatus) {
-                showAlert('请填写所有必填项（带 * 标记）', 'error');
+            if (!phone || !password || !name || !gender || !birthday || !height || !currentAddress || !hukou || !maritalStatus) {
+                showAlert('请填写所有必填项', 'error');
                 return;
             }
             
-            if (!/^1[3-9]\d{9}$/.test(phone)) {
-                showAlert('手机号格式不正确', 'error');
+            if (phone.length !== 11) {
+                showAlert('手机号必须是11位', 'error');
                 return;
             }
             
-            const finalPassword = password || generatePassword();
+            const supabase = getSupabase();
             
-            const supabase = ensureSupabase();
+            // 检查手机号是否已存在
+            const { data: existingUser } = await supabase
+                .from('users')
+                .select('id')
+                .eq('phone', phone)
+                .single();
             
-            try {
-                const { data: existing, error: checkError } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('phone', phone)
-                    .single();
-                
-                if (checkError && checkError.code !== 'PGRST116') {
-                    throw checkError;
-                }
-                
-                if (existing) {
-                    showAlert('该手机号已存在', 'error');
-                    return;
-                }
-                
-                const userData = {
-                    name: name,
-                    phone: phone,
-                    password: finalPassword,
-                    gender: gender,
-                    birthday: birthday,
-                    height: height,
-                    current_address: currentAddress,
-                    hukou: hukou,
-                    marital_status: maritalStatus,
-                    weight: parseInt(document.getElementById('clientWeight').value) || null,
-                    education: document.getElementById('clientEducation').value,
-                    occupation: document.getElementById('clientOccupation').value,
-                    income: document.getElementById('clientIncome').value,
-                    property: document.getElementById('clientProperty').value,
-                    car: document.getElementById('clientCar').value,
-                    smoking: document.getElementById('clientSmoking').value,
-                    drinking: document.getElementById('clientDrinking').value,
-                    religion: document.getElementById('clientReligion').value,
-                    wechat: document.getElementById('clientWechat').value,
-                    personality: getCheckboxValues('clientPersonality'),
-                    interests: getCheckboxValues('clientInterests'),
-                    activity_types: getCheckboxValues('clientActivityTypes'),
-                    accept_pet: document.getElementById('clientAcceptPet').value,
-                    schedule: document.getElementById('clientSchedule').value,
-                    finance_view: document.getElementById('clientFinanceView').value,
-                    live_with_parents: document.getElementById('clientLiveWithParents').value,
-                    expected_children: document.getElementById('clientExpectedChildren').value,
-                    self_description: document.getElementById('clientSelfDescription').value,
-                    declaration: document.getElementById('clientDeclaration').value,
-                    agency_id: currentUser.id,
-                    photos: selectedPhotos,
-                    status: 'active'
-                };
-                
-                const { error: userError } = await supabase
-                    .from('users')
-                    .insert([userData]);
-                
-                if (userError) {
-                    showAlert('录入失败：' + userError.message, 'error');
-                    return;
-                }
-                
-                const reqData = {
-                    min_age: parseInt(document.getElementById('clientReqMinAge').value) || null,
-                    max_age: parseInt(document.getElementById('clientReqMaxAge').value) || null,
-                    age_importance: document.getElementById('clientAgeImportance').value,
-                    min_height: parseInt(document.getElementById('clientReqMinHeight').value) || null,
-                    max_height: parseInt(document.getElementById('clientReqMaxHeight').value) || null,
-                    height_importance: document.getElementById('clientHeightImportance').value,
-                    education: getCheckboxValues('clientReqEducation'),
-                    education_importance: document.getElementById('clientEducationImportance').value,
-                    marital_status: getCheckboxValues('clientReqMarital'),
-                    marital_importance: document.getElementById('clientMaritalImportance').value,
-                    province: document.getElementById('clientReqProvince').value,
-                    province_importance: document.getElementById('clientProvinceImportance').value,
-                    body_type: document.getElementById('clientReqBodyType').value,
-                    min_income: document.getElementById('clientReqMinIncome').value,
-                    smoking: document.getElementById('clientReqSmoking').value,
-                    drinking: document.getElementById('clientReqDrinking').value,
-                    personality: getCheckboxValues('clientReqPersonality'),
-                    personality_importance: document.getElementById('clientPersonalityImportance').value,
-                    min_interest_overlap: parseInt(document.getElementById('clientReqMinInterestOverlap').value) || 2,
-                    activities: getCheckboxValues('clientReqActivities'),
-                    min_activity_overlap: parseInt(document.getElementById('clientReqMinActivityOverlap').value) || 1,
-                    values: document.getElementById('clientReqValues').value
-                };
-                
-                const { data: newUser } = await supabase
-                    .from('users')
-                    .select('id')
-                    .eq('phone', phone)
-                    .single();
-                
-                if (newUser) {
-                    await supabase
-                        .from('requirements')
-                        .insert([{ user_id: newUser.id, ...reqData }]);
-                }
-                
-                showAlert(`录入成功！账号: ${phone}，密码: ${finalPassword}`, 'success');
-                
+            if (existingUser) {
+                showAlert('该手机号已注册', 'error');
+                return;
+            }
+            
+            const userData = {
+                phone: phone,
+                password: password,
+                name: name,
+                gender: gender,
+                birthday: birthday,
+                height: parseInt(height),
+                current_address: currentAddress,
+                hukou: hukou,
+                marital_status: maritalStatus,
+                weight: document.getElementById('clientWeight').value ? parseInt(document.getElementById('clientWeight').value) : null,
+                education: document.getElementById('clientEducation').value,
+                occupation: document.getElementById('clientOccupation').value,
+                income: document.getElementById('clientIncome').value,
+                property: document.getElementById('clientProperty').value,
+                car: document.getElementById('clientCar').value,
+                smoking: document.getElementById('clientSmoking').value,
+                drinking: document.getElementById('clientDrinking').value,
+                religion: document.getElementById('clientReligion').value,
+                wechat: document.getElementById('clientWechat').value,
+                accept_pet: document.getElementById('clientAcceptPet').value,
+                schedule: document.getElementById('clientSchedule').value,
+                interests: getCheckboxValues('clientInterests'),
+                activity_types: getCheckboxValues('clientActivityTypes'),
+                finance_view: document.getElementById('clientFinanceView').value,
+                live_with_parents: document.getElementById('clientLiveWithParents').value,
+                expected_children: document.getElementById('clientExpectedChildren').value,
+                self_description: document.getElementById('clientSelfDescription').value,
+                declaration: document.getElementById('clientDeclaration').value,
+                agency_id: currentUser.id,
+                photos: selectedPhotos,
+                status: 'active'
+            };
+            
+            const { error } = await supabase
+                .from('users')
+                .insert([userData]);
+            
+            if (error) {
+                console.error('录入失败:', error);
+                showAlert('录入失败: ' + error.message, 'error');
+            } else {
+                showAlert('录入成功', 'success');
                 clearClientForm();
                 showTab('clients');
                 loadClients();
-            } catch (e) {
-                showAlert('录入失败：' + e.message, 'error');
             }
         }
-        
+
+        // 清空表单
         function clearClientForm() {
             document.getElementById('clientPhone').value = '';
             document.getElementById('clientPassword').value = '';
@@ -1234,119 +1248,11 @@
 
             document.querySelectorAll('#addTab input[type="checkbox"]').forEach(cb => cb.checked = false);
             document.querySelectorAll('#addTab .checkbox-item').forEach(item => item.classList.remove('selected'));
-            
-            document.getElementById('clientReqMinAge').value = '';
-            document.getElementById('clientReqMaxAge').value = '';
-            document.getElementById('clientAgeImportance').value = 'must';
-            document.getElementById('clientReqMinHeight').value = '';
-            document.getElementById('clientReqMaxHeight').value = '';
-            document.getElementById('clientHeightImportance').value = 'must';
-            document.getElementById('clientEducationImportance').value = 'must';
-            document.getElementById('clientMaritalImportance').value = 'must';
-            document.getElementById('clientReqProvince').value = '';
-            document.getElementById('clientProvinceImportance').value = 'must';
-            document.getElementById('clientReqBodyType').value = '';
-            document.getElementById('clientReqMinIncome').value = '';
-            document.getElementById('clientReqSmoking').value = '';
-            document.getElementById('clientReqDrinking').value = '';
-            document.getElementById('clientPersonalityImportance').value = 'normal';
-            document.getElementById('clientReqMinInterestOverlap').value = '2';
-            document.getElementById('clientReqMinActivityOverlap').value = '1';
-            document.getElementById('clientReqValues').value = '';
-            
-            const passwordInput = document.getElementById('clientPassword');
-            if (passwordInput) {
-                passwordInput.value = generatePassword();
-            }
+
+            document.getElementById('clientPassword').value = generatePassword();
         }
-        
-        async function loadRequests() {
-            console.log('📥 开始加载联系请求...');
-            
-            // 1. 检查 Supabase 是否加载
-            if (typeof window.supabase === 'undefined') {
-                console.error('❌ Supabase 库未加载');
-                const requestList = document.getElementById('requestList');
-                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 库未加载，请刷新页面</p>';
-                return;
-            }
 
-            // 2. 获取 Supabase 客户端
-            const supabase = getSupabase();
-            if (!supabase) {
-                console.error('❌ Supabase 客户端未初始化');
-                const requestList = document.getElementById('requestList');
-                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 客户端未初始化</p>';
-                return;
-            }
-
-            // 3. 检查用户信息
-            if (!currentUser || !currentUser.id) {
-                console.error('❌ 用户信息未初始化');
-                const requestList = document.getElementById('requestList');
-                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：用户信息丢失，请重新登录</p>';
-                return;
-            }
-
-            console.log('🔍 查询 agency_id:', currentUser.id);
-
-            // 4. 查询数据
-            try {
-                const { data: requests, error } = await supabase
-                    .from('agency_requests')
-                    .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
-                    .eq('agency_id', currentUser.id)
-                    .eq('status', 'pending')
-                    .order('created_at', { ascending: false });
-
-                console.log('📊 查询结果:', { 成功: !!requests, 数量: requests?.length, 错误: error });
-
-                const requestList = document.getElementById('requestList');
-                if (!requestList) return;
-
-                if (error) {
-                    console.error('❌ 查询失败:', error);
-                    requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + error.message + '</p>';
-                    return;
-                }
-
-                if (!requests || requests.length === 0) {
-                    requestList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无联系请求</p>';
-                    return;
-                }
-
-            requestList.innerHTML = requests.map(req => `
-                <div class="message-item">
-                    <img class="message-avatar" src="${req.from_user?.photos?.[0] || 'https://via.placeholder.com/40'}">
-                    <div class="message-content">
-                        <div style="font-weight: 600;">${req.from_user?.name || '匿名用户'} (${req.from_user?.phone})</div>
-                        <div style="color: #888; margin-top: 5px;">${req.message || '希望与您联系'}</div>
-                        <div class="message-time">${new Date(req.created_at).toLocaleString()}</div>
-                    </div>
-                    <div style="display: flex; gap: 10px;">
-                        <button class="btn btn-primary btn-small" onclick="handleRequest('${req.id}', 'accepted')">接受</button>
-                        <button class="btn btn-danger btn-small" onclick="handleRequest('${req.id}', 'rejected')">拒绝</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-        
-        async function handleRequest(requestId, status) {
-            const supabase = getSupabase();
-            
-            const { error } = await supabase
-                .from('agency_requests')
-                .update({ status: status })
-                .eq('id', requestId);
-            
-            if (error) {
-                showAlert('操作失败', 'error');
-            } else {
-                showAlert(status === 'accepted' ? '已接受' : '已拒绝', 'success');
-                loadRequests();
-            }
-        }
-        
+        // 初始化复选框事件
         function initCheckboxEvents() {
             document.querySelectorAll('.checkbox-item').forEach(item => {
                 const checkbox = item.querySelector('input[type="checkbox"]');
@@ -1366,27 +1272,22 @@
             });
         }
 
+        // 标签按钮点击事件
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const tabName = this.dataset.tab;
+                showTab(tabName);
+            });
+        });
+
+        // 页面初始化
         async function init() {
-            console.log('========== 中介后台初始化 ==========');
+            console.log('========== 开始初始化 ==========');
             
-            // 1. 先检查用户登录
-            if (!currentUser || currentUser.role !== 'agency') {
-                console.error('❌ 用户未登录或权限不足');
-                window.location.href = 'index.html';
-                return;
-            }
-            console.log('✅ 用户登录状态:', currentUser);
-
-            // 2. 初始化 UI
             initCheckboxEvents();
-            initProvinceSelect();
+            document.getElementById('clientPassword').value = generatePassword();
 
-            const passwordInput = document.getElementById('clientPassword');
-            if (passwordInput) {
-                passwordInput.value = generatePassword();
-            }
-
-            // 3. 等待 Supabase 加载
+            // 等待 Supabase 加载
             console.log('⌛ 等待 Supabase 库加载...');
             let waitCount = 0;
             while (typeof window.supabase === 'undefined' && waitCount < 50) {
@@ -1402,7 +1303,6 @@
             }
             console.log('✅ Supabase 库已加载');
 
-            // 4. 初始化 Supabase 客户端
             try {
                 getSupabase();
                 console.log('✅ Supabase 客户端已初始化');
@@ -1413,14 +1313,14 @@
                 return;
             }
 
-            // 5. 加载数据
             console.log('📥 开始加载数据...');
             await loadClients();
             await loadRequests();
             console.log('========== 初始化完成 ==========');
         }
 
-        document.addEventListener('DOMContentLoaded', init);
-</script>
+        // 启动初始化
+        init();
+    </script>
 </body>
 </html>
