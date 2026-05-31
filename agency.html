@@ -149,9 +149,8 @@
                     <div id="manageClientResult" style="margin-top: 15px;"></div>
                 </div>
 
-                <div id="editStatusBar" class="hidden" style="margin: 15px 0; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div id="editStatusBar" class="hidden" style="margin: 15px 0; padding: 12px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px;">
                     <span>📝 当前正在编辑：<strong id="editingClientName"></strong>（<span id="editingClientPhone"></span>）</span>
-                    <button type="button" class="btn btn-secondary" onclick="cancelEdit()">取消编辑</button>
                 </div>
 
                 <form id="clientForm" onsubmit="submitClientForm(event)">
@@ -1138,13 +1137,17 @@
                 showAlert('重置失败', 'error');
             } else {
                 showAlert(`密码已重置为: ${newPassword}`, 'success');
-                navigator.clipboard.writeText(newPassword).catch(() => {});
 
-                // 切换到录入标签并填充密码框
                 showTab('add');
-                document.getElementById('clientPassword').value = newPassword;
-                document.getElementById('clientPassword').focus();
-                document.getElementById('clientPassword').select();
+                
+                setTimeout(() => {
+                    const passwordInput = document.getElementById('clientPassword');
+                    if (passwordInput) {
+                        passwordInput.value = newPassword;
+                        passwordInput.focus();
+                        passwordInput.select();
+                    }
+                }, 100);
             }
         }
 
