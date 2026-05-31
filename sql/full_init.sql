@@ -386,4 +386,87 @@ INSERT INTO user_privacy (user_id, contact_visibility, profile_visibility) VALUE
 ((SELECT id FROM users WHERE phone = '13812345678'), 'public', 'all'),
 ((SELECT id FROM users WHERE phone = '13987654321'), 'friends', 'all');
 
+-- ============================================
+-- RLS 行级安全策略设置
+-- ============================================
+
+-- 启用 RLS
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_requirements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE agencies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blacklist ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activities ENABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_registrations ENABLE ROW LEVEL SECURITY;
+
+-- ============================================
+-- users 表策略
+-- ============================================
+
+CREATE POLICY "Users can read own profile" ON users
+    FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON users
+    FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Agencies can read their clients" ON users
+    FOR SELECT USING (agency_id = auth.uid());
+
+CREATE POLICY "Agencies can update their clients" ON users
+    FOR UPDATE USING (agency_id = auth.uid());
+
+CREATE POLICY "Agencies can insert clients" ON users
+    FOR INSERT WITH CHECK (agency_id = auth.uid());
+
+CREATE POLICY "Agencies can delete their clients" ON users
+    FOR DELETE USING (agency_id = auth.uid());
+
+-- ============================================
+-- user_requirements 表策略
+-- ============================================
+
+CREATE POLICY "Users can read own requirements" ON user_requirements
+    FOR SELECT USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert own requirements" ON user_requirements
+    FOR INSERT WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own requirements" ON user_requirements
+    FOR UPDATE USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own requirements" ON user_requirements
+    FOR DELETE USING (user_id = auth.uid());
+
+CREATE POLICY "Agencies can read their clients requirements" ON user_requirements
+    FOR SELECT USING (
+        user_id IN (SELECT id FROM users WHERE agency_id = auth.uid())
+    );
+
+CREATE POLICY "Agencies can insert their clients requirements" ON user_requirements
+    FOR INSERT WITH CHECK (
+        user_id IN (SELECT id FROM users WHERE agency_id = auth.uid())
+    );
+
+CREATE POLICY "Agencies can update their clients requirements" ON user_requirements
+    FOR UPDATE USING (
+        user_id IN (SELECT id FROM users WHERE agency_id = auth.uid())
+    );
+
+CREATE POLICY "Agencies can delete their clients requirements" ON user_requirements
+    FOR DELETE USING (
+        user_id IN (SELECT id FROM users WHERE agency_id = auth.uid())
+    );
+
+-- ============================================
+-- agencies 表策略
+-- ============================================
+
+CREATE POLICY "Agencies can read own agency" ON agencies
+    FOR SELECT USING (id = auth.uid());
+
+CREATE POLICY "Agencies can update own agency" ON agencies
+    FOR UPDATE USING (id = auth.uid());
+
 SELECT '数据库初始化完成！' AS result;

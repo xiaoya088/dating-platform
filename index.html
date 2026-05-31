@@ -24,6 +24,10 @@
                     <label>密码</label>
                     <input type="password" id="loginPassword" placeholder="请输入密码">
                 </div>
+                <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="rememberMe" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <label for="rememberMe" style="margin: 0; cursor: pointer; color: #666; font-weight: normal;">记住我</label>
+                </div>
                 <button class="btn btn-primary btn-block" id="btnLogin">登录</button>
                 <p style="text-align: center; margin-top: 20px; color: #888;">
                     还没有账号？<a href="register.html" style="color: #667eea;">立即注册</a>
@@ -37,6 +41,38 @@
     <script>
         const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
         const currentUser = localStorage.getItem('currentUser');
+        
+        function loadRememberedUser() {
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (rememberedUser) {
+                try {
+                    const user = JSON.parse(rememberedUser);
+                    if (user.phone) {
+                        document.getElementById('loginAccount').value = user.phone;
+                    }
+                    if (user.password && user.rememberPassword) {
+                        document.getElementById('loginPassword').value = user.password;
+                    }
+                    if (user.rememberPassword !== undefined) {
+                        document.getElementById('rememberMe').checked = user.rememberPassword;
+                    }
+                } catch (e) {
+                    console.log('读取记住信息失败:', e);
+                }
+            }
+        }
+        
+        function saveRememberedUser(account, password, remember) {
+            if (remember) {
+                localStorage.setItem('rememberedUser', JSON.stringify({
+                    phone: account,
+                    password: password,
+                    rememberPassword: true
+                }));
+            } else {
+                localStorage.removeItem('rememberedUser');
+            }
+        }
         
         if (!hasSeenSplash && !currentUser) {
             sessionStorage.setItem('hasSeenSplash', 'true');
@@ -59,6 +95,7 @@
                     handleLogin();
                 }
             });
+            loadRememberedUser();
         }
         
         function showAlert(message, type) {
@@ -91,6 +128,7 @@
             
             const account = document.getElementById('loginAccount').value.trim();
             const password = document.getElementById('loginPassword').value;
+            const remember = document.getElementById('rememberMe').checked;
             
             if (!account || !password) {
                 showAlert('请输入账号和密码', 'error');
@@ -117,6 +155,7 @@
                         const encodedData = encodeURIComponent(userDataStr);
                         console.log('用户数据已编码，长度:', encodedData.length);
 
+                        saveRememberedUser(account, password, remember);
                         showAlert('登录成功', 'success');
                         setTimeout(() => {
                             window.location.href = (user.name ? 'match.html' : 'profile.html') + '?user=' + encodedData;
@@ -136,6 +175,7 @@
                     const encodedData = encodeURIComponent(userDataStr);
                     console.log('用户数据已编码，长度:', encodedData.length);
 
+                    saveRememberedUser(account, password, remember);
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
                         window.location.href = 'agency.html?user=' + encodedData;
@@ -153,6 +193,7 @@
                     const userDataStr = JSON.stringify({ ...user, role: 'admin' });
                     const encodedData = encodeURIComponent(userDataStr);
                     console.log('用户数据已编码，长度:', encodedData.length);
+                    saveRememberedUser(account, password, remember);
                     showAlert('登录成功', 'success');
                     setTimeout(() => {
                         console.log("即将跳转到管理后台，URL:", "admin.html?user=" + encodedData.substring(0, 50) + "...");

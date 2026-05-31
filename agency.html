@@ -20,11 +20,19 @@
             .print-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
             .print-table th, .print-table td { border: 1px solid #333; padding: 8px 12px; text-align: left; vertical-align: top; }
             .print-table th { background: #f0f0f0 !important; font-weight: bold; width: 30%; }
-            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; }
+            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; page-break-before: always; }
             .print-footer { display: block !important; margin-top: 30px; text-align: right; font-size: 10pt; color: #666; border-top: 1px solid #333; padding-top: 10px; }
+            .print-only-requirements .print-header { display: none !important; }
+            .print-only-requirements .print-table:first-of-type { display: none !important; }
+            .print-only-requirements .print-section-title { margin-top: 0; page-break-before: avoid; }
+            .print-only-requirements .print-footer { display: none !important; }
+            .print-photos-row img { max-width: 180px; max-height: 220px; margin: 10px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid #ddd; }
+            .print-photos-row { text-align: center; padding: 15px !important; }
         }
         .print-header { display: none; }
         .print-footer { display: none; }
+        .print-section-title { display: none; }
+        .print-only-requirements .print-section-title { display: block !important; }
     </style>
 </head>
 <body>
@@ -87,6 +95,17 @@
         function closeModal() {
             const modal = document.getElementById('clientDetailModal');
             if (modal) modal.classList.add('hidden');
+        }
+
+        function printRequirementsOnly() {
+            const modalContent = document.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.classList.add('print-only-requirements');
+                window.print();
+                setTimeout(() => {
+                    modalContent.classList.remove('print-only-requirements');
+                }, 100);
+            }
         }
 
         function closeEditModal() {
@@ -799,6 +818,26 @@
             return Array.from(checkboxes).map(cb => cb.value);
         }
 
+        function setCheckboxValues(containerId, values) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+            const valueArray = Array.isArray(values) ? values : (values ? values.split(',') : []);
+            checkboxes.forEach(cb => {
+                cb.checked = valueArray.includes(cb.value);
+            });
+        }
+
+        function getImportanceLabel(importance) {
+            const labels = {
+                'must': '必须满足',
+                'very_important': '非常重要',
+                'normal': '一般',
+                'optional': '可有可无'
+            };
+            return labels[importance] || importance || '';
+        }
+
         // 加载客户列表
         async function loadClients() {
             console.log('📥 开始加载客户列表...');
@@ -983,6 +1022,12 @@
                 showAlert('获取客户信息失败', 'error');
                 return;
             }
+
+            const { data: requirements } = await supabase
+                .from('user_requirements')
+                .select('*')
+                .eq('user_id', clientId)
+                .maybeSingle();
             
             const age = client.birthday ? Math.floor((new Date() - new Date(client.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
             
@@ -1011,7 +1056,7 @@
                         </table>
                     </td></tr>
 
-                    <tr><th>照片</th><td colspan="3">
+                    <tr class="print-photos-row"><th>照片</th><td colspan="3">
                         ${(() => {
                             let photos = client.photos;
                             if (!photos) return '<span style="color: #888;">暂无照片</span>';
@@ -1090,13 +1135,41 @@
                     
                     <tr><th>注册时间</th><td colspan="3">${client.created_at ? new Date(client.created_at).toLocaleString() : '-'}</td></tr>
                 </table>
+
+                <div class="print-section-title">择偶要求</div>
+                <table class="print-table">
+                    <tr><th>年龄要求</th><td colspan="3">
+                        ${requirements?.min_age || requirements?.max_age ? `${requirements?.min_age || '不限'} - ${requirements?.max_age || '不限'} 岁` : '-'}${requirements?.age_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.age_importance)}）</span>` : ''}
+                    </td></tr>
+                    <tr><th>身高要求</th><td colspan="3">
+                        ${requirements?.min_height || requirements?.max_height ? `${requirements?.min_height || '不限'} - ${requirements?.max_height || '不限'} cm` : '-'}${requirements?.height_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.height_importance)}）</span>` : ''}
+                    </td></tr>
+                    <tr><th>学历要求</th><td colspan="3">
+                        ${requirements?.education?.length ? requirements.education.map(e => `<span style="display: inline-block; background: #e8f0e8; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${e}</span>`).join('') : '-'}${requirements?.education_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.education_importance)}）</span>` : ''}
+                    </td></tr>
+                    <tr><th>婚姻状况要求</th><td colspan="3">
+                        ${requirements?.marital_status?.length ? requirements.marital_status.map(m => `<span style="display: inline-block; background: #f0e8e8; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${m}</span>`).join('') : '-'}${requirements?.marital_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.marital_importance)}）</span>` : ''}
+                    </td></tr>
+                    <tr><th>地区要求</th><td colspan="3">
+                        ${requirements?.province || '-'}${requirements?.province_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.province_importance)}）</span>` : ''}
+                    </td></tr>
+                    <tr><th>体型要求</th><td colspan="3">${requirements?.body_type || '-'}</td></tr>
+                    <tr><th>年收入要求</th><td colspan="3">
+                        ${requirements?.min_income ? `${requirements.min_income} 元以上` : '-'}${requirements?.income_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.income_importance)}）</span>` : ''}
+                    </td></tr>
+                    <tr><th>房产要求</th><td colspan="3">${requirements?.house_required || '-'}</td></tr>
+                    <tr><th>车辆要求</th><td colspan="3">${requirements?.car_required || '-'}</td></tr>
+                    <tr><th>吸烟要求</th><td colspan="3">${requirements?.smoking || '-'}</td></tr>
+                    <tr><th>饮酒要求</th><td colspan="3">${requirements?.drinking || '-'}</td></tr>
+                </table>
                 
                 <div class="print-footer">
                     <p>婚恋红娘系统 - 个人信息表</p>
                 </div>
                 
                 <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
-                    <button class="btn btn-primary" onclick="window.print()">🖨️ 打印</button>
+                    <button class="btn btn-primary" onclick="window.print()">🖨️ 打印全部</button>
+                    <button class="btn btn-secondary" onclick="printRequirementsOnly()">🖨️ 仅打印择偶要求</button>
                     <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
                 </div>
             `;
@@ -1199,10 +1272,37 @@
             document.getElementById('clientReligion').value = client.religion || '';
             document.getElementById('clientAcceptPet').value = client.accept_pet || '';
             document.getElementById('clientSchedule').value = client.schedule || '';
-            document.getElementById('clientInterests').value = Array.isArray(client.interests) ? client.interests.join(', ') : (client.interests || '');
-            document.getElementById('clientActivityTypes').value = Array.isArray(client.activity_types) ? client.activity_types.join(', ') : (client.activity_types || '');
+            setCheckboxValues('clientInterests', client.interests);
+            setCheckboxValues('clientActivityTypes', client.activity_types);
             document.getElementById('clientSelfDescription').value = client.self_description || '';
             document.getElementById('clientDeclaration').value = client.declaration || '';
+
+            // 填充择偶要求字段
+            const { data: requirements } = await supabase
+                .from('user_requirements')
+                .select('*')
+                .eq('user_id', clientId)
+                .maybeSingle();
+
+            document.getElementById('clientReqMinAge').value = requirements?.min_age || '';
+            document.getElementById('clientReqMaxAge').value = requirements?.max_age || '';
+            document.getElementById('clientAgeImportance').value = requirements?.age_importance || 'normal';
+            document.getElementById('clientReqMinHeight').value = requirements?.min_height || '';
+            document.getElementById('clientReqMaxHeight').value = requirements?.max_height || '';
+            document.getElementById('clientHeightImportance').value = requirements?.height_importance || 'normal';
+            document.getElementById('clientReqProvince').value = requirements?.province || '';
+            document.getElementById('clientProvinceImportance').value = requirements?.province_importance || 'normal';
+            document.getElementById('clientReqBodyType').value = requirements?.body_type || '';
+            document.getElementById('clientReqMinIncome').value = requirements?.min_income || '';
+            document.getElementById('clientIncomeImportance').value = requirements?.income_importance || 'normal';
+            document.getElementById('clientReqProperty').value = requirements?.house_required || '';
+            document.getElementById('clientReqCar').value = requirements?.car_required || '';
+            document.getElementById('clientReqSmoking').value = requirements?.smoking || '';
+            document.getElementById('clientReqDrinking').value = requirements?.drinking || '';
+
+            // 设置复选框值
+            setCheckboxValues('clientReqEducation', requirements?.education);
+            setCheckboxValues('clientReqMarital', requirements?.marital_status);
 
             // 清除客户搜索结果
             document.getElementById('manageClientResult').innerHTML = '';
@@ -1251,10 +1351,32 @@
                 religion: document.getElementById('clientReligion').value.trim(),
                 accept_pet: document.getElementById('clientAcceptPet').value.trim(),
                 schedule: document.getElementById('clientSchedule').value.trim(),
-                interests: document.getElementById('clientInterests').value.split(',').map(s => s.trim()).filter(s => s),
-                activity_types: document.getElementById('clientActivityTypes').value.split(',').map(s => s.trim()).filter(s => s),
+                interests: getCheckboxValues('clientInterests'),
+                activity_types: getCheckboxValues('clientActivityTypes'),
                 self_description: document.getElementById('clientSelfDescription').value.trim(),
                 declaration: document.getElementById('clientDeclaration').value.trim()
+            };
+
+            const requirementsData = {
+                min_age: document.getElementById('clientReqMinAge').value ? parseInt(document.getElementById('clientReqMinAge').value) : null,
+                max_age: document.getElementById('clientReqMaxAge').value ? parseInt(document.getElementById('clientReqMaxAge').value) : null,
+                age_importance: document.getElementById('clientAgeImportance').value,
+                min_height: document.getElementById('clientReqMinHeight').value ? parseInt(document.getElementById('clientReqMinHeight').value) : null,
+                max_height: document.getElementById('clientReqMaxHeight').value ? parseInt(document.getElementById('clientReqMaxHeight').value) : null,
+                height_importance: document.getElementById('clientHeightImportance').value,
+                education: getCheckboxValues('clientReqEducation'),
+                education_importance: document.getElementById('clientEducationImportance').value,
+                marital_status: getCheckboxValues('clientReqMarital'),
+                marital_importance: document.getElementById('clientMaritalImportance').value,
+                province: document.getElementById('clientReqProvince').value.trim(),
+                province_importance: document.getElementById('clientProvinceImportance').value,
+                body_type: document.getElementById('clientReqBodyType').value,
+                min_income: document.getElementById('clientReqMinIncome').value,
+                income_importance: document.getElementById('clientIncomeImportance').value,
+                house_required: document.getElementById('clientReqProperty').value,
+                car_required: document.getElementById('clientReqCar').value,
+                smoking: document.getElementById('clientReqSmoking').value,
+                drinking: document.getElementById('clientReqDrinking').value
             };
 
             if (selectedPhotos.length > 0) {
@@ -1262,19 +1384,52 @@
             }
 
             if (editClientId) {
-                // 编辑模式
-                const { error } = await supabase
+                // 编辑模式 - 更新 users 表
+                const { error: userError } = await supabase
                     .from('users')
                     .update(formData)
                     .eq('id', editClientId);
 
-                if (error) {
-                    showAlert('保存失败: ' + error.message, 'error');
-                } else {
-                    showAlert('保存成功', 'success');
-                    cancelEdit();
-                    showAllClientsForManage();
+                if (userError) {
+                    showAlert('保存失败: ' + userError.message, 'error');
+                    return;
                 }
+
+                // 更新 user_requirements 表
+                const { data: existingReq, error: reqCheckError } = await supabase
+                    .from('user_requirements')
+                    .select('id')
+                    .eq('user_id', editClientId)
+                    .maybeSingle();
+
+                if (reqCheckError) {
+                    showAlert('保存失败: ' + reqCheckError.message, 'error');
+                    return;
+                }
+
+                if (existingReq) {
+                    const { error: reqError } = await supabase
+                        .from('user_requirements')
+                        .update(requirementsData)
+                        .eq('user_id', editClientId);
+                    if (reqError) {
+                        showAlert('保存失败: ' + reqError.message, 'error');
+                        return;
+                    }
+                } else {
+                    requirementsData.user_id = editClientId;
+                    const { error: reqError } = await supabase
+                        .from('user_requirements')
+                        .insert([requirementsData]);
+                    if (reqError) {
+                        showAlert('保存失败: ' + reqError.message, 'error');
+                        return;
+                    }
+                }
+
+                showAlert('保存成功', 'success');
+                cancelEdit();
+                showAllClientsForManage();
             } else {
                 // 新增模式
                 if (!formData.phone || !formData.name) {
@@ -1285,17 +1440,31 @@
                 formData.agency_id = currentUser.id;
                 formData.status = 'active';
 
-                const { error } = await supabase
+                const { data: newUser, error: userError } = await supabase
                     .from('users')
-                    .insert([formData]);
+                    .insert([formData])
+                    .select()
+                    .single();
 
-                if (error) {
-                    showAlert('录入失败: ' + error.message, 'error');
-                } else {
-                    showAlert('录入成功', 'success');
-                    document.getElementById('clientForm').reset();
-                    selectedPhotos = [];
+                if (userError) {
+                    showAlert('录入失败: ' + userError.message, 'error');
+                    return;
                 }
+
+                // 插入 user_requirements 表
+                requirementsData.user_id = newUser.id;
+                const { error: reqError } = await supabase
+                    .from('user_requirements')
+                    .insert([requirementsData]);
+
+                if (reqError) {
+                    showAlert('录入失败: ' + reqError.message, 'error');
+                    return;
+                }
+
+                showAlert('录入成功', 'success');
+                document.getElementById('clientForm').reset();
+                selectedPhotos = [];
             }
         }
 

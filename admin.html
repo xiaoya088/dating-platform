@@ -63,14 +63,22 @@
             .print-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
             .print-table th, .print-table td { border: 1px solid #333; padding: 8px 12px; text-align: left; vertical-align: top; }
             .print-table th { background: #f0f0f0 !important; font-weight: bold; width: 30%; }
-            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; }
+            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; page-break-before: always; }
             .print-footer { display: block !important; margin-top: 30px; text-align: right; font-size: 10pt; color: #666; border-top: 1px solid #333; padding-top: 10px; }
             .modal { position: static; background: none; display: block !important; }
             .modal-content { width: 100%; max-width: 100%; max-height: none; overflow: visible; box-shadow: none; border: none; padding: 0; }
             .modal-header { display: none; }
+            .print-only-requirements .print-header { display: none !important; }
+            .print-only-requirements .print-table:first-of-type { display: none !important; }
+            .print-only-requirements .print-section-title { margin-top: 0; page-break-before: avoid; }
+            .print-only-requirements .print-footer { display: none !important; }
+            .print-photos-row img { max-width: 180px; max-height: 220px; margin: 10px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid #ddd; }
+            .print-photos-row { text-align: center; padding: 15px !important; }
         }
         .print-header { display: none; }
         .print-footer { display: none; }
+        .print-section-title { display: none; }
+        .print-only-requirements .print-section-title { display: block !important; }
     </style>
 </head>
 <body>
@@ -562,6 +570,12 @@
                     .single();
                 
                 if (error) throw error;
+
+                const { data: requirements } = await supabaseClient
+                    .from('user_requirements')
+                    .select('*')
+                    .eq('user_id', userId)
+                    .maybeSingle();
                 
                 const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
                 const userStatus = user.status === 'active' ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">禁用</span>';
@@ -578,28 +592,10 @@
                         <tr><th style="width: 20%;">基本信息</th><td style="width: 80%;" colspan="3">
                             <table style="width: 100%; border: none;">
                                 <tr>
-                                    <td style="border: none; width: 15%;"><strong>姓名：</strong>${user.name || '-'}</td>
-                                    <td style="border: none; width: 15%;"><strong>性别：</strong>${user.gender || '-'}</td>
-                                    <td style="border: none; width: 15%;"><strong>年龄：</strong>${age}岁</td>
-                                    <td style="border: none; width: 15%;"><strong>生日：</strong>${user.birthday || '-'}</td>
-                                    <td style="border: none; width: 40%;" rowspan="4">
-                                                                <strong>照片：</strong><br>
-                                                                ${(() => {
-                                                                    let photos = user.photos;
-                                                                    if (!photos) return '<span style="color: #888;">暂无照片</span>';
-                                                                    if (typeof photos === 'string') {
-                                                                        try {
-                                                                            photos = JSON.parse(photos);
-                                                                        } catch (e) {
-                                                                            return '<span style="color: #888;">暂无照片</span>';
-                                                                        }
-                                                                    }
-                                                                    if (!Array.isArray(photos) || photos.length === 0) {
-                                                                        return '<span style="color: #888;">暂无照片</span>';
-                                                                    }
-                                                                    return photos.map((photo, idx) => `<img src="${photo}" style="max-width: 120px; max-height: 150px; margin: 5px; border-radius: 5px; object-fit: cover; cursor: pointer;" onclick="window.open('${photo}', '_blank')">`).join('');
-                                                                })()}
-                                                            </td>
+                                    <td style="border: none; width: 25%;"><strong>姓名：</strong>${user.name || '-'}</td>
+                                    <td style="border: none; width: 25%;"><strong>性别：</strong>${user.gender || '-'}</td>
+                                    <td style="border: none; width: 25%;"><strong>年龄：</strong>${age}岁</td>
+                                    <td style="border: none; width: 25%;"><strong>生日：</strong>${user.birthday || '-'}</td>
                                 </tr>
                                 <tr>
                                     <td style="border: none;"><strong>身高：</strong>${user.height || '-'} cm</td>
@@ -608,6 +604,24 @@
                                     <td style="border: none;"></td>
                                 </tr>
                             </table>
+                        </td></tr>
+
+                        <tr class="print-photos-row"><th>照片</th><td colspan="3">
+                            ${(() => {
+                                let photos = user.photos;
+                                if (!photos) return '<span style="color: #888;">暂无照片</span>';
+                                if (typeof photos === 'string') {
+                                    try {
+                                        photos = JSON.parse(photos);
+                                    } catch (e) {
+                                        return '<span style="color: #888;">暂无照片</span>';
+                                    }
+                                }
+                                if (!Array.isArray(photos) || photos.length === 0) {
+                                    return '<span style="color: #888;">暂无照片</span>';
+                                }
+                                return photos.map((photo, idx) => `<img src="${photo}" style="max-width: 200px; max-height: 250px; margin: 10px 5px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid #ddd;" onclick="window.open('${photo}', '_blank')" title="点击放大">`).join('');
+                            })()}
                         </td></tr>
                         
                         <tr><th>联系方式</th><td colspan="3">
@@ -683,13 +697,41 @@
                         
                         <tr><th>注册时间</th><td colspan="3">${user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</td></tr>
                     </table>
+
+                    <div class="print-section-title">择偶要求</div>
+                    <table class="print-table">
+                        <tr><th>年龄要求</th><td colspan="3">
+                            ${requirements?.min_age || requirements?.max_age ? `${requirements?.min_age || '不限'} - ${requirements?.max_age || '不限'} 岁` : '-'}${requirements?.age_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.age_importance)}）</span>` : ''}
+                        </td></tr>
+                        <tr><th>身高要求</th><td colspan="3">
+                            ${requirements?.min_height || requirements?.max_height ? `${requirements?.min_height || '不限'} - ${requirements?.max_height || '不限'} cm` : '-'}${requirements?.height_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.height_importance)}）</span>` : ''}
+                        </td></tr>
+                        <tr><th>学历要求</th><td colspan="3">
+                            ${requirements?.education?.length ? requirements.education.map(e => `<span style="display: inline-block; background: #e8f0e8; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${e}</span>`).join('') : '-'}${requirements?.education_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.education_importance)}）</span>` : ''}
+                        </td></tr>
+                        <tr><th>婚姻状况要求</th><td colspan="3">
+                            ${requirements?.marital_status?.length ? requirements.marital_status.map(m => `<span style="display: inline-block; background: #f0e8e8; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${m}</span>`).join('') : '-'}${requirements?.marital_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.marital_importance)}）</span>` : ''}
+                        </td></tr>
+                        <tr><th>地区要求</th><td colspan="3">
+                            ${requirements?.province || '-'}${requirements?.province_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.province_importance)}）</span>` : ''}
+                        </td></tr>
+                        <tr><th>体型要求</th><td colspan="3">${requirements?.body_type || '-'}</td></tr>
+                        <tr><th>年收入要求</th><td colspan="3">
+                            ${requirements?.min_income ? `${requirements.min_income} 元以上` : '-'}${requirements?.income_importance ? ` <span style="color: #666;">（${getImportanceLabel(requirements.income_importance)}）</span>` : ''}
+                        </td></tr>
+                        <tr><th>房产要求</th><td colspan="3">${requirements?.house_required || '-'}</td></tr>
+                        <tr><th>车辆要求</th><td colspan="3">${requirements?.car_required || '-'}</td></tr>
+                        <tr><th>吸烟要求</th><td colspan="3">${requirements?.smoking || '-'}</td></tr>
+                        <tr><th>饮酒要求</th><td colspan="3">${requirements?.drinking || '-'}</td></tr>
+                    </table>
                     
                     <div class="print-footer">
                         <p>婚恋红娘系统 - 个人信息表</p>
                     </div>
                     
                     <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
-                        <button class="btn btn-primary" onclick="window.print()">🖨️ 打印</button>
+                        <button class="btn btn-primary" onclick="window.print()">🖨️ 打印全部</button>
+                        <button class="btn btn-secondary" onclick="printRequirementsOnly()">🖨️ 仅打印择偶要求</button>
                         <button class="btn btn-secondary" onclick="copyUserId('${user.id}')">📋 复制ID</button>
                         <button class="btn btn-secondary modal-close" onclick="closeModal()">关闭</button>
                     </div>
@@ -697,6 +739,27 @@
                 document.getElementById('modal').classList.add('show');
             } catch (e) {
                 showAlert('获取详情失败: ' + e.message, 'error');
+            }
+        }
+        
+        function getImportanceLabel(importance) {
+            const labels = {
+                'must': '必须满足',
+                'very_important': '非常重要',
+                'normal': '一般',
+                'optional': '可有可无'
+            };
+            return labels[importance] || importance || '';
+        }
+        
+        function printRequirementsOnly() {
+            const modalContent = document.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.classList.add('print-only-requirements');
+                window.print();
+                setTimeout(() => {
+                    modalContent.classList.remove('print-only-requirements');
+                }, 100);
             }
         }
         

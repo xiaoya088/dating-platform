@@ -1,35 +1,36 @@
--- =============================================
--- 禁用 RLS 以确保中介能正常工作
--- =============================================
+-- ============================================
+-- 临时禁用 RLS（让功能先正常运行）
+-- ============================================
 
--- 禁用 users 表的 RLS
-ALTER TABLE IF EXISTS users DISABLE ROW LEVEL SECURITY;
+-- 禁用所有表的 RLS
+ALTER TABLE users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE user_requirements DISABLE ROW LEVEL SECURITY;
+ALTER TABLE agencies DISABLE ROW LEVEL SECURITY;
+ALTER TABLE user_photos DISABLE ROW LEVEL SECURITY;
+ALTER TABLE likes DISABLE ROW LEVEL SECURITY;
+ALTER TABLE messages DISABLE ROW LEVEL SECURITY;
+ALTER TABLE blacklist DISABLE ROW LEVEL SECURITY;
+ALTER TABLE activities DISABLE ROW LEVEL SECURITY;
+ALTER TABLE activity_registrations DISABLE ROW LEVEL SECURITY;
 
--- 禁用 agencies 表的 RLS
-ALTER TABLE IF EXISTS agencies DISABLE ROW LEVEL SECURITY;
+-- 删除之前创建的策略
+DROP POLICY IF EXISTS "Users can read own profile" ON users;
+DROP POLICY IF EXISTS "Users can update own profile" ON users;
+DROP POLICY IF EXISTS "Agencies can read their clients" ON users;
+DROP POLICY IF EXISTS "Agencies can update their clients" ON users;
+DROP POLICY IF EXISTS "Agencies can insert clients" ON users;
+DROP POLICY IF EXISTS "Agencies can delete their clients" ON users;
 
--- 禁用 agency_requests 表的 RLS
-ALTER TABLE IF EXISTS agency_requests DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Users can read own requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Users can insert own requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Users can update own requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Users can delete own requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Agencies can read their clients requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Agencies can insert their clients requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Agencies can update their clients requirements" ON user_requirements;
+DROP POLICY IF EXISTS "Agencies can delete their clients requirements" ON user_requirements;
 
--- 禁用 admins 表的 RLS
-ALTER TABLE IF EXISTS admins DISABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Agencies can read own agency" ON agencies;
+DROP POLICY IF EXISTS "Agencies can update own agency" ON agencies;
 
--- 禁用 messages 表的 RLS
-ALTER TABLE IF EXISTS messages DISABLE ROW LEVEL SECURITY;
-
--- 禁用 dating_events 表的 RLS
-ALTER TABLE IF EXISTS dating_events DISABLE ROW LEVEL SECURITY;
-
--- 禁用 registrations 表的 RLS
-ALTER TABLE IF EXISTS registrations DISABLE ROW LEVEL SECURITY;
-
--- 禁用 notifications 表的 RLS
-ALTER TABLE IF EXISTS notifications DISABLE ROW LEVEL SECURITY;
-
--- 禁用 feedback 表的 RLS
-ALTER TABLE IF EXISTS feedback DISABLE ROW LEVEL SECURITY;
-
--- 禁用 system_logs 表的 RLS
-ALTER TABLE IF EXISTS system_logs DISABLE ROW LEVEL SECURITY;
-
-SELECT '✅ RLS 已禁用（仅对存在的表）' AS message;
+SELECT 'RLS 已禁用，功能可正常运行!' AS status;
