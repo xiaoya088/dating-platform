@@ -35,12 +35,31 @@
     </div>
     
     <script>
-        document.getElementById('btnLogin').addEventListener('click', handleLogin);
-        document.getElementById('loginPassword').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                handleLogin();
+        const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+        const currentUser = localStorage.getItem('currentUser');
+        
+        if (!hasSeenSplash && !currentUser) {
+            sessionStorage.setItem('hasSeenSplash', 'true');
+            window.location.href = 'splash.html';
+        } else {
+            if (currentUser) {
+                try {
+                    const user = JSON.parse(currentUser);
+                    if (user.role === 'agency') {
+                        window.location.href = 'agency.html';
+                    } else {
+                        window.location.href = user.name ? 'match.html' : 'profile.html';
+                    }
+                } catch (e) {}
             }
-        });
+            
+            document.getElementById('btnLogin').addEventListener('click', handleLogin);
+            document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    handleLogin();
+                }
+            });
+        }
         
         function showAlert(message, type) {
             const alertBox = document.getElementById('alertBox');

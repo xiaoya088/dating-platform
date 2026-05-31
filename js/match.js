@@ -569,6 +569,7 @@ async function getMatchDetails(userId, targetId) {
 
     return {
         ...matchResult,
+        user: targetData,
         myProfile: {
             age: calculateAge(myData.birthday),
             height: myData.height,
@@ -811,7 +812,7 @@ async function getCachedMatches(userId) {
         }
         
         if (!data || data.length === 0) {
-            console.log('没有找到缓存的匹配结果');
+            console.log('没有找到缓存的匹配结果，请确保数据库已执行 calculate_all_matches()');
             return [];
         }
         
@@ -832,20 +833,15 @@ async function getCachedMatches(userId) {
         users?.forEach(u => userMap[u.id] = u);
         
         return data.map(row => ({
-            user: userMap[row.target_user_id],
+            userId: row.target_user_id,
             score: row.score,
             aToB: { score: row.a_to_b_score },
             bToA: { score: row.b_to_a_score },
-            reasons: row.reasons,
-            commonInterests: row.common_interests,
-            commonActivities: row.common_activities,
-            calculatedAt: row.calculated_at,
-            userType: userMap[row.target_user_id]?.agency_id ?
-                (userMap[row.target_user_id].agency_info_public ? 'agency_public' : 'agency_private') :
-                'normal'
-        })).filter(m => m.user);
+            user: userMap[row.target_user_id],
+            matchTime: row.calculated_at
+        }));
     } catch (e) {
-        console.error('获取缓存匹配异常:', e);
+        console.error('getCachedMatches 错误:', e);
         return [];
     }
 }

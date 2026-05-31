@@ -15,7 +15,7 @@
         <ul class="navbar-nav">
             <li><a href="match.html" class="active">匹配推荐</a></li>
             <li><a href="messages.html">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px; margin-left:5px;">0</span></a></li>
-            <li><a href="announcements.html">📢 公告</a></li>
+            <li><a href="announcements.html">公告</a></li>
             <li><a href="activities.html">线下活动</a></li>
             <li><a href="profile.html">个人资料</a></li>
             <li><a href="#" onclick="logout()">退出</a></li>
@@ -115,15 +115,34 @@
                 matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在加载匹配列表...</p></div>';
                 
                 try {
+                    // 直接从数据库读取已计算的匹配结果（匹配已在数据库端定时计算）
                     const matches = await getCachedMatches(currentUser.id);
                     
                     if (matches.length === 0) {
-                        console.log('缓存为空，执行首次计算...');
-                        matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>首次加载，正在计算匹配度...</p></div>';
-                        const freshMatches = await calculateAndCacheMatches(currentUser.id);
-                        allMatches = freshMatches;
+                        // 数据库中没有匹配结果，等待一下再试（数据库可能还在计算中）
+                        console.log('数据库暂无匹配结果，等待重试...');
+                        matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>匹配计算中，请稍候...</p></div>';
+                        
+                        // 等待3秒后重试，最多重试3次
+                        let retryCount = 0;
+                        let dbMatches = [];
+                        while (retryCount < 3 && dbMatches.length === 0) {
+                            await new Promise(resolve => setTimeout(resolve, 3000));
+                            dbMatches = await getCachedMatches(currentUser.id);
+                            retryCount++;
+                            console.log(`第${retryCount}次重试，获取到 ${dbMatches.length} 条匹配`);
+                        }
+                        
+                        if (dbMatches.length > 0) {
+                            allMatches = dbMatches;
+                        } else {
+                            // 数据库确实没有结果，显示提示
+                            console.log('数据库匹配结果为空');
+                            matchList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无匹配结果，请稍后再试或完善个人资料</p>';
+                            allMatches = [];
+                        }
                     } else {
-                        console.log('从缓存加载匹配:', matches.length);
+                        console.log('从数据库加载匹配:', matches.length);
                         allMatches = matches;
                     }
                     
@@ -141,10 +160,18 @@
         
         async function refreshMatchesInternal() {
             const matchList = document.getElementById('matchList');
-            matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在重新计算匹配度，请稍候...</p></div>';
+            matchList.innerHTML = '<div class="loading"><div class="spinner"></div><p>正在刷新匹配列表...</p></div>';
             
             try {
-                const matches = await calculateAndCacheMatches(currentUser.id);
+                // 触发数据库端的匹配重新计算
+                const supabase = getSupabaseClient();
+                await supabase.rpc('calculate_matches_for_user', { p_user_id: currentUser.id });
+                
+                // 等待计算完成
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 重新加载匹配结果
+                const matches = await getCachedMatches(currentUser.id);
                 allMatches = matches;
                 document.getElementById('matchCount').textContent = matches.length;
                 currentPage = 1;
@@ -160,7 +187,7 @@
         function renderMatches() {
             const matchList = document.getElementById('matchList');
 
-            if (allMatches.length === 0) {
+            if (!allMatches || !Array.isArray(allMatches) || allMatches.length === 0) {
                 matchList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无匹配结果，请尝试调整筛选条件或完善您的择偶要求</p>';
                 return;
             }
@@ -170,11 +197,11 @@
             const pageMatches = allMatches.slice(start, end);
 
             matchList.innerHTML = pageMatches.map(match => {
-                const { user, score, reasons, userType } = match;
+                const { user, score, aToB, bToA, reasons, userType } = match;
                 const card = formatMatchCard(match);
 
-                const scoreClass = score >= 80 ? 'score-excellent' : score >= 70 ? 'score-good' : 'score-normal';
-                const scoreLabel = score >= 80 ? '完美' : score >= 70 ? '优质' : score >= 50 ? '一般' : '偏低';
+                const myScoreToThem = aToB?.score ?? score;
+                const themToMe = bToA?.score ?? 0;
 
                 let actionButtons = '';
                 if (userType === 'normal' || userType === 'agency_public') {
@@ -194,26 +221,40 @@
                     `;
                 }
 
+                const userPhotos = Array.isArray(user.photos) ? user.photos : (user.photos ? JSON.parse(user.photos) : []);
+                const photoCount = userPhotos.length;
+
                 return `
                     <div class="match-card" onclick="showUserDetail('${user.id}')">
-                        <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/100?text=无头像'">
+                        <div class="match-left">
+                            <div class="match-avatar-wrap">
+                                <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/100?text=无头像'">
+                                ${photoCount > 1 ? `<span class="photo-count">${photoCount}</span>` : ''}
+                            </div>
+                        </div>
                         <div class="match-info">
-                            <div class="match-name">
-                                ${card.displayInfo.name}
+                            <div class="match-name-row">
+                                <span class="match-name">${card.displayInfo.name}</span>
                                 ${card.badge}
                             </div>
-                            <div class="match-meta">
-                                ${card.displayInfo.age}岁 | ${card.displayInfo.height}cm | ${card.displayInfo.province} ${card.displayInfo.city}
+                            <div class="match-basic">
+                                <span>${card.displayInfo.age}岁</span>
+                                <span>${card.displayInfo.height}cm</span>
+                                <span>${card.displayInfo.city || user.province || '未知'}</span>
                             </div>
                             <div class="match-education">${card.displayInfo.education || '学历未填写'}</div>
                             ${card.displayInfo.declaration ? `<div class="match-declaration">"${card.displayInfo.declaration}"</div>` : ''}
-                            <div class="match-tags">
-                                ${reasons.slice(0, 3).map(r => `<span class="tag tag-success">${r}</span>`).join('')}
-                            </div>
+                            ${reasons && reasons.length > 0 ? `
+                                <div class="match-tags">
+                                    ${reasons.slice(0, 3).map(r => `<span class="tag tag-success">${r}</span>`).join('')}
+                                </div>
+                            ` : ''}
                         </div>
-                        <div class="match-score-container">
-                            <div class="match-score ${scoreClass}">${score}%</div>
-                            <div class="match-score-label">${scoreLabel}</div>
+                        <div class="match-score-wrap">
+                            <div class="match-scores-v">
+                                <div class="score-down">↓${myScoreToThem}%</div>
+                                <div class="score-up">↑${themToMe}%</div>
+                            </div>
                         </div>
                         <div class="match-actions">
                             ${actionButtons}
@@ -301,76 +342,86 @@
                     `;
                 }
 
+                const userPhotos = Array.isArray(user.photos) ? user.photos : (user.photos ? JSON.parse(user.photos) : []);
+                
                 modalBody.innerHTML = `
-                    <div style="display: flex; gap: 20px;">
-                        <div style="width: 200px;">
-                            <img src="${card.displayInfo.avatar}" style="width: 100%; border-radius: 8px;" onerror="this.src='https://via.placeholder.com/200?text=无头像'">
-                            ${user.photos?.slice(1, 4).map(p => `<img src="${p}" style="width: 60px; height: 60px; border-radius: 4px; margin-top: 5px;">`).join('')}
+                    <div class="modal-user-section">
+                        <div class="modal-photos">
+                            <img src="${card.displayInfo.avatar}" style="width: 100%; max-width: 150px; border-radius: 8px;" onerror="this.src='https://via.placeholder.com/150?text=无头像'">
+                            ${userPhotos.length > 1 ? `
+                                <div style="display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap;">
+                                    ${userPhotos.slice(1, 4).map(p => `<img src="${p}" style="width: 45px; height: 45px; border-radius: 4px; object-fit: cover;">`).join('')}
+                                </div>
+                            ` : ''}
                         </div>
-                        <div style="flex: 1;">
-                            <div style="margin-bottom: 15px;">
-                                <span style="font-size: 24px; font-weight: bold;">${card.displayInfo.name}</span>
+                        <div class="modal-info">
+                            <div style="margin-bottom: 10px;">
+                                <span style="font-size: 22px; font-weight: bold;">${card.displayInfo.name}</span>
                                 ${card.badge}
                             </div>
-                            <p><strong>年龄：</strong>${details.targetProfile.age || '未填写'}岁</p>
-                            <p><strong>身高：</strong>${details.targetProfile.height || '未填写'}cm</p>
-                            <p><strong>学历：</strong>${details.targetProfile.education || '未填写'}</p>
-                            <p><strong>职业：</strong>${user.occupation || '未填写'}</p>
-                            <p><strong>收入：</strong>${details.targetProfile.income || '未填写'}</p>
-                            <p><strong>婚姻状况：</strong>${details.targetProfile.maritalStatus || '未填写'}</p>
-                            <p><strong>所在地：</strong>${user.province || ''} ${user.city || ''}</p>
-                            <p><strong>微信：</strong>${user.wechat_visible ? user.wechat || '未填写' : '未公开'}</p>
+                            <div class="info-grid">
+                                <div class="info-item"><span class="info-label">年龄</span><span class="info-value">${details.targetProfile.age || '?'}岁</span></div>
+                                <div class="info-item"><span class="info-label">身高</span><span class="info-value">${details.targetProfile.height || '?'}cm</span></div>
+                                <div class="info-item"><span class="info-label">学历</span><span class="info-value">${details.targetProfile.education || '未填写'}</span></div>
+                                <div class="info-item"><span class="info-label">职业</span><span class="info-value">${user.occupation || '未填写'}</span></div>
+                                <div class="info-item"><span class="info-label">收入</span><span class="info-value">${details.targetProfile.income || '未填写'}</span></div>
+                                <div class="info-item"><span class="info-label">婚姻</span><span class="info-value">${details.targetProfile.maritalStatus || '未填写'}</span></div>
+                                <div class="info-item"><span class="info-label">地区</span><span class="info-value">${details.targetProfile.city || (user.province + ' ' + (user.city || '')) || '未填写'}</span></div>
+                                <div class="info-item"><span class="info-label">微信</span><span class="info-value">${user.wechat_visible ? user.wechat || '未填写' : '未公开'}</span></div>
+                            </div>
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">匹配分析</h4>
-                        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 15px;">
-                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                                <div style="font-size: 28px; font-weight: bold; color: #e74c3c;">${score}%</div>
-                                <div style="font-size: 12px; color: #888;">综合匹配度</div>
+                    <div class="modal-match-section">
+                        <h4>匹配分析</h4>
+                        <div class="match-scores">
+                            <div class="score-item score-main">
+                                <div class="score-value" style="color: #e74c3c;">${score}%</div>
+                                <div class="score-label">综合匹配度</div>
                             </div>
-                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                                <div style="font-size: 28px; font-weight: bold; color: #27ae60;">${details.aToB.score}%</div>
-                                <div style="font-size: 12px; color: #888;">您满足对方</div>
+                            <div class="score-item">
+                                <div class="score-value" style="color: #27ae60;">${details.aToB.score}%</div>
+                                <div class="score-label">我→对方</div>
                             </div>
-                            <div style="text-align: center; padding: 10px; background: white; border-radius: 8px;">
-                                <div style="font-size: 28px; font-weight: bold; color: #3498db;">${details.bToA.score}%</div>
-                                <div style="font-size: 12px; color: #888;">对方满足您</div>
+                            <div class="score-item">
+                                <div class="score-value" style="color: #3498db;">${details.bToA.score}%</div>
+                                <div class="score-label">对方→我</div>
                             </div>
                         </div>
-                        ${details.interestBonus > 0 ? `<p style="color: #27ae60; font-size: 13px;">✓ 兴趣标签加成：+${details.interestBonus}分</p>` : ''}
-                        ${details.activityBonus > 0 ? `<p style="color: #27ae60; font-size: 13px;">✓ 线下活动契合度加成：+${details.activityBonus}分</p>` : ''}
+                        ${details.interestBonus > 0 ? `<p class="bonus-text">✓ 兴趣加成：+${details.interestBonus}分</p>` : ''}
+                        ${details.activityBonus > 0 ? `<p class="bonus-text">✓ 活动契合：+${details.activityBonus}分</p>` : ''}
                         ${reasons.length > 0 ? `
-                            <div style="margin-top: 10px;">
+                            <div class="match-reasons">
                                 <p><strong>匹配亮点：</strong></p>
-                                <div style="display: flex; flex-wrap: wrap; gap: 5px;">
-                                    ${reasons.map(r => `<span style="background: #d4edda; color: #155724; padding: 4px 10px; border-radius: 15px; font-size: 12px;">${r}</span>`).join('')}
+                                <div class="reason-tags">
+                                    ${reasons.map(r => `<span class="reason-tag">${r}</span>`).join('')}
                                 </div>
                             </div>
                         ` : ''}
                     </div>
 
                     ${details.targetProfile.interests && details.targetProfile.interests.length > 0 ? `
-                        <div style="margin-top: 15px;">
+                        <div class="modal-section">
                             <strong>兴趣爱好：</strong>
-                            <div class="match-tags">
+                            <div class="tag-list">
                                 ${details.targetProfile.interests.map(i => `<span class="tag">${i}</span>`).join('')}
                             </div>
                         </div>
                     ` : ''}
 
                     ${details.targetProfile.activities && details.targetProfile.activities.length > 0 ? `
-                        <div style="margin-top: 15px;">
+                        <div class="modal-section">
                             <strong>喜欢的活动：</strong>
-                            <div class="match-tags">
+                            <div class="tag-list">
                                 ${details.targetProfile.activities.map(a => `<span class="tag tag-info">${a}</span>`).join('')}
                             </div>
                         </div>
                     ` : ''}
 
-                    <p style="margin-top: 15px;"><strong>婚恋宣言：</strong></p>
-                    <p style="color: #666;">${card.displayInfo.declaration || '暂无描述'}</p>
+                    <div class="modal-section">
+                        <strong>婚恋宣言：</strong>
+                        <p style="color: #666; margin-top: 5px;">${card.displayInfo.declaration || '暂无描述'}</p>
+                    </div>
 
                     ${contactSection}
                 `;
@@ -506,64 +557,100 @@
         }
 
         loadMatches();
-        startPeriodicMatchCalculation(currentUser.id, 30);
         updateNavLinks();
-    }
 </script>
 
     <style>
         .match-card {
             display: flex;
-            align-items: flex-start;
-            padding: 20px;
+            align-items: center;
+            padding: 15px;
             border-bottom: 1px solid #eee;
             cursor: pointer;
             transition: background 0.2s;
+            gap: 12px;
         }
         .match-card:hover {
             background: #f8f9fa;
         }
+        .match-left {
+            flex-shrink: 0;
+        }
+        .match-avatar-wrap {
+            position: relative;
+            display: inline-block;
+        }
         .match-avatar {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             object-fit: cover;
-            margin-right: 15px;
+        }
+        .photo-count {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            font-size: 10px;
+            padding: 2px 5px;
+            border-radius: 8px;
         }
         .match-info {
             flex: 1;
+            min-width: 0;
+        }
+        .match-name-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
         }
         .match-name {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
-            margin-bottom: 5px;
         }
-        .match-meta {
+        .match-basic {
+            display: flex;
+            gap: 8px;
             color: #666;
-            font-size: 14px;
-            margin-bottom: 5px;
+            font-size: 13px;
+            margin-bottom: 3px;
+            flex-wrap: wrap;
+        }
+        .match-basic span::after {
+            content: '·';
+            margin-left: 8px;
+        }
+        .match-basic span:last-child::after {
+            content: '';
         }
         .match-education {
             color: #888;
-            font-size: 13px;
-            margin-bottom: 5px;
+            font-size: 12px;
+            margin-bottom: 3px;
         }
         .match-declaration {
             color: #999;
-            font-size: 13px;
+            font-size: 12px;
             font-style: italic;
-            margin: 5px 0;
+            margin: 3px 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 200px;
         }
         .match-tags {
             display: flex;
             flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 8px;
+            gap: 4px;
+            margin-top: 5px;
         }
         .tag {
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 11px;
             background: #e9ecef;
             color: #495057;
         }
@@ -575,25 +662,36 @@
             background: #d1ecf1;
             color: #0c5460;
         }
-        .match-score-container {
+        .match-score-wrap {
+            flex-shrink: 0;
             text-align: center;
-            margin: 0 15px;
         }
-        .match-score {
-            font-size: 28px;
-            font-weight: bold;
-        }
-        .score-excellent { color: #e74c3c; }
-        .score-good { color: #f39c12; }
-        .score-normal { color: #95a5a6; }
-        .match-score-label {
-            font-size: 12px;
-            color: #888;
-        }
-        .match-actions {
+        .match-scores-v {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 4px;
+        }
+        .score-down {
+            background: #fff5f5;
+            color: #e74c3c;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .score-up {
+            background: #f0fff4;
+            color: #27ae60;
+            padding: 4px 8px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .match-actions {
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
         }
         .btn-small {
             padding: 6px 12px;
@@ -618,10 +716,9 @@
             100% { transform: rotate(360deg); }
         }
         .badge {
-            padding: 2px 8px;
-            border-radius: 10px;
-            font-size: 11px;
-            margin-left: 8px;
+            padding: 2px 6px;
+            border-radius: 8px;
+            font-size: 10px;
         }
         .badge-info {
             background: #d1ecf1;
@@ -630,6 +727,168 @@
         .badge-warning {
             background: #fff3cd;
             color: #856404;
+        }
+        
+        .modal-user-section {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+        .modal-photos {
+            flex-shrink: 0;
+        }
+        .modal-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 15px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-label {
+            color: #888;
+            font-size: 13px;
+        }
+        .info-value {
+            font-weight: 500;
+            font-size: 13px;
+        }
+        .modal-match-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .match-scores {
+            display: flex;
+            justify-content: space-around;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .score-item {
+            text-align: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            flex: 1;
+        }
+        .score-main {
+            flex: 1.2;
+        }
+        .score-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .score-label {
+            font-size: 11px;
+            color: #888;
+            margin-top: 3px;
+        }
+        .bonus-text {
+            color: #27ae60;
+            font-size: 13px;
+            margin: 5px 0;
+        }
+        .match-reasons {
+            margin-top: 10px;
+        }
+        .reason-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        .reason-tag {
+            background: #d4edda;
+            color: #155724;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 12px;
+        }
+        .modal-section {
+            margin-top: 15px;
+        }
+        .tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 8px;
+        }
+        
+        @media (max-width: 600px) {
+            .match-card {
+                flex-wrap: wrap;
+                padding: 12px;
+                gap: 10px;
+            }
+            .match-left {
+                order: 1;
+            }
+            .match-info {
+                order: 2;
+                flex: 1;
+                min-width: calc(100% - 90px);
+            }
+            .match-score-wrap {
+                order: 3;
+            }
+            .match-scores-v {
+                flex-direction: row;
+            }
+            .score-down, .score-up {
+                font-size: 12px;
+                padding: 3px 6px;
+            }
+            .match-actions {
+                order: 4;
+                flex-direction: row;
+                width: 100%;
+                justify-content: center;
+                margin-top: 8px;
+            }
+            .match-actions .btn {
+                flex: 1;
+            }
+            .match-declaration {
+                max-width: 100%;
+            }
+            
+            .modal-user-section {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+            .modal-photos {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .info-item {
+                justify-content: center;
+                gap: 10px;
+            }
+            .match-scores {
+                flex-direction: column;
+            }
+            .score-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 8px 15px;
+            }
+            .score-value {
+                font-size: 20px;
+            }
         }
     </style>
 </body>

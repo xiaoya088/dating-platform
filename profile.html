@@ -24,8 +24,9 @@
         .btn { width: 100%; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
         .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
         .btn-primary:active { opacity: 0.9; }
-        .tabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        .tab-btn { padding: 10px 16px; background: #f0f2f5; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap; font-size: 14px; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab-btn { padding: 10px 16px; background: #f0f2f5; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; white-space: nowrap; font-size: 14px; flex-shrink: 0; }
         .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
@@ -38,22 +39,31 @@
         .alert-error { background: #f8d7da; color: #721c24; }
         .back-link { display: inline-block; padding: 10px 15px; color: white; text-decoration: none; font-weight: 500; }
         @media (max-width: 480px) {
+            .container { padding: 10px; }
             .form-col { min-width: 100%; }
-            .card { padding: 15px; margin: 0 -5px 15px; border-radius: 8px; }
-            .tabs { gap: 5px; }
-            .tab-btn { padding: 8px 12px; font-size: 13px; }
+            .card { padding: 15px; margin: 0 0 15px; border-radius: 8px; }
+            .tabs { gap: 5px; padding-bottom: 5px; }
+            .tab-btn { padding: 8px 12px; font-size: 12px; }
+            .form-group { margin-bottom: 12px; }
+            .form-group label { font-size: 14px; margin-bottom: 6px; display: block; }
+            .checkbox-item { padding: 8px 10px; font-size: 13px; }
+            .btn { padding: 12px; font-size: 15px; min-height: 44px; }
+            .back-link { padding: 8px 12px; font-size: 14px; }
+            .navbar { padding: 10px; gap: 10px; }
         }
     </style>
 </head>
 <body>
-    <nav class="navbar" style="flex-wrap: wrap;">
-        <a href="match.html" class="back-link">← 返回</a>
-        <span class="navbar-brand">💕 个人资料</span>
-        <div>
-            <a href="announcements.html" class="back-link">📢 公告</a>
-            <a href="messages.html" class="back-link">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px;">0</span></a>
-            <a href="#" onclick="logout()" class="back-link">退出</a>
-        </div>
+    <nav class="navbar">
+        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <ul class="navbar-nav">
+            <li><a href="match.html">匹配推荐</a></li>
+            <li><a href="messages.html">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px; margin-left:5px;">0</span></a></li>
+            <li><a href="announcements.html">公告</a></li>
+            <li><a href="activities.html">线下活动</a></li>
+            <li><a href="profile.html" class="active">个人资料</a></li>
+            <li><a href="#" onclick="logout()">退出</a></li>
+        </ul>
     </nav>
     
     <div class="container">

@@ -621,32 +621,214 @@ table tr:hover {
 }
 
 @media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+    
     .form-row,
     .form-row-3,
     .stat-grid {
         grid-template-columns: 1fr;
+        gap: 15px;
     }
     
     .form-row-4 {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .form-group {
+        margin-bottom: 10px;
+    }
+    
+    .form-group label {
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    
+    .checkbox-group {
+        gap: 8px;
+    }
+    
+    .checkbox-item {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+    
+    .checkbox-item input {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .photo-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    #photoGrid img {
+        width: calc(33.33% - 7px);
+        aspect-ratio: 1;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    
+    .card-header {
+        font-size: 15px;
+        padding: 12px 10px;
+    }
+    
+    .btn-save {
+        position: sticky;
+        bottom: 10px;
+        z-index: 100;
+    }
+    
+    .tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        gap: 5px;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+    }
+    
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+    
+    .tab-btn {
+        flex-shrink: 0;
+        padding: 10px 14px;
+        font-size: 13px;
+        white-space: nowrap;
     }
     
     .navbar {
         flex-direction: column;
-        gap: 15px;
+        gap: 10px;
+        padding: 10px;
     }
     
     .navbar-nav {
         flex-wrap: wrap;
         justify-content: center;
+        gap: 5px;
+    }
+    
+    .navbar-nav li {
+        margin: 2px 0;
+    }
+    
+    .navbar-nav a {
+        padding: 8px 12px;
+        font-size: 14px;
     }
     
     .match-card {
         flex-direction: column;
         text-align: center;
+        padding: 15px;
+    }
+    
+    .match-avatar {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 10px;
+    }
+    
+    .match-info {
+        margin: 10px 0;
+    }
+    
+    .match-score-container {
+        margin: 10px 0;
+    }
+    
+    .bidirectional-scores {
+        justify-content: center;
+    }
+    
+    .match-actions {
+        flex-direction: row;
+        justify-content: center;
+        width: 100%;
+    }
+    
+    .match-actions .btn {
+        flex: 1;
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .btn {
+        padding: 10px 16px;
+        font-size: 15px;
+        min-height: 44px;
+    }
+    
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        font-size: 16px;
+        padding: 12px;
+        min-height: 44px;
     }
     
     .photo-grid {
         grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+    }
+    
+    .photo-grid img {
+        aspect-ratio: 1;
+        object-fit: cover;
+    }
+    
+    .tab-btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+    
+    .card {
+        padding: 15px;
+        margin: 10px 0;
+    }
+    
+    .card-header {
+        font-size: 18px;
+        padding: 12px;
+    }
+    
+    .modal {
+        padding: 10px;
+    }
+    
+    .modal-content {
+        padding: 15px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    
+    .print-table {
+        font-size: 12px;
+    }
+    
+    .print-table th,
+    .print-table td {
+        padding: 5px;
+    }
+    
+    .chat-messages {
+        height: 50vh;
+    }
+    
+    #chatInput {
+        font-size: 16px;
     }
 }

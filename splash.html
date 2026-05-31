@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鹊桥缘 - 启动中</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+        }
+        
+        .container {
+            text-align: center;
+            animation: fadeIn 1s ease-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 30px;
+            animation: float 3s ease-in-out infinite, pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .logo::before {
+            content: '💕';
+            font-size: 120px;
+            display: block;
+            animation: rotateHeart 4s linear infinite;
+        }
+        
+        @keyframes rotateHeart {
+            0% { transform: rotate(0deg) scale(1); }
+            25% { transform: rotate(5deg) scale(1.05); }
+            50% { transform: rotate(0deg) scale(1); }
+            75% { transform: rotate(-5deg) scale(0.95); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+        
+        .title {
+            font-size: 42px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 2px 2px 20px rgba(0,0,0,0.3);
+            margin-bottom: 10px;
+            animation: titleReveal 1.5s ease-out;
+        }
+        
+        @keyframes titleReveal {
+            from { 
+                opacity: 0; 
+                letter-spacing: -20px; 
+            }
+            to { 
+                opacity: 1; 
+                letter-spacing: 5px; 
+            }
+        }
+        
+        .subtitle {
+            font-size: 18px;
+            color: rgba(255,255,255,0.8);
+            margin-bottom: 40px;
+            animation: subtitleFade 2s ease-out;
+        }
+        
+        @keyframes subtitleFade {
+            from { opacity: 0; }
+            to { opacity: 0.8; }
+        }
+        
+        .loading-bar {
+            width: 200px;
+            height: 4px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 0 auto;
+            animation: loadingBarAppear 0.5s ease-out 1s forwards;
+            opacity: 0;
+        }
+        
+        @keyframes loadingBarAppear {
+            from { opacity: 0; width: 0; }
+            to { opacity: 1; width: 200px; }
+        }
+        
+        .loading-progress {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b9d, #c44569);
+            border-radius: 2px;
+            animation: loadingProgress 3s ease-out forwards;
+        }
+        
+        @keyframes loadingProgress {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        .loading-text {
+            font-size: 14px;
+            color: rgba(255,255,255,0.6);
+            margin-top: 15px;
+            animation: textPulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes textPulse {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+        
+        .star {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.5); }
+        }
+        
+        .bridges {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 200px;
+            pointer-events: none;
+        }
+        
+        .bridge {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.1;
+        }
+        
+        .bridge::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60%;
+            height: 80%;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-bottom: none;
+            border-radius: 50% 50% 0 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars">
+        <script>
+            // 创建随机闪烁星星
+            const starsContainer = document.querySelector('.stars');
+            for (let i = 0; i < 50; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                star.style.width = (Math.random() * 4 + 2) + 'px';
+                star.style.height = star.style.width;
+                starsContainer.appendChild(star);
+            }
+        </script>
+    </div>
+    
+    <div class="bridges">
+        <div class="bridge"></div>
+    </div>
+    
+    <div class="container">
+        <div class="logo"></div>
+        <div class="title">鹊桥缘</div>
+        <div class="subtitle">智能匹配 · 遇见真爱</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+        <div class="loading-text">正在为您寻找缘分...</div>
+    </div>
+    
+    <script>
+        // 3秒后跳转到主页面
+        setTimeout(() => {
+            window.location.href = 'index.html';
+        }, 3500);
+    </script>
+</body>
+</html>

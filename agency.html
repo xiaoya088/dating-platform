@@ -133,7 +133,15 @@
                         <option value="丧偶">丧偶</option>
                     </select>
                 </div>
-                
+
+                <div class="form-group">
+                    <label>照片上传</label>
+                    <div id="photoPreview" style="display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0;"></div>
+                    <input type="file" id="clientPhoto" accept="image/*" multiple onchange="handlePhotoSelect(this)">
+                    <button type="button" class="btn btn-secondary btn-small" onclick="clearPhotos()" style="margin-top: 5px;">清除照片</button>
+                    <p style="color: #888; font-size: 12px; margin-top: 5px;">支持 JPG、PNG 格式，可上传多张照片</p>
+                </div>
+
                 <h4 style="margin: 15px 0 10px; color: #667eea;">外貌生活</h4>
                 <div class="form-row">
                     <div class="form-col">
@@ -760,20 +768,54 @@
         }
         
         async function loadClients() {
-            const supabase = getSupabase();
+            console.log('📥 开始加载客户列表...');
             
-            const { data: clients } = await supabase
-                .from('users')
-                .select('*')
-                .eq('agency_id', currentUser.id)
-                .order('created_at', { ascending: false });
-            
-            const clientList = document.getElementById('clientList');
-            
-            if (!clients || clients.length === 0) {
-                clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无客户</p>';
+            // 1. 检查 Supabase 是否加载
+            if (typeof window.supabase === 'undefined') {
+                console.error('❌ Supabase 库未加载');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 库未加载，请刷新页面</p>';
                 return;
             }
+
+            // 2. 获取 Supabase 客户端
+            const supabase = getSupabase();
+            if (!supabase) {
+                console.error('❌ Supabase 客户端未初始化');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 客户端未初始化</p>';
+                return;
+            }
+
+            // 3. 检查用户信息
+            if (!currentUser || !currentUser.id) {
+                console.error('❌ 用户信息未初始化');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：用户信息丢失，请重新登录</p>';
+                return;
+            }
+
+            console.log('🔍 查询 agency_id:', currentUser.id);
+
+            // 4. 查询数据
+            try {
+                const { data: clients, error } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('agency_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+
+                console.log('📊 查询结果:', { 成功: !!clients, 数量: clients?.length, 错误: error });
+
+                const clientList = document.getElementById('clientList');
+
+                if (error) {
+                    console.error('❌ 查询失败:', error);
+                    clientList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + error.message + '</p>';
+                    return;
+                }
+
+                if (!clients || clients.length === 0) {
+                    clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无客户</p>';
+                    return;
+                }
             
             clientList.innerHTML = `
                 <table>
@@ -815,22 +857,37 @@
         
         async function searchClients() {
             const keyword = document.getElementById('searchClient').value.trim();
-            
+
             if (!keyword) {
                 loadClients();
                 return;
             }
-            
+
             const supabase = getSupabase();
-            
-            const { data: clients } = await supabase
+
+            if (!supabase) {
+                console.error('Supabase 客户端未初始化');
+                return;
+            }
+
+            console.log('searchClients: keyword:', keyword);
+
+            const { data: clients, error } = await supabase
                 .from('users')
                 .select('*')
                 .eq('agency_id', currentUser.id)
                 .or(`name.ilike.%${keyword}%,phone.ilike.%${keyword}%`);
-            
+
+            console.log('searchClients result:', { clients, error });
+
             const clientList = document.getElementById('clientList');
-            
+
+            if (error) {
+                console.error('搜索客户失败:', error);
+                clientList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">搜索失败: ' + error.message + '</p>';
+                return;
+            }
+
             if (!clients || clients.length === 0) {
                 clientList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">未找到匹配客户</p>';
                 return;
@@ -959,7 +1016,52 @@
                 loadClients();
             }
         }
-        
+
+        let selectedPhotos = [];
+
+        function handlePhotoSelect(input) {
+            const preview = document.getElementById('photoPreview');
+            const files = input.files;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const photoData = e.target.result;
+                    selectedPhotos.push(photoData);
+
+                    const imgContainer = document.createElement('div');
+                    imgContainer.style.cssText = 'position: relative; width: 80px; height: 80px;';
+
+                    const img = document.createElement('img');
+                    img.src = photoData;
+                    img.style.cssText = 'width: 100%; height: 100%; object-fit: cover; border-radius: 8px;';
+
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '×';
+                    removeBtn.style.cssText = 'position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; border-radius: 50%; background: #e74c3c; color: white; border: none; cursor: pointer; font-size: 14px; line-height: 1;';
+                    removeBtn.onclick = function() {
+                        const index = selectedPhotos.indexOf(photoData);
+                        if (index > -1) selectedPhotos.splice(index, 1);
+                        imgContainer.remove();
+                    };
+
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(removeBtn);
+                    preview.appendChild(imgContainer);
+                };
+                reader.readAsDataURL(file);
+            }
+            input.value = '';
+        }
+
+        function clearPhotos() {
+            selectedPhotos = [];
+            document.getElementById('photoPreview').innerHTML = '';
+        }
+
         function getCheckboxValues(containerId) {
             const container = document.getElementById(containerId);
             if (!container) return [];
@@ -1039,6 +1141,7 @@
                     self_description: document.getElementById('clientSelfDescription').value,
                     declaration: document.getElementById('clientDeclaration').value,
                     agency_id: currentUser.id,
+                    photos: selectedPhotos,
                     status: 'active'
                 };
                 
@@ -1125,7 +1228,10 @@
             document.getElementById('clientExpectedChildren').value = '';
             document.getElementById('clientSelfDescription').value = '';
             document.getElementById('clientDeclaration').value = '';
-            
+
+            selectedPhotos = [];
+            document.getElementById('photoPreview').innerHTML = '';
+
             document.querySelectorAll('#addTab input[type="checkbox"]').forEach(cb => cb.checked = false);
             document.querySelectorAll('#addTab .checkbox-item').forEach(item => item.classList.remove('selected'));
             
@@ -1155,22 +1261,60 @@
         }
         
         async function loadRequests() {
-            const supabase = getSupabase();
+            console.log('📥 开始加载联系请求...');
             
-            const { data: requests } = await supabase
-                .from('agency_requests')
-                .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
-                .eq('agency_id', currentUser.id)
-                .eq('status', 'pending')
-                .order('created_at', { ascending: false });
-            
-            const requestList = document.getElementById('requestList');
-            
-            if (!requests || requests.length === 0) {
-                requestList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无联系请求</p>';
+            // 1. 检查 Supabase 是否加载
+            if (typeof window.supabase === 'undefined') {
+                console.error('❌ Supabase 库未加载');
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 库未加载，请刷新页面</p>';
                 return;
             }
-            
+
+            // 2. 获取 Supabase 客户端
+            const supabase = getSupabase();
+            if (!supabase) {
+                console.error('❌ Supabase 客户端未初始化');
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：Supabase 客户端未初始化</p>';
+                return;
+            }
+
+            // 3. 检查用户信息
+            if (!currentUser || !currentUser.id) {
+                console.error('❌ 用户信息未初始化');
+                const requestList = document.getElementById('requestList');
+                if (requestList) requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：用户信息丢失，请重新登录</p>';
+                return;
+            }
+
+            console.log('🔍 查询 agency_id:', currentUser.id);
+
+            // 4. 查询数据
+            try {
+                const { data: requests, error } = await supabase
+                    .from('agency_requests')
+                    .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
+                    .eq('agency_id', currentUser.id)
+                    .eq('status', 'pending')
+                    .order('created_at', { ascending: false });
+
+                console.log('📊 查询结果:', { 成功: !!requests, 数量: requests?.length, 错误: error });
+
+                const requestList = document.getElementById('requestList');
+                if (!requestList) return;
+
+                if (error) {
+                    console.error('❌ 查询失败:', error);
+                    requestList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + error.message + '</p>';
+                    return;
+                }
+
+                if (!requests || requests.length === 0) {
+                    requestList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无联系请求</p>';
+                    return;
+                }
+
             requestList.innerHTML = requests.map(req => `
                 <div class="message-item">
                     <img class="message-avatar" src="${req.from_user?.photos?.[0] || 'https://via.placeholder.com/40'}">
@@ -1214,25 +1358,69 @@
                             item.classList.remove('selected');
                         }
                     });
-                    
+
                     if (checkbox.checked) {
                         item.classList.add('selected');
                     }
                 }
             });
         }
-        
-        initCheckboxEvents();
-        initProvinceSelect();
-        
-        const passwordInput = document.getElementById('clientPassword');
-        if (passwordInput) {
-            passwordInput.value = generatePassword();
+
+        async function init() {
+            console.log('========== 中介后台初始化 ==========');
+            
+            // 1. 先检查用户登录
+            if (!currentUser || currentUser.role !== 'agency') {
+                console.error('❌ 用户未登录或权限不足');
+                window.location.href = 'index.html';
+                return;
+            }
+            console.log('✅ 用户登录状态:', currentUser);
+
+            // 2. 初始化 UI
+            initCheckboxEvents();
+            initProvinceSelect();
+
+            const passwordInput = document.getElementById('clientPassword');
+            if (passwordInput) {
+                passwordInput.value = generatePassword();
+            }
+
+            // 3. 等待 Supabase 加载
+            console.log('⌛ 等待 Supabase 库加载...');
+            let waitCount = 0;
+            while (typeof window.supabase === 'undefined' && waitCount < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                waitCount++;
+            }
+
+            if (typeof window.supabase === 'undefined') {
+                console.error('❌ Supabase 库加载超时');
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：数据库连接超时，请刷新页面</p>';
+                document.getElementById('requestList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：数据库连接超时，请刷新页面</p>';
+                return;
+            }
+            console.log('✅ Supabase 库已加载');
+
+            // 4. 初始化 Supabase 客户端
+            try {
+                getSupabase();
+                console.log('✅ Supabase 客户端已初始化');
+            } catch (e) {
+                console.error('❌ Supabase 客户端初始化失败:', e);
+                document.getElementById('clientList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：' + e.message + '</p>';
+                document.getElementById('requestList').innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">错误：' + e.message + '</p>';
+                return;
+            }
+
+            // 5. 加载数据
+            console.log('📥 开始加载数据...');
+            await loadClients();
+            await loadRequests();
+            console.log('========== 初始化完成 ==========');
         }
-        
-        loadClients();
-        loadRequests();
-    }
+
+        document.addEventListener('DOMContentLoaded', init);
 </script>
 </body>
 </html>
