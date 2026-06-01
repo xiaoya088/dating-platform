@@ -10,7 +10,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <div class="navbar-brand">💕 婚恋红娘系统 <span id="userNameDisplay" style="font-size: 14px; color: #888; font-weight: normal; margin-left: 10px;"></span></div>
         <ul class="navbar-nav">
             <li><a href="match.html">匹配推荐</a></li>
             <li><a href="messages.html">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px; margin-left:5px;">0</span></a></li>
@@ -22,23 +22,29 @@
     </nav>
     
     <div class="container">
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="available">可报名活动</button>
-            <button class="tab-btn" data-tab="registered">已报名活动</button>
-        </div>
-        
-        <div id="availableTab" class="tab-content active">
-            <div id="activityList">
-                <div class="loading">
-                    <div class="spinner"></div>
+        <div class="card">
+            <div class="card-header">线下活动</div>
+            
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="available">可报名活动</button>
+                <button class="tab-btn" data-tab="registered">已报名活动</button>
+            </div>
+            
+            <div id="availableTab" class="tab-content active">
+                <div id="activityList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>加载中...</p>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <div id="registeredTab" class="tab-content hidden">
-            <div id="registeredList">
-                <div class="loading">
-                    <div class="spinner"></div>
+            
+            <div id="registeredTab" class="tab-content hidden">
+                <div id="registeredList">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>加载中...</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -60,6 +66,8 @@
         const currentUser = getCurrentUser();
         if (!currentUser) {
             window.location.href = 'index.html';
+        } else {
+            document.getElementById('userNameDisplay').textContent = `欢迎, ${currentUser.name || '用户'}`;
         }
         
         document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -295,10 +303,8 @@
         function updateNavLinks() {
             const links = document.querySelectorAll('a[href="profile.html"]');
             if (links.length > 0 && currentUser) {
-                const userDataStr = JSON.stringify(currentUser);
-                const encodedData = encodeURIComponent(userDataStr);
                 links.forEach(link => {
-                    link.href = 'profile.html?user=' + encodedData;
+                    link.href = 'profile.html';
                 });
             }
         }

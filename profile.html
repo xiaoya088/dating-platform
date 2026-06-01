@@ -55,7 +55,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <div class="navbar-brand">💕 婚恋红娘系统 <span id="userNameDisplay" style="font-size: 14px; color: #888; font-weight: normal; margin-left: 10px;"></span></div>
         <ul class="navbar-nav">
             <li><a href="match.html">匹配推荐</a></li>
             <li><a href="messages.html">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px; margin-left:5px;">0</span></a></li>
@@ -695,54 +695,62 @@
     
     <script>
         let currentUser = null;
+        let currentVersion = null;
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedUser = urlParams.get('user');
-
-        console.log("profile.html 页面加载");
-        console.log("URL 参数 user:", encodedUser ? "存在" : "不存在");
-
-        if (encodedUser) {
-            console.log("从 URL 获取到用户数据");
-            try {
-                const userDataStr = decodeURIComponent(encodedUser);
-                currentUser = JSON.parse(userDataStr);
-                console.log("解码后的用户数据:", currentUser);
-                localStorage.setItem('currentUser', userDataStr);
-                console.log("已保存到 localStorage");
-            } catch (e) {
-                console.error("解码用户数据失败:", e);
-            }
-        } 
-
-        if (!currentUser) {
-            console.log("从 localStorage 获取用户数据");
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Profile page loaded, initializing...');
+            
+            // 先初始化 Supabase
+            initSupabase();
+            
+            // 获取当前用户
             currentUser = getCurrentUser();
-            console.log("localStorage 中的用户数据:", currentUser);
-        }
-
-        if (!currentUser) {
-            console.log('用户未登录，重定向到登录页');
-            window.location.href = 'index.html';
-        } else {
+            
+            if (!currentUser) {
+                console.log('用户未登录，重定向到登录页');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+                return;
+            }
+            
+            console.log('当前用户:', currentUser.id, currentUser.name);
+            
+            // 更新欢迎信息
+            document.getElementById('userNameDisplay').textContent = `欢迎, ${currentUser.name || '用户'}`;
+            
+            // 初始化消息通知
             if (typeof initMessageNotification === 'function') {
                 initMessageNotification(currentUser.id);
             }
-        }
-        
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                this.classList.add('active');
-                document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
-                if (this.dataset.tab === 'photos') {
-                    loadPhotos();
-                } else if (this.dataset.tab === 'matchStatus') {
-                    loadMatchStatusData();
-                }
-            });
+            
+            // 绑定标签页切换事件
+            bindTabEvents();
+            
+            // 加载用户数据
+            loadUserData();
+            
+            // 初始化复选框事件
+            initCheckboxEvents();
+            
+            console.log('Profile page initialized successfully');
         });
+        
+        function bindTabEvents() {
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    document.getElementById(this.dataset.tab + 'Tab').classList.add('active');
+                    if (this.dataset.tab === 'photos') {
+                        loadPhotos();
+                    } else if (this.dataset.tab === 'matchStatus') {
+                        loadMatchStatusData();
+                    }
+                });
+            });
+        }
         
         function showAlert(message, type) {
             const alertBox = document.getElementById('alertBox');
@@ -753,6 +761,18 @@
         }
         
         async function saveBasicInfo() {
+            console.log('saveBasicInfo called');
+            console.log('currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                showAlert('用户未登录，请重新登录', 'error');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                return;
+            }
+            
+            const supabase = getSupabase();
+            console.log('supabase client:', supabase);
+            
             const name = document.getElementById('name').value.trim();
             const gender = document.getElementById('gender').value;
             const birthday = document.getElementById('birthday').value;
@@ -767,8 +787,10 @@
             }
             
             try {
-                const supabase = ensureSupabase();
-                const { error } = await supabase
+                const supabase = getSupabase();
+                const userId = typeof currentUser === 'object' ? currentUser.id : currentUser;
+                
+                let query = supabase
                     .from('users')
                     .update({
                         name: name,
@@ -780,9 +802,34 @@
                         marital_status: maritalStatus,
                         updated_at: new Date().toISOString()
                     })
-                    .eq('id', currentUser.id);
+                    .eq('id', userId);
                 
-                if (error) throw error;
+                // 如果有版本号，添加乐观锁检查
+                if (currentVersion !== null) {
+                    query = query.eq('version', currentVersion);
+                }
+                
+                const { error } = await query;
+                
+                if (error) {
+                    if (error.code === '409' || error.message.includes('conflict')) {
+                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
+                        setTimeout(() => {
+                            loadUserData();
+                        }, 1000);
+                        return;
+                    }
+                    throw error;
+                }
+                
+                currentUser.name = name;
+                currentUser.gender = gender;
+                currentUser.birthday = birthday;
+                currentUser.height = parseInt(height);
+                currentUser.hukou = hukou;
+                currentUser.current_address = currentAddress;
+                currentUser.marital_status = maritalStatus;
+                sessionStorage.setItem('currentUser', JSON.stringify(currentUser));
                 
                 showAlert('保存成功！', 'success');
             } catch (e) {
@@ -791,6 +838,18 @@
         }
         
         async function saveAppearanceInfo() {
+            console.log('saveAppearanceInfo called');
+            console.log('currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                showAlert('用户未登录，请重新登录', 'error');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                return;
+            }
+            
+            const supabase = getSupabase();
+            console.log('supabase client:', supabase);
+            
             const education = document.getElementById('education').value;
             const occupation = document.getElementById('occupation').value.trim();
             
@@ -800,8 +859,10 @@
             }
             
             try {
-                const supabase = ensureSupabase();
-                const { error } = await supabase
+                const supabase = getSupabase();
+                const userId = typeof currentUser === 'object' ? currentUser.id : currentUser;
+                
+                let query = supabase
                     .from('users')
                     .update({
                         education: education,
@@ -813,11 +874,25 @@
                         smoking: document.getElementById('smoking').value,
                         drinking: document.getElementById('drinking').value,
                         religion: document.getElementById('religion').value.trim(),
+                        wechat: document.getElementById('wechat').value.trim(),
                         updated_at: new Date().toISOString()
                     })
-                    .eq('id', currentUser.id);
+                    .eq('id', userId);
                 
-                if (error) throw error;
+                if (currentVersion !== null) {
+                    query = query.eq('version', currentVersion);
+                }
+                
+                const { error } = await query;
+                
+                if (error) {
+                    if (error.code === '409' || error.message.includes('conflict')) {
+                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
+                        setTimeout(() => { loadUserData(); }, 1000);
+                        return;
+                    }
+                    throw error;
+                }
                 
                 showAlert('保存成功！', 'success');
             } catch (e) {
@@ -891,6 +966,10 @@
                 document.getElementById('liveWithParents').value = data.live_with_parents || '';
                 document.getElementById('expectedChildren').value = data.expected_children || '';
                 document.getElementById('selfDescription').value = data.self_description || '';
+                
+                // 保存乐观锁版本号
+                currentVersion = data.version || null;
+                console.log('Loaded version:', currentVersion);
             } catch (e) {
                 console.error('加载数据失败:', e);
             }
@@ -1092,14 +1171,25 @@
         }
         
         async function savePersonalityInfo() {
+            console.log('savePersonalityInfo called');
+            console.log('currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                showAlert('用户未登录，请重新登录', 'error');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                return;
+            }
+            
             try {
-                const supabase = ensureSupabase();
+                const supabase = getSupabase();
+                console.log('supabase client:', supabase);
+                const userId = typeof currentUser === 'object' ? currentUser.id : currentUser;
                 
                 const personalityValues = Array.from(document.querySelectorAll('#personalityList input:checked')).map(el => el.value);
                 const interestsValues = Array.from(document.querySelectorAll('#interestsList input:checked')).map(el => el.value);
                 const activityTypesValues = Array.from(document.querySelectorAll('#activityTypes input:checked')).map(el => el.value);
                 
-                const { error } = await supabase
+                let query = supabase
                     .from('users')
                     .update({
                         personality: personalityValues.length > 0 ? personalityValues : null,
@@ -1109,9 +1199,22 @@
                         schedule: document.getElementById('schedule').value,
                         updated_at: new Date().toISOString()
                     })
-                    .eq('id', currentUser.id);
+                    .eq('id', userId);
                 
-                if (error) throw error;
+                if (currentVersion !== null) {
+                    query = query.eq('version', currentVersion);
+                }
+                
+                const { error } = await query;
+                
+                if (error) {
+                    if (error.code === '409' || error.message.includes('conflict')) {
+                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
+                        setTimeout(() => { loadUserData(); }, 1000);
+                        return;
+                    }
+                    throw error;
+                }
                 
                 showAlert('保存成功！', 'success');
             } catch (e) {
@@ -1120,8 +1223,19 @@
         }
         
         async function saveValuesInfo() {
+            console.log('saveValuesInfo called');
+            console.log('currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                showAlert('用户未登录，请重新登录', 'error');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                return;
+            }
+            
             try {
-                const supabase = ensureSupabase();
+                const supabase = getSupabase();
+                console.log('supabase client:', supabase);
+                const userId = typeof currentUser === 'object' ? currentUser.id : currentUser;
                 const selfDescription = document.getElementById('selfDescription').value.trim();
                 
                 if (selfDescription.length > 500) {
@@ -1129,7 +1243,7 @@
                     return;
                 }
                 
-                const { error } = await supabase
+                let query = supabase
                     .from('users')
                     .update({
                         finance_view: document.getElementById('financeView').value,
@@ -1139,9 +1253,22 @@
                         declaration: document.getElementById('declaration').value.trim(),
                         updated_at: new Date().toISOString()
                     })
-                    .eq('id', currentUser.id);
+                    .eq('id', userId);
                 
-                if (error) throw error;
+                if (currentVersion !== null) {
+                    query = query.eq('version', currentVersion);
+                }
+                
+                const { error } = await query;
+                
+                if (error) {
+                    if (error.code === '409' || error.message.includes('conflict')) {
+                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
+                        setTimeout(() => { loadUserData(); }, 1000);
+                        return;
+                    }
+                    throw error;
+                }
                 
                 showAlert('保存成功！', 'success');
             } catch (e) {
@@ -1150,8 +1277,19 @@
         }
         
         async function saveRequirements() {
+            console.log('saveRequirements called');
+            console.log('currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                showAlert('用户未登录，请重新登录', 'error');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                return;
+            }
+            
             try {
-                const supabase = ensureSupabase();
+                const supabase = getSupabase();
+                console.log('supabase client:', supabase);
+                const userId = typeof currentUser === 'object' ? currentUser.id : currentUser;
                 
                 const educationValues = Array.from(document.querySelectorAll('#reqEducation input:checked')).map(el => el.value);
                 const maritalValues = Array.from(document.querySelectorAll('#reqMarital input:checked')).map(el => el.value);
@@ -1188,7 +1326,7 @@
                 const { data: existing, error: selectError } = await supabase
                     .from('user_requirements')
                     .select('id')
-                    .eq('user_id', currentUser.id)
+                    .eq('user_id', userId)
                     .eq('scheme_type', currentSchemeType || 'standard')
                     .single();
                 
@@ -1203,7 +1341,7 @@
                 } else {
                     ({ error } = await supabase
                         .from('user_requirements')
-                        .insert({ ...requirements, user_id: currentUser.id }));
+                        .insert({ ...requirements, user_id: userId }));
                 }
                 
                 if (error) throw error;
@@ -1398,123 +1536,190 @@
 
         async function loadMyLikes() {
             const supabase = getSupabase();
-
-            const { data: likes, error } = await supabase
-                .from('likes')
-                .select('*, to_user:to_user_id(*)')
-                .eq('from_user_id', currentUser.id)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('loadMyLikes error:', error);
-            }
-
             const list = document.getElementById('myLikesList');
+            
+            list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
 
-            if (!likes || likes.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
-                return;
-            }
+            try {
+                const { data: likes, error } = await supabase
+                    .from('likes')
+                    .select('to_user_id, created_at')
+                    .eq('from_user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
 
-            list.innerHTML = likes.map(like => {
-                const user = like.to_user;
-                if (!user) return '';
-                return `
-                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                        <img src="${user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
-                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                if (error) {
+                    console.error('loadMyLikes error:', error);
+                    throw error;
+                }
+
+                if (!likes || likes.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
+                    return;
+                }
+
+                const userIds = likes.map(l => l.to_user_id);
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('id, name, photos, province, city')
+                    .in('id', userIds);
+
+                if (usersError) {
+                    console.error('loadMyLikes users error:', usersError);
+                    throw usersError;
+                }
+
+                const userMap = {};
+                users?.forEach(u => userMap[u.id] = u);
+
+                list.innerHTML = likes.map(like => {
+                    const user = userMap[like.to_user_id];
+                    if (!user) return '';
+                    const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
+                    return `
+                        <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                                <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                            </div>
+                            <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="viewUserProfile('${user.id}')">查看</button>
                         </div>
-                        <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="viewUserProfile('${user.id}')">查看</button>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('loadMyLikes failed:', e);
+                list.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">加载失败: ${e.message}</p>`;
+            }
         }
 
         async function loadLikedMe() {
             const supabase = getSupabase();
-
-            const { data: likes, error } = await supabase
-                .from('likes')
-                .select('*, from_user:from_user_id(*)')
-                .eq('to_user_id', currentUser.id)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('loadLikedMe error:', error);
-            }
-
             const list = document.getElementById('likedMeList');
+            
+            list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
 
-            if (!likes || likes.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
-                return;
-            }
+            try {
+                const { data: likes, error } = await supabase
+                    .from('likes')
+                    .select('from_user_id, created_at')
+                    .eq('to_user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
 
-            list.innerHTML = likes.map(like => {
-                const user = like.from_user;
-                if (!user) return '';
-                return `
-                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                        <img src="${user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
-                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                if (error) {
+                    console.error('loadLikedMe error:', error);
+                    throw error;
+                }
+
+                if (!likes || likes.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
+                    return;
+                }
+
+                const userIds = likes.map(l => l.from_user_id);
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('id, name, photos, province, city')
+                    .in('id', userIds);
+
+                if (usersError) {
+                    console.error('loadLikedMe users error:', usersError);
+                    throw usersError;
+                }
+
+                const userMap = {};
+                users?.forEach(u => userMap[u.id] = u);
+
+                list.innerHTML = likes.map(like => {
+                    const user = userMap[like.from_user_id];
+                    if (!user) return '';
+                    const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
+                    return `
+                        <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                                <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                            </div>
+                            <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="likeUserBack('${user.id}')">回赞</button>
                         </div>
-                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="likeUserBack('${user.id}')">回赞</button>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('loadLikedMe failed:', e);
+                list.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">加载失败: ${e.message}</p>`;
+            }
         }
 
         async function loadMutualLikes() {
             const supabase = getSupabase();
-
-            const { data: myLikes, error: myLikesError } = await supabase
-                .from('likes')
-                .select('to_user_id')
-                .eq('from_user_id', currentUser.id);
-
-            if (myLikesError) {
-                console.error('loadMutualLikes error:', myLikesError);
-            }
-
-            const myLikeIds = myLikes?.map(l => l.to_user_id) || [];
-
-            const { data: likedMe, error: likedMeError } = await supabase
-                .from('likes')
-                .select('*, from_user:from_user_id(*)')
-                .eq('to_user_id', currentUser.id);
-
-            if (likedMeError) {
-                console.error('loadMutualLikes error:', likedMeError);
-            }
-
-            const mutualLikes = likedMe?.filter(l => myLikeIds.includes(l.from_user_id)) || [];
-
             const list = document.getElementById('mutualLikesList');
+            
+            list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
 
-            if (mutualLikes.length === 0) {
-                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无互相喜欢的用户</p>';
-                return;
-            }
+            try {
+                const { data: myLikes, error: myLikesError } = await supabase
+                    .from('likes')
+                    .select('to_user_id')
+                    .eq('from_user_id', currentUser.id);
 
-            list.innerHTML = mutualLikes.map(like => {
-                const user = like.from_user;
-                if (!user) return '';
-                return `
-                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                        <img src="${user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
-                        <div style="flex: 1;">
-                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
-                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                if (myLikesError) {
+                    console.error('loadMutualLikes myLikes error:', myLikesError);
+                    throw myLikesError;
+                }
+
+                const myLikeIds = myLikes?.map(l => l.to_user_id) || [];
+
+                if (myLikeIds.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无互相喜欢的用户</p>';
+                    return;
+                }
+
+                const { data: likedMe, error: likedMeError } = await supabase
+                    .from('likes')
+                    .select('from_user_id')
+                    .eq('to_user_id', currentUser.id)
+                    .in('from_user_id', myLikeIds);
+
+                if (likedMeError) {
+                    console.error('loadMutualLikes likedMe error:', likedMeError);
+                    throw likedMeError;
+                }
+
+                const mutualUserIds = likedMe?.map(l => l.from_user_id) || [];
+
+                if (mutualUserIds.length === 0) {
+                    list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无互相喜欢的用户</p>';
+                    return;
+                }
+
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('id, name, photos, province, city')
+                    .in('id', mutualUserIds);
+
+                if (usersError) {
+                    console.error('loadMutualLikes users error:', usersError);
+                    throw usersError;
+                }
+
+                list.innerHTML = users.map(user => {
+                    const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
+                    return `
+                        <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                                <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                            </div>
+                            <span style="color: #27ae60; font-size: 12px; margin-right: 10px;">💕 互相喜欢</span>
+                            <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="sendMessage('${user.id}')">发消息</button>
                         </div>
-                        <span style="color: #27ae60; font-size: 12px; margin-right: 10px;">💕 互相喜欢</span>
-                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="sendMessage('${user.id}')">发消息</button>
-                    </div>
-                `;
-            }).join('');
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('loadMutualLikes failed:', e);
+                list.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">加载失败: ${e.message}</p>`;
+            }
         }
 
         async function likeUserBack(userId) {
@@ -1539,7 +1744,8 @@
         }
 
         function sendMessage(userId) {
-            window.location.href = `messages.html?to=${userId}`;
+            sessionStorage.setItem('targetChatUser', JSON.stringify({ id: userId }));
+            window.location.href = 'messages.html';
         }
 
         function loadMatchStatusData() {
@@ -1637,10 +1843,7 @@
             });
         }
 
-        if (currentUser) {
-            loadUserData();
-            initCheckboxEvents();
-        }
+        // 初始化逻辑已在 DOMContentLoaded 事件中处理
     </script>
     
     <div id="backToTop" onclick="window.scrollTo({top:0,behavior:'smooth'})" style="display:none; position:fixed; bottom:20px; right:20px; width:44px; height:44px; background:linear-gradient(135deg,#667eea,#764ba2); color:white; border-radius:50%; cursor:pointer; font-size:20px; line-height:44px; text-align:center; box-shadow:0 4px 15px rgba(102,126,234,0.4); z-index:999; transition:all 0.3s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(102,126,234,0.5)';" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 15px rgba(102,126,234,0.4)';">↑</div>

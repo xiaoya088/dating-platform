@@ -10,7 +10,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <div class="navbar-brand">💕 婚恋红娘系统 <span id="userNameDisplay" style="font-size: 14px; color: #888; font-weight: normal; margin-left: 10px;"></span></div>
         <ul class="navbar-nav">
             <li><a href="match.html">匹配推荐</a></li>
             <li><a href="messages.html" class="active">私信</a></li>
@@ -66,14 +66,24 @@
         
         if (!currentUser) {
             window.location.href = 'index.html';
+        } else {
+            document.getElementById('userNameDisplay').textContent = `欢迎, ${currentUser.name || '用户'}`;
         }
         
         let currentChatUserId = null;
+        let messagePollInterval = null;
+        let lastMessageCheckTime = null;
         
-        // 检查URL参数是否有指定聊天对象
-        const urlParams = new URLSearchParams(window.location.search);
-        const targetUserId = urlParams.get('to');
-        console.log('messages.html targetUserId:', targetUserId);
+        // 从sessionStorage获取目标聊天用户
+        function getTargetChatUser() {
+            const data = sessionStorage.getItem('targetChatUser');
+            return data ? JSON.parse(data) : null;
+        }
+        
+        // 设置目标聊天用户（供外部页面调用）
+        function setTargetChatUser(userId, userName) {
+            sessionStorage.setItem('targetChatUser', JSON.stringify({ id: userId, name: userName }));
+        }
         
         async function init() {
             console.log('messages.html init started');
@@ -81,8 +91,11 @@
                 await loadMessageList();
                 console.log('messages.html loadMessageList completed');
                 
-                if (targetUserId) {
-                    await openChat(targetUserId);
+                // 检查是否有目标聊天用户
+                const targetUser = getTargetChatUser();
+                if (targetUser && targetUser.id) {
+                    await openChat(targetUser.id);
+                    sessionStorage.removeItem('targetChatUser');
                     console.log('messages.html openChat completed');
                 }
             } catch (error) {
@@ -119,6 +132,17 @@
             console.log('DOM ready, starting init');
             setupTabs();
             await init();
+            
+            // 回车发送消息
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendChatMessage();
+                    }
+                });
+            }
         });
         
         function getUserPhotoUrl(user) {
@@ -140,101 +164,122 @@
         async function loadMessageList() {
             console.log('loadMessageList started');
             const supabase = getSupabase();
+            const messageList = document.getElementById('messageList');
             
-            const { data: sentMessages, error: sentError } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('from_user_id', currentUser.id)
-                .order('created_at', { ascending: false });
+            messageList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
             
-            if (sentError) {
-                console.error('查询已发送消息失败:', sentError);
-            }
-            
-            const { data: receivedMessages, error: receivedError } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('to_user_id', currentUser.id)
-                .order('created_at', { ascending: false });
-            
-            if (receivedError) {
-                console.error('查询接收消息失败:', receivedError);
-            }
-            
-            const allMessages = [...(sentMessages || []), ...(receivedMessages || [])];
-            const messages = allMessages.sort((a, b) => 
-                new Date(b.created_at) - new Date(a.created_at)
-            );
-            
-            console.log('loadMessageList messages count:', messages.length);
-            
-            if (!messages || messages.length === 0) {
-                document.getElementById('messageList').innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无私信记录</p>';
-                return;
-            }
-            
-            const userIds = new Set();
-            messages.forEach(m => {
-                if (m.from_user_id !== currentUser.id) userIds.add(m.from_user_id);
-                if (m.to_user_id !== currentUser.id) userIds.add(m.to_user_id);
-            });
-            
-            const { data: users, error: usersError } = await supabase
-                .from('users')
-                .select('id, name, photos, province, city')
-                .in('id', Array.from(userIds));
-            
-            if (usersError) {
-                console.error('查询用户失败:', usersError);
-            }
-            
-            const userMap = {};
-            users?.forEach(u => userMap[u.id] = u);
-            
-            const conversations = {};
-            messages.forEach(m => {
-                const otherId = m.from_user_id === currentUser.id ? m.to_user_id : m.from_user_id;
-                if (!conversations[otherId]) {
-                    conversations[otherId] = {
-                        user: userMap[otherId],
-                        lastMessage: m,
-                        unreadCount: 0
-                    };
+            try {
+                const { data: sentMessages, error: sentError } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('from_user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                if (sentError) {
+                    console.error('查询已发送消息失败:', sentError);
                 }
                 
-                if (m.to_user_id === currentUser.id && !m.is_read) {
-                    conversations[otherId].unreadCount++;
+                const { data: receivedMessages, error: receivedError } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('to_user_id', currentUser.id)
+                    .order('created_at', { ascending: false });
+                
+                if (receivedError) {
+                    console.error('查询接收消息失败:', receivedError);
                 }
-            });
-            
-            const convList = Object.values(conversations).sort((a, b) => 
-                new Date(b.lastMessage.created_at) - new Date(a.lastMessage.created_at)
-            );
-            
-            document.getElementById('messageList').innerHTML = convList.map(conv => `
-                <div class="message-item" onclick="openChat('${conv.user?.id || conv.lastMessage.from_user_id}')">
-                    <img class="message-avatar" src="${getUserPhotoUrl(conv.user)}">
-                    <div class="message-content">
-                        <div style="font-weight: 600;">${conv.user?.name || '匿名用户'}</div>
-                        <div style="color: #888; font-size: 14px; margin-top: 5px;">${conv.lastMessage.content?.substring(0, 50) || '[图片]'}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="message-time">${formatTime(conv.lastMessage.created_at)}</div>
-                        ${conv.unreadCount > 0 ? `<span class="unread-badge">${conv.unreadCount}</span>` : ''}
-                    </div>
-                </div>
-            `).join('');
+                
+                const allMessages = [...(sentMessages || []), ...(receivedMessages || [])];
+                const messages = allMessages.sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.createdAt || 0);
+                    const dateB = new Date(b.created_at || b.createdAt || 0);
+                    return dateB - dateA;
+                });
+                
+                console.log('loadMessageList messages count:', messages.length);
+                
+                if (!messages || messages.length === 0) {
+                    messageList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无私信记录</p>';
+                    return;
+                }
+                
+                const userIds = new Set();
+                messages.forEach(m => {
+                    if (m.from_user_id !== currentUser.id) userIds.add(m.from_user_id);
+                    if (m.to_user_id !== currentUser.id) userIds.add(m.to_user_id);
+                });
+                
+                const { data: users, error: usersError } = await supabase
+                    .from('users')
+                    .select('id, name, photos, province, city')
+                    .in('id', Array.from(userIds));
+                
+                if (usersError) {
+                    console.error('查询用户失败:', usersError);
+                }
+                
+                const userMap = {};
+                users?.forEach(u => userMap[u.id] = u);
+                
+                const conversations = {};
+                messages.forEach(m => {
+                    const otherId = m.from_user_id === currentUser.id ? m.to_user_id : m.from_user_id;
+                    if (!conversations[otherId]) {
+                        conversations[otherId] = {
+                            user: userMap[otherId],
+                            lastMessage: m,
+                            unreadCount: 0
+                        };
+                    }
+                    
+                    if (m.to_user_id === currentUser.id && m.is_read === false) {
+                        conversations[otherId].unreadCount++;
+                    }
+                });
+                
+                const convList = Object.values(conversations).sort((a, b) => {
+                    const dateA = new Date(a.lastMessage.created_at || a.lastMessage.createdAt || 0);
+                    const dateB = new Date(b.lastMessage.created_at || b.lastMessage.createdAt || 0);
+                    return dateB - dateA;
+                });
+                
+                messageList.innerHTML = convList.map(conv => {
+                    const content = conv.lastMessage.content;
+                    const displayContent = content ? content.substring(0, 50) : '[图片]';
+                    return `
+                        <div class="message-item" onclick="openChat('${conv.user?.id || conv.lastMessage.from_user_id}')">
+                            <img class="message-avatar" src="${getUserPhotoUrl(conv.user)}">
+                            <div class="message-content">
+                                <div style="font-weight: 600;">${conv.user?.name || '匿名用户'}</div>
+                                <div style="color: #888; font-size: 14px; margin-top: 5px;">${displayContent}${content && content.length > 50 ? '...' : ''}</div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div class="message-time">${formatTime(conv.lastMessage.created_at || conv.lastMessage.createdAt)}</div>
+                                ${conv.unreadCount > 0 ? `<span class="unread-badge">${conv.unreadCount}</span>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('loadMessageList exception:', e);
+                messageList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载消息列表失败: ${e.message}</p>`;
+            }
         }
         
         function formatTime(timestamp) {
+            if (!timestamp) return '未知时间';
+            
             const date = new Date(timestamp);
+            if (isNaN(date.getTime())) return '未知时间';
+            
             const now = new Date();
             const diff = now - date;
             
             if (diff < 60000) return '刚刚';
             if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
             if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-            return date.toLocaleDateString();
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+            return date.toLocaleDateString('zh-CN');
         }
         
         async function openChat(userId) {
@@ -254,8 +299,6 @@
                 .select('*')
                 .eq('id', userId)
                 .single();
-            
-            console.log('openChat user data:', user, 'error:', userError);
             
             if (userError) {
                 console.error('获取用户信息失败:', userError);
@@ -296,62 +339,112 @@
                 .eq('from_user_id', userId)
                 .eq('to_user_id', currentUser.id)
                 .eq('is_read', false);
+            
+            // 开始消息轮询
+            startMessagePolling();
+        }
+        
+        function startMessagePolling() {
+            stopMessagePolling();
+            lastMessageCheckTime = new Date();
+            messagePollInterval = setInterval(async () => {
+                if (currentChatUserId) {
+                    await checkNewMessages();
+                }
+                await loadMessageList();
+            }, 10000);
+        }
+        
+        function stopMessagePolling() {
+            if (messagePollInterval) {
+                clearInterval(messagePollInterval);
+                messagePollInterval = null;
+            }
+        }
+        
+        async function checkNewMessages() {
+            if (!currentChatUserId || !lastMessageCheckTime) return;
+            
+            const supabase = getSupabase();
+            const { data: newMessages } = await supabase
+                .from('messages')
+                .select('id, created_at')
+                .eq('from_user_id', currentChatUserId)
+                .eq('to_user_id', currentUser.id)
+                .gt('created_at', lastMessageCheckTime.toISOString());
+            
+            if (newMessages && newMessages.length > 0) {
+                await loadChatMessages();
+                showAlert(`收到 ${newMessages.length} 条新消息`, 'success');
+            }
+            
+            lastMessageCheckTime = new Date();
         }
         
         async function loadChatMessages() {
             console.log('loadChatMessages started, currentChatUserId:', currentChatUserId);
             const supabase = getSupabase();
+            const chatMessages = document.getElementById('chatMessages');
             
             if (!currentChatUserId) {
                 console.error('currentChatUserId is null, cannot load messages');
+                chatMessages.innerHTML = '<p style="text-align: center; color: #888;">请选择聊天对象</p>';
                 return;
             }
             
-            const { data: sentMessages, error: sentError } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('from_user_id', currentUser.id)
-                .eq('to_user_id', currentChatUserId);
-            
-            if (sentError) {
-                console.error('加载已发送消息失败:', sentError);
-            }
-            
-            const { data: receivedMessages, error: receivedError } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('from_user_id', currentChatUserId)
-                .eq('to_user_id', currentUser.id);
-            
-            if (receivedError) {
-                console.error('加载接收消息失败:', receivedError);
-            }
-            
-            const messages = [...(sentMessages || []), ...(receivedMessages || [])];
-            messages.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-            
-            console.log('loadChatMessages messages count:', messages.length);
-            
-            const chatMessages = document.getElementById('chatMessages');
-            
-            if (!messages || messages.length === 0) {
-                chatMessages.innerHTML = '<p style="text-align: center; color: #888;">暂无消息，开始对话吧</p>';
-                return;
-            }
-            
-            chatMessages.innerHTML = messages.map(m => {
-                const isMine = m.from_user_id === currentUser.id;
-                return `
-                    <div style="display: flex; justify-content: ${isMine ? 'flex-end' : 'flex-start'}; margin-bottom: 10px;">
-                        <div style="max-width: 80%; padding: 10px 14px; border-radius: 12px; background: ${isMine ? '#667eea' : '#e1e5eb'}; color: ${isMine ? 'white' : '#333'}; word-wrap: break-word;">
-                            ${m.content || `<img src="${m.image_url}" style="max-width: 100%;">`}
-                            <div style="font-size: 11px; color: ${isMine ? 'rgba(255,255,255,0.7)' : '#888'}; margin-top: 5px;">${formatTime(m.created_at)}</div>
+            try {
+                const { data: sentMessages, error: sentError } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('from_user_id', currentUser.id)
+                    .eq('to_user_id', currentChatUserId);
+                
+                if (sentError) {
+                    console.error('加载已发送消息失败:', sentError);
+                }
+                
+                const { data: receivedMessages, error: receivedError } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('from_user_id', currentChatUserId)
+                    .eq('to_user_id', currentUser.id);
+                
+                if (receivedError) {
+                    console.error('加载接收消息失败:', receivedError);
+                }
+                
+                const messages = [...(sentMessages || []), ...(receivedMessages || [])];
+                messages.sort((a, b) => {
+                    const dateA = new Date(a.created_at || a.createdAt || 0);
+                    const dateB = new Date(b.created_at || b.createdAt || 0);
+                    return dateA - dateB;
+                });
+                
+                console.log('loadChatMessages messages count:', messages.length);
+                
+                if (!messages || messages.length === 0) {
+                    chatMessages.innerHTML = '<p style="text-align: center; color: #888;">暂无消息，开始对话吧</p>';
+                    return;
+                }
+                
+                chatMessages.innerHTML = messages.map(m => {
+                    const isMine = m.from_user_id === currentUser.id;
+                    const messageContent = m.content ? m.content : (m.image_url ? `<img src="${m.image_url}" style="max-width: 100%;">` : '[空消息]');
+                    return `
+                        <div style="display: flex; justify-content: ${isMine ? 'flex-end' : 'flex-start'}; margin-bottom: 10px;">
+                            <div style="max-width: 80%; padding: 10px 14px; border-radius: 12px; background: ${isMine ? '#667eea' : '#e1e5eb'}; color: ${isMine ? 'white' : '#333'}; word-wrap: break-word;">
+                                ${messageContent}
+                                <div style="font-size: 11px; color: ${isMine ? 'rgba(255,255,255,0.7)' : '#888'}; margin-top: 5px;">${formatTime(m.created_at || m.createdAt)}</div>
+                            </div>
                         </div>
-                    </div>
-                `;
-            }).join('');
-            
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+                    `;
+                }).join('');
+                
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            } catch (e) {
+                console.error('loadChatMessages exception:', e);
+                chatMessages.innerHTML = `<p style="text-align: center; color: #e74c3c;">加载消息失败: ${e.message}</p>`;
+            }
         }
         
         async function sendChatMessage() {
@@ -375,25 +468,35 @@
             
             const supabase = getSupabase();
             
-            const { error } = await supabase
-                .from('messages')
-                .insert([{
-                    from_user_id: currentUser.id,
-                    to_user_id: currentChatUserId,
-                    content: content,
-                    is_read: false
-                }]);
-            
-            if (error) {
-                console.error('send error:', error);
-                showAlert('发送失败: ' + error.message, 'error');
-            } else {
-                document.getElementById('messageInput').value = '';
-                await loadChatMessages();
+            try {
+                const { error } = await supabase
+                    .from('messages')
+                    .insert([{
+                        from_user_id: currentUser.id,
+                        to_user_id: currentChatUserId,
+                        content: content,
+                        is_read: false,
+                        created_at: new Date().toISOString()
+                    }]);
+                
+                if (error) {
+                    console.error('send error:', error);
+                    showAlert('发送失败: ' + error.message, 'error');
+                } else {
+                    document.getElementById('messageInput').value = '';
+                    await loadChatMessages();
+                    await loadMessageList();
+                    showAlert('消息发送成功', 'success');
+                }
+            } catch (e) {
+                console.error('sendChatMessage exception:', e);
+                showAlert('发送失败: ' + e.message, 'error');
             }
         }
         
         function backToList() {
+            stopMessagePolling();
+            currentChatUserId = null;
             document.querySelector('[data-tab="chat"]').classList.remove('active');
             document.querySelector('[data-tab="list"]').classList.add('active');
             document.getElementById('chatTab').classList.add('hidden');

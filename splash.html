@@ -223,10 +223,38 @@
     </div>
     
     <script>
-        // 3秒后跳转到主页面
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 3500);
+        // 检查用户是否已登录，如果已登录直接跳转
+        let shouldSkip = false;
+        try {
+            const storedUser = sessionStorage.getItem('currentUser');
+            if (storedUser) {
+                const user = JSON.parse(storedUser);
+                if (user && user.id) {
+                    shouldSkip = true;
+                    window.location.href = user.name ? 'match.html' : 'profile.html';
+                }
+            }
+            
+            // 检查是否有记住的用户，尝试自动登录
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (rememberedUser && !shouldSkip) {
+                const remembered = JSON.parse(rememberedUser);
+                if (remembered.rememberPassword && remembered.phone && remembered.password) {
+                    shouldSkip = true;
+                    // 直接跳转到登录页，让登录页处理自动登录
+                    window.location.href = 'index.html';
+                }
+            }
+        } catch (e) {
+            console.log('检查登录状态失败:', e);
+        }
+        
+        if (!shouldSkip) {
+            // 3秒后跳转到主页面
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 3500);
+        }
     </script>
 </body>
 </html>

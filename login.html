@@ -188,8 +188,42 @@
             }
         }
         
+        async function autoLogin() {
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (rememberedUser) {
+                const user = JSON.parse(rememberedUser);
+                if (user.rememberPassword && user.phone && user.password) {
+                    try {
+                        const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+                        const foundUser = users.find(u => u.phone === user.phone && u.password === user.password);
+                        
+                        if (foundUser && foundUser.status !== 'pending') {
+                            localStorage.setItem('datingCurrentUser', JSON.stringify(foundUser));
+                            
+                            if (foundUser.phone === ADMIN_PHONE || foundUser.role === 'admin') {
+                                window.location.href = 'admin.html';
+                            } else if (foundUser.role === 'agency') {
+                                window.location.href = 'agency.html';
+                            } else {
+                                window.location.href = 'profile.html';
+                            }
+                            return true;
+                        }
+                    } catch (e) {
+                        console.log('自动登录失败:', e);
+                    }
+                }
+            }
+            return false;
+        }
+        
         initAdmin();
-        loadRememberedUser();
+        
+        autoLogin().then(success => {
+            if (!success) {
+                loadRememberedUser();
+            }
+        });
         
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();

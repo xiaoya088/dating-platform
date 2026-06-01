@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>婚恋红娘系统 - 文档中心</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .doc-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .doc-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+        .doc-nav {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .doc-nav a {
+            padding: 10px 20px;
+            background: white;
+            border-radius: 20px;
+            text-decoration: none;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+        .doc-nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+        .doc-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .doc-section h2 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .doc-section h3 {
+            color: #764ba2;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+        .doc-section h4 {
+            color: #555;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+        .doc-section p {
+            line-height: 1.8;
+            margin-bottom: 15px;
+        }
+        .doc-section ul, .doc-section ol {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+        .doc-section li {
+            line-height: 1.8;
+            margin-bottom: 8px;
+        }
+        .doc-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .doc-table th, .doc-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .doc-table th {
+            background: #667eea;
+            color: white;
+        }
+        .doc-table tr:nth-child(even) {
+            background: #f8f9fa;
+        }
+        .doc-table tr:hover {
+            background: #e9ecef;
+        }
+        .doc-alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .doc-alert.warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+        .doc-alert.info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+        .doc-alert.danger {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+        }
+        .doc-alert.success {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+        }
+        .doc-code {
+            background: #f4f4f4;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            margin: 15px 0;
+        }
+        .doc-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .doc-badge.new { background: #28a745; color: white; }
+        .doc-badge.improve { background: #17a2b8; color: white; }
+        .doc-badge.bug { background: #dc3545; color: white; }
+        .doc-badge.plan { background: #6c757d; color: white; }
+        .toc {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .toc ul {
+            list-style: none;
+            margin-left: 0;
+        }
+        .toc ul ul {
+            margin-left: 20px;
+        }
+        .toc a {
+            text-decoration: none;
+            color: #333;
+        }
+        .toc a:hover {
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">📚 婚恋红娘系统 - 文档中心</div>
+        <ul class="navbar-nav">
+            <li><a href="admin.html">返回管理后台</a></li>
+            <li><a href="index.html">登录页面</a></li>
+        </ul>
+    </nav>
+
+    <div class="doc-container">
+        <div class="doc-header">
+            <h1>📚 婚恋红娘系统文档</h1>
+            <p>版本: v2.0 | 更新日期: 2026-05-31 | 状态: 完善中</p>
+        </div>
+
+        <div class="toc">
+            <h3>📑 目录</h3>
+            <ul>
+                <li><a href="#overview">1. 系统概述</a></li>
+                <li><a href="#user-manual">2. 用户操作手册</a>
+                    <ul>
+                        <li><a href="#user-register">2.1 注册与登录</a></li>
+                        <li><a href="#user-profile">2.2 个人资料</a></li>
+                        <li><a href="#user-match">2.3 匹配推荐</a></li>
+                        <li><a href="#user-message">2.4 私信聊天</a></li>
+                        <li><a href="#user-activity">2.5 线下活动</a></li>
+                    </ul>
+                </li>
+                <li><a href="#admin-manual">3. 管理员手册</a>
+                    <ul>
+                        <li><a href="#admin-login">3.1 管理员登录</a></li>
+                        <li><a href="#admin-user">3.2 用户管理</a></li>
+                        <li><a href="#admin-agency">3.3 中介管理</a></li>
+                        <li><a href="#admin-announcement">3.4 公告管理</a></li>
+                        <li><a href="#admin-activity">3.5 活动管理</a></li>
+                        <li><a href="#admin-stat">3.6 数据统计</a></li>
+                    </ul>
+                </li>
+                <li><a href="#agency-manual">4. 中介手册</a>
+                    <ul>
+                        <li><a href="#agency-client">4.1 客户管理</a></li>
+                        <li><a href="#agency-match">4.2 匹配推荐</a></li>
+                    </ul>
+                </li>
+                <li><a href="#database">5. 数据库结构</a>
+                    <ul>
+                        <li><a href="#db-tables">5.1 数据表</a></li>
+                        <li><a href="#db-fields">5.2 字段说明</a></li>
+                    </ul>
+                </li>
+                <li><a href="#api">6. API接口</a></li>
+                <li><a href="#problems">7. 已知问题</a></li>
+                <li><a href="#future">8. 未来计划</a></li>
+            </ul>
+        </div>
+
+        <div id="overview" class="doc-section">
+            <h2>1. 系统概述</h2>
+            
+            <h3>1.1 系统简介</h3>
+            <p>婚恋红娘系统是一个面向婚恋市场的综合管理平台，提供用户注册、资料管理、智能匹配推荐、即时通讯、线下活动管理等功能。系统采用前后端分离架构，前端使用原生HTML/CSS/JavaScript，后端使用Supabase云数据库服务。</p>
+            
+            <h3>1.2 系统架构</h3>
+            <table class="doc-table">
+                <tr>
+                    <th>层级</th>
+                    <th>技术栈</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>前端</td>
+                    <td>HTML5 + CSS3 + JavaScript</td>
+                    <td>响应式设计，支持移动端</td>
+                </tr>
+                <tr>
+                    <td>后端数据库</td>
+                    <td>Supabase (PostgreSQL)</td>
+                    <td>云数据库，提供实时数据订阅</td>
+                </tr>
+                <tr>
+                    <td>文件存储</td>
+                    <td>Supabase Storage</td>
+                    <td>用户照片、头像存储</td>
+                </tr>
+                <tr>
+                    <td>认证</td>
+                    <td>自定义认证系统</td>
+                    <td>手机号+密码登录</td>
+                </tr>
+            </table>
+
+            <h3>1.3 用户角色</h3>
+            <table class="doc-table">
+                <tr>
+                    <th>角色</th>
+                    <th>说明</th>
+                    <th>入口</th>
+                </tr>
+                <tr>
+                    <td>普通用户</td>
+                    <td>注册用户，使用匹配推荐功能</td>
+                    <td>index.html</td>
+                </tr>
+                <tr>
+                    <td>中介</td>
+                    <td>婚介机构工作人员，管理客户</td>
+                    <td>agency.html</td>
+                </tr>
+                <tr>
+                    <td>管理员</td>
+                    <td>系统管理员，全局管理</td>
+                    <td>admin.html</td>
+                </tr>
+            </table>
+
+            <h3>1.4 功能模块</h3>
+            <ul>
+                <li><strong>用户模块</strong>：注册、登录、资料管理、头像上传</li>
+                <li><strong>匹配模块</strong>：智能匹配算法、匹配结果展示、筛选</li>
+                <li><strong>消息模块</strong>：即时私信、消息通知</li>
+                <li><strong>活动模块</strong>：线下活动发布、报名、管理</li>
+                <li><strong>公告模块</strong>：系统公告发布</li>
+                <li><strong>管理模块</strong>：用户管理、中介管理、数据统计</li>
+            </ul>
+        </div>
+
+        <div id="user-manual" class="doc-section">
+            <h2>2. 用户操作手册</h2>
+            
+            <div id="user-register" class="doc-subsection">
+                <h3>2.1 注册与登录</h3>
+                
+                <h4>注册流程</h4>
+                <ol>
+                    <li>访问系统首页，点击"注册"按钮</li>
+                    <li>填写手机号（作为唯一账号）</li>
+                    <li>设置登录密码（建议6位以上）</li>
+                    <li>输入验证码（短信验证码）</li>
+                    <li>点击注册完成</li>
+                </ol>
+                
+                <div class="doc-alert info">
+                    <strong>注意：</strong>手机号将作为登录凭证，请确保真实有效。一个手机号只能注册一个账号。
+                </div>
+                
+                <h4>登录流程</h4>
+                <ol>
+                    <li>输入已注册的手机号</li>
+                    <li>输入登录密码</li>
+                    <li>点击"登录"按钮</li>
+                    <li>首次登录需完善个人资料</li>
+                </ol>
+                
+                <h4>忘记密码</h4>
+                <p>如忘记密码，请联系客服或管理员重置密码。</p>
+            </div>
+
+            <div id="user-profile" class="doc-subsection">
+                <h3>2.2 个人资料</h3>
+                
+                <h4>基本资料</h4>
+                <p>必填项：姓名、性别、生日、身高、婚姻状况、学历、户口所在地</p>
+                <p>选填项：体重、职业、收入、房产、车辆、吸烟、饮酒、宗教信仰</p>
+                
+                <h4>个人照片</h4>
+                <ul>
+                    <li>最多上传9张照片</li>
+                    <li>可设置一张为头像</li>
+                    <li>支持JPG、PNG格式</li>
+                    <li>单张不超过5MB</li>
+                </ul>
+                
+                <h4>择偶要求</h4>
+                <p>设置您对另一半的要求，系统将根据要求进行智能匹配：</p>
+                <ul>
+                    <li>年龄范围、身高范围</li>
+                    <li>学历要求、婚姻状况</li>
+                    <li>地区要求、体型要求</li>
+                    <li>收入要求、房产车辆</li>
+                    <li>生活习惯（吸烟、饮酒）</li>
+                    <li>宗教信仰</li>
+                </ul>
+                <p>每项要求可设置重要程度：必须满足（红色）、重要（黄色）、一般（绿色）</p>
+            </div>
+
+            <div id="user-match" class="doc-subsection">
+                <h3>2.3 匹配推荐</h3>
+                
+                <h4>智能匹配原理</h4>
+                <p>系统根据您的个人资料和择偶要求，通过算法计算与其他用户的匹配度：</p>
+                <ul>
+                    <li>基础匹配：年龄、身高、学历、地区等基础条件</li>
+                    <li>兴趣匹配：性格爱好、活动偏好的相似度</li>
+                    <li>价值观匹配：婚恋观、消费观的一致性</li>
+                </ul>
+                
+                <h4>查看匹配</h4>
+                <ol>
+                    <li>进入"匹配推荐"页面</li>
+                    <li>查看匹配列表，按匹配度排序</li>
+                    <li>点击用户卡片查看详情</li>
+                    <li>可对心仪用户"收藏"或"私信"</li>
+                </ol>
+                
+                <h4>匹配度说明</h4>
+                <table class="doc-table">
+                    <tr>
+                        <th>匹配度</th>
+                        <th>说明</th>
+                        <th>建议</th>
+                    </tr>
+                    <tr>
+                        <td>90%+</td>
+                        <td>高度匹配</td>
+                        <td>强烈推荐联系</td>
+                    </tr>
+                    <tr>
+                        <td>70-90%</td>
+                        <td>较好匹配</td>
+                        <td>建议深入了解</td>
+                    </tr>
+                    <tr>
+                        <td>50-70%</td>
+                        <td>一般匹配</td>
+                        <td>可以尝试接触</td>
+                    </tr>
+                    <tr>
+                        <td>50%以下</td>
+                        <td>匹配度较低</td>
+                        <td>可作为参考</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="user-message" class="doc-subsection">
+                <h3>2.4 私信聊天</h3>
+                
+                <h4>发送消息</h4>
+                <ol>
+                    <li>在匹配列表点击用户头像进入详情页</li>
+                    <li>点击"发消息"按钮</li>
+                    <li>输入消息内容</li>
+                    <li>点击发送</li>
+                </ol>
+                
+                <h4>消息通知</h4>
+                <p>当有新消息时，页面右上角会显示红点提示。未读消息数量会显示在导航栏。</p>
+                
+                <div class="doc-alert warning">
+                    <strong>注意：</strong>如果对方将您拉黑，则无法发送消息给对方。
+                </div>
+            </div>
+
+            <div id="user-activity" class="doc-subsection">
+                <h3>2.5 线下活动</h3>
+                
+                <h4>查看活动</h4>
+                <p>在活动页面查看所有线下活动，包括：</p>
+                <ul>
+                    <li>活动名称、时间、地点</li>
+                    <li>活动内容、费用</li>
+                    <li>已报名人数</li>
+                </ul>
+                
+                <h4>报名参加</h4>
+                <ol>
+                    <li>选择感兴趣的活动</li>
+                    <li>点击"立即报名"</li>
+                    <li>确认报名信息</li>
+                    <li>等待管理员审核</li>
+                </ol>
+                
+                <h4>我的活动</h4>
+                <p>在"我的活动"中可查看已报名的活动状态：报名中、已通过、已拒绝、已取消</p>
+            </div>
+        </div>
+
+        <div id="admin-manual" class="doc-section">
+            <h2>3. 管理员手册</h2>
+            
+            <div id="admin-login" class="doc-subsection">
+                <h3>3.1 管理员登录</h3>
+                <ol>
+                    <li>访问管理后台入口</li>
+                    <li>输入管理员账号和密码</li>
+                    <li>点击登录</li>
+                </ol>
+                <div class="doc-alert warning">
+                    <strong>注意：</strong>管理员账号由系统初始化创建，初始账号为 admin / admin123，请首次登录后立即修改密码。
+                </div>
+            </div>
+
+            <div id="admin-user" class="doc-subsection">
+                <h3>3.2 用户管理</h3>
+                
+                <h4>用户列表</h4>
+                <p>查看所有注册用户信息，包括：</p>
+                <ul>
+                    <li>基本信息：手机号、姓名、性别、年龄</li>
+                    <li>资料状态：已完善/未完善</li>
+                    <li>账号状态：正常/禁用</li>
+                    <li>注册时间、最近登录时间</li>
+                </ul>
+                
+                <h4>用户操作</h4>
+                <ul>
+                    <li><strong>查看详情</strong>：查看完整用户资料和择偶要求</li>
+                    <li><strong>编辑</strong>：修改用户基本信息和择偶要求</li>
+                    <li><strong>启用/禁用</strong>：控制用户登录状态</li>
+                    <li><strong>删除</strong>：永久删除用户（需谨慎）</li>
+                </ul>
+                
+                <h4>筛选功能</h4>
+                <ul>
+                    <li>按状态筛选：全部/正常/禁用</li>
+                    <li>按性别筛选：男/女</li>
+                    <li>按资料完善度筛选</li>
+                    <li>关键词搜索：手机号、姓名</li>
+                </ul>
+            </div>
+
+            <div id="admin-agency" class="doc-subsection">
+                <h3>3.3 中介管理</h3>
+                
+                <h4>中介列表</h4>
+                <p>查看所有婚介机构账号，包括：</p>
+                <ul>
+                    <li>机构名称、联系人、电话</li>
+                    <li>账号状态：正常/禁用</li>
+                    <li>录入客户数量</li>
+                </ul>
+                
+                <h4>添加中介</h4>
+                <ol>
+                    <li>点击"添加中介"按钮</li>
+                    <li>填写机构信息</li>
+                    <li>设置初始密码</li>
+                    <li>点击保存</li>
+                </ol>
+                
+                <h4>中介操作</h4>
+                <ul>
+                    <li><strong>编辑</strong>：修改中介机构信息</li>
+                    <li><strong>重置密码</strong>：重置登录密码</li>
+                    <li><strong>启用/禁用</strong>：控制账号状态</li>
+                </ul>
+            </div>
+
+            <div id="admin-announcement" class="doc-subsection">
+                <h3>3.4 公告管理</h3>
+                
+                <h4>发布公告</h4>
+                <ol>
+                    <li>点击"发布公告"按钮</li>
+                    <li>填写公告标题和内容</li>
+                    <li>可选择置顶</li>
+                    <li>点击发布</li>
+                </ol>
+                
+                <h4>公告操作</h4>
+                <ul>
+                    <li><strong>编辑</strong>：修改公告内容</li>
+                    <li><strong>删除</strong>：删除公告</li>
+                    <li><strong>置顶/取消置顶</strong>：控制公告显示顺序</li>
+                </ul>
+            </div>
+
+            <div id="admin-activity" class="doc-subsection">
+                <h3>3.5 活动管理</h3>
+                
+                <h4>创建活动</h4>
+                <ol>
+                    <li>点击"创建活动"按钮</li>
+                    <li>填写活动信息：名称、时间、地点、费用、内容</li>
+                    <li>设置报名截止时间</li>
+                    <li>点击创建</li>
+                </ol>
+                
+                <h4>活动审核</h4>
+                <p>查看用户报名申请，可进行：</p>
+                <ul>
+                    <li><strong>通过</strong>：允许用户参加活动</li>
+                    <li><strong>拒绝</strong>：拒绝用户报名</li>
+                    <li><strong>查看详情</strong>：查看报名信息</li>
+                </ul>
+            </div>
+
+            <div id="admin-stat" class="doc-subsection">
+                <h3>3.6 数据统计</h3>
+                
+                <h4>统计指标</h4>
+                <table class="doc-table">
+                    <tr>
+                        <th>指标</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr>
+                        <td>总用户数</td>
+                        <td>所有注册用户数量</td>
+                    </tr>
+                    <tr>
+                        <td>活跃用户</td>
+                        <td>近30天有登录的用户</td>
+                    </tr>
+                    <tr>
+                        <td>中介数量</td>
+                        <td>合作的婚介机构数量</td>
+                    </tr>
+                    <tr>
+                        <td>活动数量</td>
+                        <td>已创建的活动总数</td>
+                    </tr>
+                    <tr>
+                        <td>匹配次数</td>
+                        <td>用户查看匹配的总次数</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div id="agency-manual" class="doc-section">
+            <h2>4. 中介手册</h2>
+            
+            <div id="agency-client" class="doc-subsection">
+                <h3>4.1 客户管理</h3>
+                
+                <h4>录入客户</h4>
+                <ol>
+                    <li>点击"添加客户"按钮</li>
+                    <li>填写客户基本信息</li>
+                    <li>完善择偶要求</li>
+                    <li>上传客户照片</li>
+                    <li>点击保存</li>
+                </ol>
+                
+                <h4>客户列表</h4>
+                <p>查看所有录入的客户，包括：</p>
+                <ul>
+                    <li>基本信息：姓名、性别、年龄、身高</li>
+                    <li>婚姻状况：未婚/离异/丧偶</li>
+                    <li>资料状态：已完善/待完善</li>
+                    <li>录入时间</li>
+                </ul>
+                
+                <h4>客户操作</h4>
+                <ul>
+                    <li><strong>查看详情</strong>：查看完整资料和择偶要求</li>
+                    <li><strong>编辑</strong>：修改客户信息</li>
+                    <li><strong>打印</strong>：打印客户资料或择偶要求</li>
+                    <li><strong>启用/禁用</strong>：控制客户账号状态</li>
+                </ul>
+            </div>
+
+            <div id="agency-match" class="doc-subsection">
+                <h3>4.2 匹配推荐</h3>
+                
+                <h4>智能匹配</h4>
+                <p>系统根据客户资料和择偶要求，自动计算匹配度并推荐合适的人选。</p>
+                
+                <h4>匹配结果</h4>
+                <ul>
+                    <li>按匹配度从高到低排序</li>
+                    <li>显示匹配原因和共同点</li>
+                    <li>可直接联系对方中介</li>
+                </ul>
+            </div>
+        </div>
+
+        <div id="database" class="doc-section">
+            <h2>5. 数据库结构</h2>
+            
+            <div id="db-tables" class="doc-subsection">
+                <h3>5.1 数据表</h3>
+                
+                <table class="doc-table">
+                    <tr>
+                        <th>表名</th>
+                        <th>说明</th>
+                        <th>主要字段</th>
+                    </tr>
+                    <tr>
+                        <td>users</td>
+                        <td>用户表</td>
+                        <td>手机号、密码、姓名、性别、资料...</td>
+                    </tr>
+                    <tr>
+                        <td>user_photos</td>
+                        <td>用户照片表</td>
+                        <td>用户ID、照片URL、是否头像</td>
+                    </tr>
+                    <tr>
+                        <td>user_requirements</td>
+                        <td>择偶要求表</td>
+                        <td>用户ID、年龄要求、身高要求...</td>
+                    </tr>
+                    <tr>
+                        <td>agencies</td>
+                        <td>中介表</td>
+                        <td>用户名、密码、机构名称、电话</td>
+                    </tr>
+                    <tr>
+                        <td>admins</td>
+                        <td>管理员表</td>
+                        <td>用户名、密码、角色</td>
+                    </tr>
+                    <tr>
+                        <td>likes</td>
+                        <td>喜欢/收藏表</td>
+                        <td>用户ID、目标用户ID、收藏状态</td>
+                    </tr>
+                    <tr>
+                        <td>messages</td>
+                        <td>消息表</td>
+                        <td>发送者ID、接收者ID、消息内容...</td>
+                    </tr>
+                    <tr>
+                        <td>blacklist</td>
+                        <td>黑名单表</td>
+                        <td>用户ID、拉黑用户ID</td>
+                    </tr>
+                    <tr>
+                        <td>activities</td>
+                        <td>活动表</td>
+                        <td>活动名称、时间、地点、费用...</td>
+                    </tr>
+                    <tr>
+                        <td>activity_registrations</td>
+                        <td>活动报名表</td>
+                        <td>活动ID、用户ID、报名状态</td>
+                    </tr>
+                    <tr>
+                        <td>announcements</td>
+                        <td>公告表</td>
+                        <td>标题、内容、是否置顶</td>
+                    </tr>
+                    <tr>
+                        <td>match_results</td>
+                        <td>匹配结果表</td>
+                        <td>用户ID、目标用户ID、匹配度</td>
+                    </tr>
+                    <tr>
+                        <td>interests</td>
+                        <td>兴趣选项表</td>
+                        <td>兴趣名称、分类</td>
+                    </tr>
+                    <tr>
+                        <td>user_interests</td>
+                        <td>用户兴趣关联表</td>
+                        <td>用户ID、兴趣ID</td>
+                    </tr>
+                    <tr>
+                        <td>system_config</td>
+                        <td>系统配置表</td>
+                        <td>配置键、配置值</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div id="db-fields" class="doc-subsection">
+                <h3>5.2 主要字段说明</h3>
+                
+                <h4>users 表</h4>
+                <table class="doc-table">
+                    <tr>
+                        <th>字段</th>
+                        <th>类型</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr><td>id</td><td>UUID</td><td>主键</td></tr>
+                    <tr><td>phone</td><td>VARCHAR(20)</td><td>手机号（唯一）</td></tr>
+                    <tr><td>password</td><td>VARCHAR(255)</td><td>密码（加密存储）</td></tr>
+                    <tr><td>name</td><td>VARCHAR(50)</td><td>姓名</td></tr>
+                    <tr><td>gender</td><td>VARCHAR(10)</td><td>性别：男/女</td></tr>
+                    <tr><td>birthday</td><td>DATE</td><td>出生日期</td></tr>
+                    <tr><td>height</td><td>INTEGER</td><td>身高（厘米）</td></tr>
+                    <tr><td>weight</td><td>INTEGER</td><td>体重（公斤）</td></tr>
+                    <tr><td>education</td><td>VARCHAR(50)</td><td>学历</td></tr>
+                    <tr><td>occupation</td><td>VARCHAR(100)</td><td>职业</td></tr>
+                    <tr><td>income</td><td>VARCHAR(50)</td><td>收入</td></tr>
+                    <tr><td>marital_status</td><td>VARCHAR(20)</td><td>婚姻状况</td></tr>
+                    <tr><td>province/city/district</td><td>VARCHAR</td><td>地区</td></tr>
+                    <tr><td>avatar_url</td><td>TEXT</td><td>头像URL</td></tr>
+                    <tr><td>photos</td><td>TEXT[]</td><td>照片URL数组</td></tr>
+                    <tr><td>status</td><td>VARCHAR(20)</td><td>状态：active/disabled</td></tr>
+                    <tr><td>agency_id</td><td>UUID</td><td>录入中介ID</td></tr>
+                    <tr><td>created_at</td><td>TIMESTAMP</td><td>创建时间</td></tr>
+                    <tr><td>updated_at</td><td>TIMESTAMP</td><td>更新时间</td></tr>
+                </table>
+                
+                <h4>user_requirements 表（择偶要求）</h4>
+                <table class="doc-table">
+                    <tr>
+                        <th>字段</th>
+                        <th>类型</th>
+                        <th>说明</th>
+                    </tr>
+                    <tr><td>id</td><td>UUID</td><td>主键</td></tr>
+                    <tr><td>user_id</td><td>UUID</td><td>用户ID</td></tr>
+                    <tr><td>req_min_age / req_max_age</td><td>INTEGER</td><td>年龄要求范围</td></tr>
+                    <tr><td>age_importance</td><td>VARCHAR(20)</td><td>年龄重要程度</td></tr>
+                    <tr><td>req_min_height / req_max_height</td><td>INTEGER</td><td>身高要求范围</td></tr>
+                    <tr><td>height_importance</td><td>VARCHAR(20)</td><td>身高重要程度</td></tr>
+                    <tr><td>req_education</td><td>TEXT[]</td><td>学历要求数组</td></tr>
+                    <tr><td>education_importance</td><td>VARCHAR(20)</td><td>学历重要程度</td></tr>
+                    <tr><td>req_marital</td><td>TEXT[]</td><td>婚姻状况要求</td></tr>
+                    <tr><td>req_province</td><td>VARCHAR(50)</td><td>地区要求</td></tr>
+                    <tr><td>req_body_type</td><td>VARCHAR(20)</td><td>体型要求</td></tr>
+                    <tr><td>req_min_income</td><td>VARCHAR(50)</td><td>最低收入要求</td></tr>
+                    <tr><td>req_property</td><td>VARCHAR(20)</td><td>房产要求</td></tr>
+                    <tr><td>req_car</td><td>VARCHAR(20)</td><td>车辆要求</td></tr>
+                    <tr><td>req_smoking</td><td>VARCHAR(20)</td><td>吸烟要求</td></tr>
+                    <tr><td>req_drinking</td><td>VARCHAR(20)</td><td>饮酒要求</td></tr>
+                    <tr><td>req_religion</td><td>VARCHAR(50)</td><td>宗教信仰要求</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div id="api" class="doc-section">
+            <h2>6. API接口</h2>
+            
+            <h3>6.1 Supabase REST API</h3>
+            <p>系统使用Supabase提供的REST API进行数据操作，基础URL：</p>
+            <div class="doc-code">https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/</div>
+            
+            <h3>6.2 主要接口</h3>
+            <table class="doc-table">
+                <tr>
+                    <th>接口</th>
+                    <th>方法</th>
+                    <th>说明</th>
+                </tr>
+                <tr>
+                    <td>/users</td>
+                    <td>GET/POST/PATCH/DELETE</td>
+                    <td>用户CRUD操作</td>
+                </tr>
+                <tr>
+                    <td>/users?id=eq.{id}</td>
+                    <td>PATCH</td>
+                    <td>更新指定用户</td>
+                </tr>
+                <tr>
+                    <td>/agencies</td>
+                    <td>GET/POST</td>
+                    <td>中介管理</td>
+                </tr>
+                <tr>
+                    <td>/admins</td>
+                    <td>GET/POST</td>
+                    <td>管理员管理</td>
+                </tr>
+                <tr>
+                    <td>/messages</td>
+                    <td>GET/POST</td>
+                    <td>消息收发</td>
+                </tr>
+                <tr>
+                    <td>/match_results</td>
+                    <td>GET</td>
+                    <td>获取匹配结果</td>
+                </tr>
+                <tr>
+                    <td>/activities</td>
+                    <td>GET/POST/PATCH</td>
+                    <td>活动管理</td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="problems" class="doc-section">
+            <h2>7. 已知问题</h2>
+            
+            <div class="doc-alert danger">
+                <h4>🔴 高优先级问题</h4>
+            </div>
+            
+            <h3>7.1 安全性问题</h3>
+            <table class="doc-table">
+                <tr>
+                    <th>问题</th>
+                    <th>描述</th>
+                    <th>状态</th>
+                    <th>修复方案</th>
+                </tr>
+                <tr>
+                    <td>密码明文存储</td>
+                    <td>数据库中密码未加密存储</td>
+                    <td><span class="doc-badge bug">待修复</span></td>
+                    <td>使用bcrypt或类似算法加密</td>
+                </tr>
+                <tr>
+                    <td>RLS策略冲突</td>
+                    <td>Supabase RLS与自定义认证不兼容</td>
+                    <td><span class="doc-badge improve">已临时禁用</span></td>
+                    <td>需重新设计认证流程或使用Supabase Auth</td>
+                </tr>
+            </table>
+            
+            <h3>7.2 功能问题</h3>
+            <table class="doc-table">
+                <tr>
+                    <th>问题</th>
+                    <th>描述</th>
+                    <th>状态</th>
+                </tr>
+                <tr>
+                    <td>匹配计算函数缺失</td>
+                    <td>match_results表存在但计算函数未正确创建</td>
+                    <td><span class="doc-badge bug">待修复</span></td>
+                </tr>
+                <tr>
+                    <td>触发器引用错误</td>
+                    <td>数据库触发器引用不存在的函数</td>
+                    <td><span class="doc-badge improve">已禁用</span></td>
+                </tr>
+                <tr>
+                    <td>sessionStorage兼容</td>
+                    <td>部分旧版浏览器不支持sessionStorage</td>
+                    <td><span class="doc-badge plan">低优先级</span></td>
+                </tr>
+            </table>
+            
+            <h3>7.3 数据问题</h3>
+            <table class="doc-table">
+                <tr>
+                    <th>问题</th>
+                    <th>描述</th>
+                    <th>状态</th>
+                </tr>
+                <tr>
+                    <td>择偶要求存储</td>
+                    <td>择偶要求字段分散在users表和user_requirements表</td>
+                    <td><span class="doc-badge improve">已统一</span></td>
+                </tr>
+                <tr>
+                    <td>缺少索引</td>
+                    <td>部分查询字段缺少索引，影响性能</td>
+                    <td><span class="doc-badge plan">计划中</span></td>
+                </tr>
+            </table>
+        </div>
+
+        <div id="future" class="doc-section">
+            <h2>8. 未来计划</h2>
+            
+            <h3>8.1 功能增强 <span class="doc-badge new">新功能</span></h3>
+            <table class="doc-table">
+                <tr>
+                    <th>功能</th>
+                    <th>描述</th>
+                    <th>优先级</th>
+                    <th>预计版本</th>
+                </tr>
+                <tr>
+                    <td>微信登录</td>
+                    <td>支持微信授权登录</td>
+                    <td>高</td>
+                    <td>v2.1</td>
+                </tr>
+                <tr>
+                    <td>实时聊天</td>
+                    <td>使用Supabase Realtime实现即时消息</td>
+                    <td>高</td>
+                    <td>v2.1</td>
+                </tr>
+                <tr>
+                    <td>视频认证</td>
+                    <td>用户可上传认证视频</td>
+                    <td>中</td>
+                    <td>v2.2</td>
+                </tr>
+                <tr>
+                    <td>高级筛选</td>
+                    <td>支持多条件组合筛选</td>
+                    <td>中</td>
+                    <td>v2.2</td>
+                </tr>
+                <tr>
+                    <td>消息提醒</td>
+                    <td>推送通知、短信提醒</td>
+                    <td>中</td>
+                    <td>v2.3</td>
+                </tr>
+                <tr>
+                    <td>数据分析</td>
+                    <td>用户行为分析、匹配效果分析</td>
+                    <td>低</td>
+                    <td>v3.0</td>
+                </tr>
+            </table>
+            
+            <h3>8.2 技术升级 <span class="doc-badge improve">改进</span></h3>
+            <table class="doc-table">
+                <tr>
+                    <th>项目</th>
+                    <th>当前方案</th>
+                    <th>改进方案</th>
+                    <th>优先级</th>
+                </tr>
+                <tr>
+                    <td>用户认证</td>
+                    <td>自定义认证</td>
+                    <td>Supabase Auth</td>
+                    <td>高</td>
+                </tr>
+                <tr>
+                    <td>密码存储</td>
+                    <td>明文</td>
+                    <td>bcrypt加密</td>
+                    <td>高</td>
+                </tr>
+                <tr>
+                    <td>前端框架</td>
+                    <td>原生JS</td>
+                    <td>React/Vue</td>
+                    <td>中</td>
+                </tr>
+                <tr>
+                    <td>数据存储</td>
+                    <td>单Supabase</td>
+                    <td>主从复制/读写分离</td>
+                    <td>低</td>
+                </tr>
+            </table>
+            
+            <h3>8.3 待补充功能 <span class="doc-badge plan">计划中</span></h3>
+            <ul>
+                <li><strong>红娘一对一服务</strong>：付费VIP服务，由红娘推荐</li>
+                <li><strong>线下门店管理</strong>：中介机构的多门店管理</li>
+                <li><strong>活动签到</strong>：活动现场扫码签到</li>
+                <li><strong>评价系统</strong>：用户互评、满意度调查</li>
+                <li><strong>风控系统</strong>：反欺诈、敏感词过滤</li>
+                <li><strong>数据导出</strong>：支持Excel、PDF导出</li>
+                <li><strong>多语言</strong>：支持英文、方言</li>
+                <li><strong>小程序</strong>：微信小程序版本</li>
+            </ul>
+            
+            <div class="doc-alert success">
+                <h4>📝 文档更新记录</h4>
+                <ul>
+                    <li><strong>2026-05-31</strong>：初始化文档，创建系统概述、用户手册、管理员手册、数据库结构</li>
+                    <li><strong>2026-05-31</strong>：添加已知问题和未来计划</li>
+                    <li><strong>2026-05-31</strong>：添加API接口说明</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="doc-footer" style="text-align: center; padding: 30px; color: #888;">
+            <p>婚恋红娘系统 - 文档中心 | 技术支持请联系开发团队</p>
+            <p>© 2026 婚恋红娘系统 - 保留所有权利</p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const sections = document.querySelectorAll('.doc-section');
+            const navLinks = document.querySelectorAll('.toc a');
+            
+            window.addEventListener('scroll', function() {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 100) {
+                        current = section.getAttribute('id');
+                    }
+                });
+            });
+            
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

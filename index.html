@@ -26,7 +26,7 @@
                 </div>
                 <div class="form-group" style="display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" id="rememberMe" checked style="width: 18px; height: 18px; cursor: pointer;">
-                    <label for="rememberMe" style="margin: 0; cursor: pointer; color: #666; font-weight: normal;">记住我</label>
+                    <label for="rememberMe" style="margin: 0; cursor: pointer; color: #666; font-weight: normal;">记住我（自动填充账号密码）</label>
                 </div>
                 <button class="btn btn-primary btn-block" id="btnLogin">登录</button>
                 <p style="text-align: center; margin-top: 20px; color: #888;">
@@ -39,63 +39,251 @@
     </div>
     
     <script>
-        const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
-        const currentUser = localStorage.getItem('currentUser');
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('页面加载完成，开始初始化...');
+            
+            // 先检查是否已登录
+            let currentUser = checkLoggedIn();
+            
+            if (currentUser) {
+                console.log('用户已登录，直接跳转');
+                redirectUser(currentUser);
+                return;
+            }
+            
+            // 尝试自动登录
+            const autoLoginSuccess = await tryAutoLogin();
+            
+            if (autoLoginSuccess) {
+                console.log('自动登录成功');
+                return;
+            }
+            
+            // 自动登录失败，加载记住的用户信息
+            loadRememberedUser();
+            
+            // 绑定登录事件
+            bindLoginEvents();
+            
+            console.log('初始化完成，等待用户操作');
+        });
+        
+        function checkLoggedIn() {
+            try {
+                const storedUser = sessionStorage.getItem('currentUser');
+                if (storedUser) {
+                    const user = JSON.parse(storedUser);
+                    if (user && user.id) {
+                        console.log('检测到已登录用户:', user.id);
+                        return user;
+                    }
+                }
+            } catch (e) {
+                console.error('检查登录状态失败:', e);
+            }
+            return null;
+        }
+        
+        function redirectUser(user) {
+            const userData = typeof user === 'string' ? JSON.parse(user) : user;
+            let redirectUrl = userData.name ? 'match.html' : 'profile.html';
+            
+            if (userData.role === 'agency') {
+                redirectUrl = 'agency.html';
+            } else if (userData.role === 'admin' || userData.phone === '13800138000') {
+                redirectUrl = 'admin.html';
+            }
+            
+            console.log('跳转到:', redirectUrl);
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 100);
+        }
+        
+        async function tryAutoLogin() {
+            console.log('尝试自动登录...');
+            
+            // 1. 尝试长期登录token
+            const tokenSuccess = await tryTokenLogin();
+            if (tokenSuccess) return true;
+            
+            // 2. 尝试本地用户登录
+            const localSuccess = await tryLocalLogin();
+            if (localSuccess) return true;
+            
+            // 3. 尝试 Supabase 直接登录
+            const supabaseSuccess = await trySupabaseLogin();
+            if (supabaseSuccess) return true;
+            
+            console.log('所有自动登录方式都失败');
+            return false;
+        }
+        
+        async function tryTokenLogin() {
+            const longTermToken = localStorage.getItem('longTermLoginToken');
+            if (!longTermToken) {
+                console.log('没有找到长期登录token');
+                return false;
+            }
+            
+            try {
+                console.log('尝试使用长期token登录...');
+                const supabase = getSupabase();
+                const { data, error } = await supabase.rpc('verify_long_term_token', {
+                    p_token: longTermToken
+                });
+                
+                if (data && data.valid && data.user_data) {
+                    const userData = { ...data.user_data, role: 'user' };
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                    console.log('长期token登录成功:', userData.id);
+                    showAlert('自动登录中...', 'success');
+                    redirectUser(userData);
+                    return true;
+                }
+            } catch (e) {
+                console.error('长期token登录失败:', e);
+                localStorage.removeItem('longTermLoginToken');
+            }
+            return false;
+        }
+        
+        async function tryLocalLogin() {
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (!rememberedUser) {
+                console.log('没有找到记住的用户');
+                return false;
+            }
+            
+            try {
+                const remembered = JSON.parse(rememberedUser);
+                if (!remembered.rememberPassword || !remembered.phone || !remembered.password) {
+                    console.log('记住的用户信息不完整');
+                    return false;
+                }
+                
+                console.log('尝试本地用户登录:', remembered.phone);
+                const users = JSON.parse(localStorage.getItem('datingUsers')) || [];
+                const foundUser = users.find(u => u.phone === remembered.phone && u.password === remembered.password);
+                
+                if (foundUser && foundUser.status !== 'pending') {
+                    sessionStorage.setItem('currentUser', JSON.stringify(foundUser));
+                    console.log('本地用户登录成功:', foundUser.id);
+                    showAlert('自动登录中...', 'success');
+                    redirectUser(foundUser);
+                    return true;
+                }
+            } catch (e) {
+                console.error('本地用户登录失败:', e);
+            }
+            return false;
+        }
+        
+        async function trySupabaseLogin() {
+            const rememberedUser = localStorage.getItem('rememberedUser');
+            if (!rememberedUser) {
+                return false;
+            }
+            
+            try {
+                const remembered = JSON.parse(rememberedUser);
+                if (!remembered.rememberPassword || !remembered.phone || !remembered.password) {
+                    return false;
+                }
+                
+                console.log('尝试 Supabase 直接登录:', remembered.phone);
+                const supabase = getSupabase();
+                
+                // 使用自定义登录验证
+                const { data, error } = await supabase
+                    .from('users')
+                    .select('id, phone, name, gender, avatar_url, status')
+                    .eq('phone', remembered.phone)
+                    .eq('password', remembered.password)
+                    .eq('status', 'active')
+                    .single();
+                
+                if (error) {
+                    console.log('Supabase登录查询失败:', error.message);
+                    return false;
+                }
+                
+                if (data) {
+                    const userData = { ...data, role: 'user' };
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                    console.log('Supabase登录成功:', data.id);
+                    showAlert('自动登录中...', 'success');
+                    redirectUser(userData);
+                    return true;
+                }
+            } catch (e) {
+                console.error('Supabase登录失败:', e);
+            }
+            return false;
+        }
         
         function loadRememberedUser() {
             const rememberedUser = localStorage.getItem('rememberedUser');
-            if (rememberedUser) {
-                try {
-                    const user = JSON.parse(rememberedUser);
-                    if (user.phone) {
-                        document.getElementById('loginAccount').value = user.phone;
-                    }
-                    if (user.password && user.rememberPassword) {
-                        document.getElementById('loginPassword').value = user.password;
-                    }
-                    if (user.rememberPassword !== undefined) {
-                        document.getElementById('rememberMe').checked = user.rememberPassword;
-                    }
-                } catch (e) {
-                    console.log('读取记住信息失败:', e);
-                }
-            }
-        }
-        
-        function saveRememberedUser(account, password, remember) {
-            if (remember) {
-                localStorage.setItem('rememberedUser', JSON.stringify({
-                    phone: account,
-                    password: password,
-                    rememberPassword: true
-                }));
-            } else {
-                localStorage.removeItem('rememberedUser');
-            }
-        }
-        
-        if (!hasSeenSplash && !currentUser) {
-            sessionStorage.setItem('hasSeenSplash', 'true');
-            window.location.href = 'splash.html';
-        } else {
-            if (currentUser) {
-                try {
-                    const user = JSON.parse(currentUser);
-                    if (user.role === 'agency') {
-                        window.location.href = 'agency.html';
-                    } else {
-                        window.location.href = user.name ? 'match.html' : 'profile.html';
-                    }
-                } catch (e) {}
-            }
+            if (!rememberedUser) return;
             
+            try {
+                const user = JSON.parse(rememberedUser);
+                if (user.phone) {
+                    document.getElementById('loginAccount').value = user.phone;
+                    console.log('已填充账号:', user.phone);
+                }
+                if (user.rememberPassword && user.password) {
+                    document.getElementById('loginPassword').value = user.password;
+                    console.log('已填充密码');
+                }
+                if (user.rememberPassword !== undefined) {
+                    document.getElementById('rememberMe').checked = user.rememberPassword;
+                }
+            } catch (e) {
+                console.error('读取记住信息失败:', e);
+            }
+        }
+        
+        function bindLoginEvents() {
             document.getElementById('btnLogin').addEventListener('click', handleLogin);
             document.getElementById('loginPassword').addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     handleLogin();
                 }
             });
-            loadRememberedUser();
+        }
+        
+        async function saveRememberedUser(account, password, remember, userId) {
+            if (remember) {
+                const userData = {
+                    phone: account,
+                    password: password,
+                    rememberPassword: true
+                };
+                localStorage.setItem('rememberedUser', JSON.stringify(userData));
+                console.log('已保存记住的用户:', account);
+                
+                if (userId) {
+                    try {
+                        const supabase = getSupabase();
+                        const { data, error } = await supabase.rpc('generate_long_term_token', {
+                            p_user_id: userId
+                        });
+                        
+                        if (data && data.token) {
+                            localStorage.setItem('longTermLoginToken', data.token);
+                            console.log('已生成长期登录token');
+                        }
+                    } catch (e) {
+                        console.log('生成长期登录token失败:', e);
+                    }
+                }
+            } else {
+                localStorage.removeItem('rememberedUser');
+                localStorage.removeItem('longTermLoginToken');
+                console.log('已清除记住的用户');
+            }
         }
         
         function showAlert(message, type) {
@@ -135,87 +323,67 @@
                 return;
             }
             
+            console.log('手动登录:', account);
+            
             try {
                 let user;
                 let lastError = null;
                 const isPhone = /^1[3-9]\d{9}$/.test(account);
                 
+                // 1. 尝试手机号用户登录
                 if (isPhone) {
                     try {
                         user = await signIn(account, password);
-                        console.log('用户登录成功，用户数据:', user);
-                        
-                        localStorage.setItem('currentUser', JSON.stringify({ ...user, role: 'user' }));
-                    const saved = localStorage.getItem('currentUser');
-                    console.log('保存后验证:', saved ? '成功' : '失败');
-                    if (!saved) {
-                        throw new Error('用户信息保存失败');
-                    }
-                        const userDataStr = JSON.stringify({ ...user, role: 'user' });
-                        const encodedData = encodeURIComponent(userDataStr);
-                        console.log('用户数据已编码，长度:', encodedData.length);
-
-                        saveRememberedUser(account, password, remember);
-                        showAlert('登录成功', 'success');
-                        setTimeout(() => {
-                            window.location.href = (user.name ? 'match.html' : 'profile.html') + '?user=' + encodedData;
-                        }, 2000);
+                        const userData = { ...user, role: 'user' };
+                        sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                        await saveRememberedUser(account, password, remember, user.id);
+                        showAlert('登录成功，正在跳转...', 'success');
+                        redirectUser(userData);
                         return;
                     } catch (e) {
                         lastError = e;
-                        console.log('用户登录失败:', e.message);
+                        console.log('手机号登录失败:', e.message);
                     }
                 }
-                
+
+                // 2. 尝试机构登录
                 try {
                     user = await agencySignIn(account, password);
-                    console.log('中介登录成功，用户数据:', user);
-
-                    const userDataStr = JSON.stringify({ ...user, role: 'agency' });
-                    const encodedData = encodeURIComponent(userDataStr);
-                    console.log('用户数据已编码，长度:', encodedData.length);
-
-                    saveRememberedUser(account, password, remember);
-                    showAlert('登录成功', 'success');
-                    setTimeout(() => {
-                        window.location.href = 'agency.html?user=' + encodedData;
-                    }, 2000);
+                    const userData = { ...user, role: 'agency' };
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                    await saveRememberedUser(account, password, remember, user.id);
+                    showAlert('登录成功，正在跳转...', 'success');
+                    redirectUser(userData);
                     return;
                 } catch (e) {
                     lastError = e;
-                    console.log('中介登录失败:', e.message);
+                    console.log('机构登录失败:', e.message);
                 }
-                
+
+                // 3. 尝试管理员登录
                 try {
                     user = await adminSignIn(account, password);
-                    console.log('管理员登录成功，用户数据:', user);
-                    
-                    const userDataStr = JSON.stringify({ ...user, role: 'admin' });
-                    const encodedData = encodeURIComponent(userDataStr);
-                    console.log('用户数据已编码，长度:', encodedData.length);
-                    saveRememberedUser(account, password, remember);
-                    showAlert('登录成功', 'success');
-                    setTimeout(() => {
-                        console.log("即将跳转到管理后台，URL:", "admin.html?user=" + encodedData.substring(0, 50) + "...");
-                        window.location.href = "admin.html?user=" + encodedData;
-                    }, 3000);
+                    const userData = { ...user, role: 'admin' };
+                    sessionStorage.setItem('currentUser', JSON.stringify(userData));
+                    await saveRememberedUser(account, password, remember, user.id);
+                    showAlert('登录成功，正在跳转...', 'success');
+                    redirectUser(userData);
                     return;
                 } catch (e) {
                     lastError = e;
                     console.log('管理员登录失败:', e.message);
                 }
                 
-                if (lastError && lastError.message.includes('network') || 
-                    lastError && lastError.message.includes('fetch') ||
-                    lastError && lastError.message.includes('Connection')) {
-                    showAlert('网络连接失败，请检查网络设置', 'error');
-                } else if (lastError && lastError.message.includes('401') ||
-                          lastError && lastError.message.includes('unauthorized')) {
-                    showAlert('认证失败，请检查账号配置', 'error');
-                } else {
-                    showAlert('账号或密码错误', 'error');
+                // 所有登录方式都失败
+                if (lastError) {
+                    if (lastError.message.includes('network') || lastError.message.includes('fetch')) {
+                        showAlert('网络连接失败，请检查网络设置', 'error');
+                    } else {
+                        showAlert('账号或密码错误', 'error');
+                    }
                 }
             } catch (error) {
+                console.error('登录异常:', error);
                 showAlert('登录异常: ' + error.message, 'error');
             }
         }

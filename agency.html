@@ -743,24 +743,18 @@
         const encodedUser = urlParams.get('user');
 
         if (encodedUser) {
-            console.log("从 URL 获取到用户数据");
             try {
                 const userDataStr = decodeURIComponent(encodedUser);
                 currentUser = JSON.parse(userDataStr);
-                console.log("解码后的用户数据:", currentUser);
-                localStorage.setItem('currentUser', userDataStr);
-                console.log("已保存到 localStorage");
+                sessionStorage.setItem('currentUser', userDataStr);
             } catch (e) {
-                console.error("解码用户数据失败:", e);
+                currentUser = getCurrentUser();
             }
         } else {
-            console.log("从 localStorage 获取用户数据");
             currentUser = getCurrentUser();
         }
 
-        // 检查登录状态
         if (!currentUser || currentUser.role !== 'agency') {
-            console.error('❌ 用户未登录或权限不足');
             window.location.href = 'index.html';
             throw new Error('未登录'); // 阻止后续代码执行
         }
@@ -1325,9 +1319,13 @@
         // 提交客户表单（新增或编辑）
         async function submitClientForm(event) {
             event.preventDefault();
+            console.log('submitClientForm called');
 
             const editClientId = document.getElementById('editClientId').value;
+            console.log('editClientId:', editClientId);
+            
             const supabase = getSupabase();
+            console.log('supabase:', supabase);
 
             const formData = {
                 name: document.getElementById('clientName').value.trim(),
@@ -1385,6 +1383,9 @@
 
             if (editClientId) {
                 // 编辑模式 - 更新 users 表
+                console.log('编辑模式，editClientId:', editClientId);
+                console.log('formData:', formData);
+                
                 const { error: userError } = await supabase
                     .from('users')
                     .update(formData)
@@ -1432,6 +1433,10 @@
                 showAllClientsForManage();
             } else {
                 // 新增模式
+                console.log('新增模式');
+                console.log('formData:', formData);
+                console.log('currentUser:', currentUser);
+                
                 if (!formData.phone || !formData.name) {
                     showAlert('请填写必填项', 'error');
                     return;
@@ -1439,12 +1444,15 @@
 
                 formData.agency_id = currentUser.id;
                 formData.status = 'active';
+                console.log('准备插入用户数据');
 
                 const { data: newUser, error: userError } = await supabase
                     .from('users')
                     .insert([formData])
                     .select()
                     .single();
+                
+                console.log('用户插入结果:', newUser, userError);
 
                 if (userError) {
                     showAlert('录入失败: ' + userError.message, 'error');

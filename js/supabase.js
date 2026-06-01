@@ -69,14 +69,13 @@ async function signIn(phone, password) {
     
     const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, phone, name, gender, avatar_url, status, created_at, updated_at')
         .eq('phone', phone)
         .eq('password', password)
         .eq('status', 'active')
         .single();
     
     if (error) {
-        console.error('登录错误:', error);
         throw new Error('手机号或密码错误');
     }
     return data;
@@ -87,14 +86,13 @@ async function agencySignIn(username, password) {
     
     const { data, error } = await supabase
         .from('agencies')
-        .select('*')
+        .select('id, username, name, phone, status, created_at')
         .eq('username', username)
         .eq('password', password)
         .eq('status', 'active')
         .single();
     
     if (error) {
-        console.error('中介登录错误:', error);
         throw new Error('用户名或密码错误');
     }
     return data;
@@ -105,13 +103,12 @@ async function adminSignIn(username, password) {
     
     const { data, error } = await supabase
         .from('admins')
-        .select('*')
+        .select('id, username, name, role, created_at')
         .eq('username', username)
         .eq('password', password)
         .single();
     
     if (error) {
-        console.error('管理员登录错误:', error);
         throw new Error('用户名或密码错误');
     }
     return data;
@@ -119,46 +116,24 @@ async function adminSignIn(username, password) {
 
 function getCurrentUser() {
     try {
-        const userStr = localStorage.getItem('currentUser');
+        const userStr = sessionStorage.getItem('currentUser');
         if (!userStr) return null;
-        
-        const user = JSON.parse(userStr);
-        console.log('getCurrentUser:', user);
-        return user;
+        return JSON.parse(userStr);
     } catch (e) {
-        console.error('getCurrentUser 错误:', e);
         return null;
     }
 }
 
 function setCurrentUser(user) {
-    try {
-        console.log('setCurrentUser 开始, user:', JSON.stringify(user).substring(0, 100));
-        
-        const userStr = JSON.stringify(user);
-        console.log('JSON.stringify 成功, 长度:', userStr.length);
-        
-        localStorage.setItem('currentUser', userStr);
-        console.log('localStorage.setItem 成功');
-        
-        const saved = localStorage.getItem('currentUser');
-        console.log('验证读取结果:', saved ? '成功' : '失败');
-        
-        if (!saved) {
-            console.error('localStorage 验证失败');
-            return false;
-        }
-        
-        console.log('setCurrentUser 完成');
-        return true;
-    } catch (e) {
-        console.error('setCurrentUser 异常:', e.message);
-        return false;
+    if (user) {
+        sessionStorage.setItem('currentUser', JSON.stringify(user));
+    } else {
+        sessionStorage.removeItem('currentUser');
     }
 }
 
 function clearCurrentUser() {
-    localStorage.removeItem('currentUser');
+    sessionStorage.removeItem('currentUser');
 }
 
 function isLoggedIn() {

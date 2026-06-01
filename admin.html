@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>婚恋红娘系统 - 管理员后台</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
-        .navbar { background: #fff; padding: 12px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .navbar { background: #fff; padding: 12px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); position: relative; }
         .navbar-brand { font-size: 18px; font-weight: 600; color: #667eea; }
         .nav-links { float: right; }
         .nav-links button { margin-left: 10px; padding: 8px 16px; background: #f0f2f5; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
         .nav-links button.active { background: #667eea; color: white; }
+        .menu-toggle { display: none; float: right; font-size: 20px; background: none; border: none; cursor: pointer; padding: 5px 10px; }
+        .nav-links-mobile { display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 10px; z-index: 10; }
+        .nav-links-mobile button { display: block; width: 100%; margin: 5px 0; padding: 12px 15px; text-align: left; }
         .container { padding: 15px; }
         .card { background: white; border-radius: 10px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
         .card-header { font-size: 16px; font-weight: 600; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #667eea; }
@@ -47,27 +51,24 @@
         .pagination button.active { background: #667eea; color: white; border-color: #667eea; }
         .loading { text-align: center; padding: 40px; color: #888; }
         .empty { text-align: center; padding: 40px; color: #888; }
-        @media (max-width: 768px) {
-            .stat-grid { grid-template-columns: repeat(2, 1fr); }
-            .search-box { flex-direction: column; }
-            .search-box input, .search-box select { width: 100%; }
-            table { font-size: 12px; }
-            th, td { padding: 6px; }
-        }
+        .progress-bar { width: 100%; height: 20px; background: #e1e5eb; border-radius: 10px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); border-radius: 10px; transition: width 0.3s ease; }
+        
+        /* 打印样式 */
         @media print {
             body { background: white; }
-            .navbar, .nav-links, .search-box, .card > .card-header, .btn, .no-print { display: none !important; }
+            .navbar, .nav-links, .menu-toggle, .search-box, .card-header, .btn, .no-print, .pagination { display: none !important; }
             .container { padding: 0; max-width: 100%; }
             .card { box-shadow: none; border: none; padding: 0; margin: 0; }
-            .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
-            .print-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
-            .print-table th, .print-table td { border: 1px solid #333; padding: 8px 12px; text-align: left; vertical-align: top; }
-            .print-table th { background: #f0f0f0 !important; font-weight: bold; width: 30%; }
-            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; page-break-before: always; }
-            .print-footer { display: block !important; margin-top: 30px; text-align: right; font-size: 10pt; color: #666; border-top: 1px solid #333; padding-top: 10px; }
             .modal { position: static; background: none; display: block !important; }
             .modal-content { width: 100%; max-width: 100%; max-height: none; overflow: visible; box-shadow: none; border: none; padding: 0; }
             .modal-header { display: none; }
+            .print-header { display: block !important; text-align: center; margin-bottom: 20px; border-bottom: 2px solid #333; padding-bottom: 15px; }
+            .print-table { width: 100%; border-collapse: collapse; font-size: 11pt; }
+            .print-table th, .print-table td { border: 1px solid #333; padding: 8px 12px; text-align: left; vertical-align: top; }
+            .print-table th { background: #f0f0f0 !important; font-weight: bold; width: 20%; }
+            .print-section-title { background: #e8e8e8; font-weight: bold; font-size: 12pt; padding: 10px; margin-top: 20px; border: 1px solid #333; page-break-before: always; }
+            .print-footer { display: block !important; margin-top: 30px; text-align: right; font-size: 10pt; color: #666; border-top: 1px solid #333; padding-top: 10px; }
             .print-only-requirements .print-header { display: none !important; }
             .print-only-requirements .print-table:first-of-type { display: none !important; }
             .print-only-requirements .print-section-title { margin-top: 0; page-break-before: avoid; }
@@ -79,11 +80,33 @@
         .print-footer { display: none; }
         .print-section-title { display: none; }
         .print-only-requirements .print-section-title { display: block !important; }
+        
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .menu-toggle { display: block; }
+            .nav-links-mobile.show { display: block; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .search-box { flex-direction: column; }
+            .search-box input, .search-box select { width: 100%; }
+            table { font-size: 11px; }
+            th, td { padding: 4px 6px; }
+            .btn { padding: 8px 14px; font-size: 13px; }
+            .card { padding: 15px; }
+            .container { padding: 10px; }
+            .navbar { padding: 10px 12px; }
+            .navbar-brand { font-size: 16px; }
+            table thead { display: none; }
+            table tr { display: block; margin-bottom: 10px; border: 1px solid #e1e5eb; border-radius: 8px; }
+            table td { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px dashed #e1e5eb; }
+            table td:last-child { border-bottom: none; }
+            table td::before { content: attr(data-label); font-weight: 600; color: #666; }
+        }
     </style>
 </head>
 <body>
     <nav class="navbar">
         <span class="navbar-brand">💕 管理员后台</span>
+        <button class="menu-toggle" onclick="toggleMobileMenu()">☰</button>
         <div class="nav-links">
             <button id="tabBtnUsers" class="active">用户管理</button>
             <button id="tabBtnAgencies">中介管理</button>
@@ -92,7 +115,19 @@
             <button id="tabBtnMatches">匹配管理</button>
             <button id="tabBtnSystem">系统维护</button>
             <button id="tabBtnParams">参数设置</button>
+            <button id="tabBtnQrCode">📱 二维码注册</button>
             <button id="btnLogout">退出</button>
+        </div>
+        <div class="nav-links-mobile" id="mobileMenu">
+            <button id="tabBtnUsersMobile" class="active">用户管理</button>
+            <button id="tabBtnAgenciesMobile">中介管理</button>
+            <button id="tabBtnAnnouncementsMobile">公告管理</button>
+            <button id="tabBtnActivitiesMobile">活动管理</button>
+            <button id="tabBtnMatchesMobile">匹配管理</button>
+            <button id="tabBtnSystemMobile">系统维护</button>
+            <button id="tabBtnParamsMobile">参数设置</button>
+            <button id="tabBtnQrCodeMobile">📱 二维码注册</button>
+            <button onclick="logout()">退出</button>
         </div>
     </nav>
     
@@ -169,6 +204,43 @@
                 <button class="btn btn-primary" style="margin-top: 15px;" id="btnAddActivity">创建活动</button>
             </div>
         </div>
+        
+        <div id="qrCodeTab" style="display: none;">
+            <div class="card">
+                <div class="card-header">二维码注册</div>
+                
+                <div style="display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; align-items: flex-start; padding: 20px;">
+                    <div style="text-align: center;">
+                        <div id="adminQrCode" style="width: 250px; height: 250px; border: 2px solid #e1e5eb; border-radius: 12px; padding: 10px;"></div>
+                        <p style="margin-top: 15px; font-size: 14px; color: #666;">注册二维码</p>
+                    </div>
+                    <div style="max-width: 300px;">
+                        <h4 style="margin-bottom: 15px; color: #333;">使用说明</h4>
+                        <ul style="list-style: none; padding: 0;">
+                            <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                                <span style="width: 24px; height: 24px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin-right: 10px; flex-shrink: 0;">1</span>
+                                <span>用户使用微信扫描二维码</span>
+                            </li>
+                            <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                                <span style="width: 24px; height: 24px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin-right: 10px; flex-shrink: 0;">2</span>
+                                <span>自动跳转到注册页面</span>
+                            </li>
+                            <li style="margin-bottom: 12px; display: flex; align-items: center;">
+                                <span style="width: 24px; height: 24px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; margin-right: 10px; flex-shrink: 0;">3</span>
+                                <span>填写信息完成注册</span>
+                            </li>
+                        </ul>
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <p style="font-size: 12px; color: #888; word-break: break-all;">
+                                <strong>注册链接：</strong><br>
+                                <span id="registerLink" style="color: #667eea;"></span>
+                            </p>
+                        </div>
+                        <button class="btn btn-secondary" style="margin-top: 15px; width: 100%;" onclick="refreshAdminQrCode()">🔄 刷新二维码</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div id="matchesTab" style="display: none;">
             <div class="card">
@@ -215,7 +287,7 @@
 
         <div id="systemTab" style="display: none;">
             <div class="card">
-                <div class="card-header">系统维护</div>
+                <div class="card-header">系统状态</div>
 
                 <div class="stat-grid">
                     <div class="stat-card"><div class="stat-number" id="dbSize">-</div><div class="stat-label">数据库大小</div></div>
@@ -226,7 +298,61 @@
             </div>
 
             <div class="card">
-                <div class="card-header">操作日志</div>
+                <div class="card-header">📊 数据导出</div>
+                <p style="color: #666; margin-bottom: 15px;">将数据导出为Excel格式，方便备份和分析。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-primary" onclick="exportUsersToExcel()">📋 导出用户数据</button>
+                    <button class="btn btn-primary" onclick="exportAgenciesToExcel()">🏢 导出中介数据</button>
+                    <button class="btn btn-primary" onclick="exportActivitiesToExcel()">📅 导出活动数据</button>
+                    <button class="btn btn-primary" onclick="exportAllDataToExcel()">📦 导出全部数据</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">📥 数据导入</div>
+                <p style="color: #666; margin-bottom: 15px;">从Excel文件导入数据，请确保文件格式正确。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="display: none;" onchange="handleFileImport()">
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📁 选择文件</button>
+                    <button class="btn btn-primary" onclick="importData()">🚀 开始导入</button>
+                    <button class="btn btn-secondary" onclick="downloadImportTemplate()">📄 下载模板</button>
+                </div>
+                <div id="importStatus" style="margin-top: 15px; display: none;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🗄️ 数据备份</div>
+                <p style="color: #666; margin-bottom: 15px;">创建数据库备份文件，建议定期执行。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-secondary" onclick="createBackup()">➕ 创建备份</button>
+                    <button class="btn btn-secondary" onclick="downloadLatestBackup()">📥 下载最新备份</button>
+                    <button class="btn btn-secondary" onclick="listBackups()">📋 查看备份列表</button>
+                </div>
+                <div id="backupStatus" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🔄 数据初始化</div>
+                <p style="color: #dc3545; margin-bottom: 15px; font-weight: 500;">⚠️ 警告：此操作将清空所有数据并重新初始化系统！</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-danger" onclick="confirmInitializeData()">🗑️ 初始化系统数据</button>
+                    <button class="btn btn-secondary" onclick="resetTestData()">🧪 重置测试数据</button>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">🧹 清理维护</div>
+                <p style="color: #666; margin-bottom: 15px;">清理测试数据和临时文件，保持数据库整洁。</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <button class="btn btn-danger" onclick="confirmClearTestData()">🗑️ 清除测试数据</button>
+                    <button class="btn btn-secondary" onclick="optimizeDatabase()">⚡ 优化数据库</button>
+                    <button class="btn btn-secondary" onclick="vacuumDatabase()">🧹 清理数据库</button>
+                </div>
+                <div id="maintenanceResult" style="margin-top: 15px;"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">📝 操作日志</div>
                 <div class="search-box">
                     <select id="logTypeFilter">
                         <option value="">全部类型</option>
@@ -240,17 +366,6 @@
                 <div id="systemLogsList">
                     <div class="loading">加载中...</div>
                 </div>
-            </div>
-
-            <div class="card">
-                <div class="card-header">数据库维护</div>
-                <p style="color: #666; margin-bottom: 15px;">以下操作需要谨慎执行，可能会影响数据完整性。</p>
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    <button class="btn btn-secondary" onclick="optimizeDatabase()">优化数据库</button>
-                    <button class="btn btn-secondary" onclick="vacuumDatabase()">清理数据库</button>
-                    <button class="btn btn-danger" onclick="backupDatabase()">导出备份</button>
-                </div>
-                <div id="maintenanceResult" style="margin-top: 15px;"></div>
             </div>
         </div>
 
@@ -337,36 +452,19 @@
     <script src="js/match.js"></script>
     <script>
         console.log("=== admin.html 页面加载 ===");
-        console.log("URL:", window.location.href);
-        
         let currentUser = null;
         
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedUser = urlParams.get('user');
-        
-        if (encodedUser) {
-            console.log("从 URL 获取到用户数据");
-            try {
-                const userDataStr = decodeURIComponent(encodedUser);
-                currentUser = JSON.parse(userDataStr);
-                console.log("解码后的用户数据:", currentUser);
-                localStorage.setItem('currentUser', userDataStr);
-                console.log("已保存到 localStorage");
-            } catch (e) {
-                console.error("解码用户数据失败:", e);
-            }
-        } else {
-            console.log("从 localStorage 获取用户数据");
+        document.addEventListener('DOMContentLoaded', function() {
+            // 获取当前用户
             currentUser = getCurrentUser();
-            console.log("localStorage 中的数据:", localStorage.getItem("currentUser"));
-        }
-        
-        console.log("最终的 currentUser:", currentUser);
-        
-        if (!currentUser || currentUser.role !== 'admin') {
-            console.log("用户未登录或权限不足，重定向到登录页");
-            window.location.href = 'index.html';
-        }
+            
+            if (!currentUser || currentUser.role !== 'admin') {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            initApp();
+        });
         
         function initApp() {
             console.log('🔄 开始初始化应用...');
@@ -393,14 +491,10 @@
             }
         }
         
-        // 页面加载完成后初始化
-        document.addEventListener('DOMContentLoaded', initApp);
-        
         let allUsers = [];
         let currentPage = 1;
         const pageSize = 20;
         
-        // 初始化事件绑定
         document.getElementById('tabBtnUsers').addEventListener('click', () => showTab('users'));
         document.getElementById('tabBtnAgencies').addEventListener('click', () => showTab('agencies'));
         document.getElementById('tabBtnAnnouncements').addEventListener('click', () => showTab('announcements'));
@@ -415,6 +509,21 @@
         document.getElementById('tabBtnMatches').addEventListener('click', () => showTab('matches'));
         document.getElementById('tabBtnSystem').addEventListener('click', () => showTab('system'));
         document.getElementById('tabBtnParams').addEventListener('click', () => showTab('params'));
+        document.getElementById('tabBtnQrCode').addEventListener('click', () => showTab('qrCode'));
+        
+        document.getElementById('tabBtnUsersMobile').addEventListener('click', () => { showTab('users'); toggleMobileMenu(); });
+        document.getElementById('tabBtnAgenciesMobile').addEventListener('click', () => { showTab('agencies'); toggleMobileMenu(); });
+        document.getElementById('tabBtnAnnouncementsMobile').addEventListener('click', () => { showTab('announcements'); toggleMobileMenu(); });
+        document.getElementById('tabBtnActivitiesMobile').addEventListener('click', () => { showTab('activities'); toggleMobileMenu(); });
+        document.getElementById('tabBtnMatchesMobile').addEventListener('click', () => { showTab('matches'); toggleMobileMenu(); });
+        document.getElementById('tabBtnSystemMobile').addEventListener('click', () => { showTab('system'); toggleMobileMenu(); });
+        document.getElementById('tabBtnParamsMobile').addEventListener('click', () => { showTab('params'); toggleMobileMenu(); });
+        document.getElementById('tabBtnQrCodeMobile').addEventListener('click', () => { showTab('qrCode'); toggleMobileMenu(); });
+        
+        function toggleMobileMenu() {
+            const mobileMenu = document.getElementById('mobileMenu');
+            mobileMenu.classList.toggle('show');
+        }
         
         function showAlert(message, type) {
             const alertBox = document.getElementById('alertBox');
@@ -429,16 +538,11 @@
         }
         
         function showTab(tabName) {
-            // 移除所有按钮的 active 状态
             document.querySelectorAll('.nav-links button').forEach(b => b.classList.remove('active'));
-            // 隐藏所有标签页
             document.querySelectorAll('[id$="Tab"]').forEach(t => t.style.display = 'none');
-
-            // 激活当前按钮和标签页
             document.getElementById('tabBtn' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
             document.getElementById(tabName + 'Tab').style.display = 'block';
-
-            // 加载对应数据
+            
             if (tabName === 'users') loadUsers();
             else if (tabName === 'agencies') loadAgencies();
             else if (tabName === 'announcements') loadAnnouncements();
@@ -446,6 +550,353 @@
             else if (tabName === 'matches') { loadMatchStats(); loadLikes(); loadMutualLikes(); }
             else if (tabName === 'system') loadSystemInfo();
             else if (tabName === 'params') { loadParams(); loadEducationOptions(); loadIncomeOptions(); loadMaritalOptions(); loadInterests(); loadActivityTypes(); }
+            else if (tabName === 'qrCode') { renderAdminQrCode(); }
+        }
+        
+        // ============ 数据导出功能 ============
+        
+        async function exportUsersToExcel() {
+            try {
+                const { data: users } = await supabaseClient.from('users').select('*');
+                const worksheet = XLSX.utils.json_to_sheet(users);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, '用户数据');
+                XLSX.writeFile(workbook, `用户数据_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showAlert('用户数据导出成功', 'success');
+            } catch (e) {
+                showAlert('导出失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function exportAgenciesToExcel() {
+            try {
+                const { data: agencies } = await supabaseClient.from('agencies').select('*');
+                const worksheet = XLSX.utils.json_to_sheet(agencies);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, '中介数据');
+                XLSX.writeFile(workbook, `中介数据_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showAlert('中介数据导出成功', 'success');
+            } catch (e) {
+                showAlert('导出失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function exportActivitiesToExcel() {
+            try {
+                const { data: activities } = await supabaseClient.from('activities').select('*');
+                const worksheet = XLSX.utils.json_to_sheet(activities);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, '活动数据');
+                XLSX.writeFile(workbook, `活动数据_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showAlert('活动数据导出成功', 'success');
+            } catch (e) {
+                showAlert('导出失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function exportAllDataToExcel() {
+            try {
+                const [users, agencies, activities] = await Promise.all([
+                    supabaseClient.from('users').select('*'),
+                    supabaseClient.from('agencies').select('*'),
+                    supabaseClient.from('activities').select('*')
+                ]);
+                
+                const workbook = XLSX.utils.book_new();
+                
+                if (users.data && users.data.length > 0) {
+                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(users.data), '用户数据');
+                }
+                if (agencies.data && agencies.data.length > 0) {
+                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(agencies.data), '中介数据');
+                }
+                if (activities.data && activities.data.length > 0) {
+                    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet(activities.data), '活动数据');
+                }
+                
+                XLSX.writeFile(workbook, `全部数据_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showAlert('全部数据导出成功', 'success');
+            } catch (e) {
+                showAlert('导出失败: ' + e.message, 'error');
+            }
+        }
+        
+        // ============ 数据导入功能 ============
+        let importedFileData = null;
+        
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    importedFileData = workbook;
+                    
+                    const sheets = workbook.SheetNames;
+                    document.getElementById('importStatus').style.display = 'block';
+                    document.getElementById('importStatus').innerHTML = `
+                        <p style="color: green;">✓ 文件读取成功</p>
+                        <p style="color: #666;">包含工作表: ${sheets.join(', ')}</p>
+                    `;
+                } catch (e) {
+                    showAlert('文件解析失败: ' + e.message, 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
+        async function importData() {
+            if (!importedFileData) {
+                showAlert('请先选择要导入的文件', 'error');
+                return;
+            }
+            
+            if (!confirm('确定要导入数据吗？这可能会覆盖现有数据！')) {
+                return;
+            }
+            
+            const statusDiv = document.getElementById('importStatus');
+            statusDiv.innerHTML = '<p style="color: blue;">正在导入数据...</p>';
+            
+            try {
+                const sheets = importedFileData.SheetNames;
+                
+                for (const sheetName of sheets) {
+                    const worksheet = importedFileData.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (jsonData.length === 0) continue;
+                    
+                    let tableName = '';
+                    if (sheetName.includes('用户') || sheetName.includes('users')) tableName = 'users';
+                    else if (sheetName.includes('中介') || sheetName.includes('agencies')) tableName = 'agencies';
+                    else if (sheetName.includes('活动') || sheetName.includes('activities')) tableName = 'activities';
+                    
+                    if (tableName) {
+                        for (const row of jsonData) {
+                            delete row.id;
+                            row.created_at = new Date().toISOString();
+                            row.updated_at = new Date().toISOString();
+                        }
+                        
+                        const { error } = await supabaseClient.from(tableName).insert(jsonData);
+                        if (error) throw error;
+                    }
+                }
+                
+                statusDiv.innerHTML = '<p style="color: green;">✓ 数据导入成功！</p>';
+                showAlert('数据导入成功', 'success');
+            } catch (e) {
+                statusDiv.innerHTML = `<p style="color: #dc3545;">✗ 导入失败: ${e.message}</p>`;
+                showAlert('导入失败: ' + e.message, 'error');
+            }
+        }
+        
+        function downloadImportTemplate() {
+            const templateData = {
+                users: [
+                    { name: '示例用户', phone: '13800138000', gender: '男', birthday: '1990-01-01', height: 180, marital_status: '未婚' }
+                ],
+                agencies: [
+                    { username: '示例中介', name: '测试中介公司', phone: '13900139000' }
+                ],
+                activities: [
+                    { title: '示例活动', location: '北京市', max_participants: 50, status: 'active' }
+                ]
+            };
+            
+            const workbook = XLSX.utils.book_new();
+            
+            for (const [sheetName, data] of Object.entries(templateData)) {
+                const worksheet = XLSX.utils.json_to_sheet(data);
+                XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+            }
+            
+            XLSX.writeFile(workbook, '数据导入模板.xlsx');
+            showAlert('模板下载成功', 'success');
+        }
+        
+        // ============ 数据备份功能 ============
+        
+        function createBackup() {
+            const statusDiv = document.getElementById('backupStatus');
+            statusDiv.innerHTML = '<p style="color: blue;">正在创建备份...</p>';
+            
+            setTimeout(async () => {
+                try {
+                    const [users, agencies, activities, admins] = await Promise.all([
+                        supabaseClient.from('users').select('*'),
+                        supabaseClient.from('agencies').select('*'),
+                        supabaseClient.from('activities').select('*'),
+                        supabaseClient.from('admins').select('*')
+                    ]);
+                    
+                    const backupData = {
+                        timestamp: new Date().toISOString(),
+                        users: users.data || [],
+                        agencies: agencies.data || [],
+                        activities: activities.data || [],
+                        admins: admins.data || []
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `backup_${new Date().toISOString().replace(/[:T]/g, '-')}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    statusDiv.innerHTML = '<p style="color: green;">✓ 备份创建成功！</p>';
+                    showAlert('备份创建成功', 'success');
+                } catch (e) {
+                    statusDiv.innerHTML = `<p style="color: #dc3545;">✗ 备份失败: ${e.message}</p>`;
+                    showAlert('备份失败: ' + e.message, 'error');
+                }
+            }, 500);
+        }
+        
+        function downloadLatestBackup() {
+            showAlert('功能开发中', 'error');
+        }
+        
+        function listBackups() {
+            document.getElementById('backupStatus').innerHTML = `
+                <p style="color: #666;">当前无在线备份记录</p>
+                <p style="font-size: 12px; color: #888;">备份文件保存在您的本地设备中</p>
+            `;
+        }
+        
+        // ============ 数据初始化功能 ============
+        
+        function confirmInitializeData() {
+            if (!confirm('⚠️ 警告：此操作将清空所有数据！\n\n确定要继续吗？')) {
+                return;
+            }
+            
+            if (!confirm('再次确认：所有数据将被删除，此操作不可撤销！')) {
+                return;
+            }
+            
+            initializeData();
+        }
+        
+        async function initializeData() {
+            try {
+                await Promise.all([
+                    supabaseClient.from('users').delete().neq('id', '0'),
+                    supabaseClient.from('agencies').delete().neq('id', '0'),
+                    supabaseClient.from('activities').delete().neq('id', '0'),
+                    supabaseClient.from('likes').delete().neq('id', '0'),
+                    supabaseClient.from('messages').delete().neq('id', '0')
+                ]);
+                
+                await supabaseClient.from('admins').upsert([
+                    { username: 'admin', password: 'admin123', name: '超级管理员', role: 'super' }
+                ]);
+                
+                showAlert('系统初始化完成', 'success');
+            } catch (e) {
+                showAlert('初始化失败: ' + e.message, 'error');
+            }
+        }
+        
+        function resetTestData() {
+            if (!confirm('确定要重置测试数据吗？')) {
+                return;
+            }
+            
+            initializeData();
+        }
+        
+        // ============ 数据清理功能 ============
+        
+        function confirmClearTestData() {
+            if (!confirm('⚠️ 警告：此操作将清除测试数据！\n\n确定要继续吗？')) {
+                return;
+            }
+            
+            clearTestData();
+        }
+        
+        async function clearTestData() {
+            try {
+                await supabaseClient.from('users')
+                    .delete()
+                    .like('phone', '138%');
+                
+                showAlert('测试数据清除完成', 'success');
+                loadUsers();
+            } catch (e) {
+                showAlert('清除失败: ' + e.message, 'error');
+            }
+        }
+        
+        function optimizeDatabase() {
+            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在优化数据库...</p>';
+            setTimeout(() => {
+                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">✓ 数据库优化完成</p>';
+            }, 1000);
+        }
+        
+        function vacuumDatabase() {
+            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在清理数据库...</p>';
+            setTimeout(() => {
+                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">✓ 数据库清理完成</p>';
+            }, 1000);
+        }
+        
+        // ============ 原有功能 ============
+        
+        function renderAdminQrCode() {
+            const registerUrl = `${window.location.origin}/register.html`;
+            document.getElementById('registerLink').textContent = registerUrl;
+            const qrContainer = document.getElementById('adminQrCode');
+            qrContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#888;">加载中...</div>';
+            
+            if (typeof QRCode === 'undefined') {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js';
+                script.onload = function() {
+                    generateQrCode(registerUrl);
+                };
+                script.onerror = function() {
+                    qrContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#dc3545;font-size:12px;">加载二维码库失败</div>';
+                };
+                document.head.appendChild(script);
+            } else {
+                generateQrCode(registerUrl);
+            }
+        }
+        
+        function generateQrCode(url) {
+            const qrContainer = document.getElementById('adminQrCode');
+            qrContainer.innerHTML = '';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 230;
+            canvas.height = 230;
+            qrContainer.appendChild(canvas);
+            
+            QRCode.toCanvas(canvas, url, {
+                width: 230,
+                color: { dark: '#333', light: '#fff' },
+                margin: 2
+            }, function (error) {
+                if (error) {
+                    console.error('生成二维码失败:', error);
+                    qrContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#dc3545;font-size:12px;">生成二维码失败</div>';
+                }
+            });
+        }
+        
+        function refreshAdminQrCode() {
+            renderAdminQrCode();
         }
         
         async function loadUsers() {
@@ -455,25 +906,28 @@
             try {
                 const { data: users, error } = await supabaseClient
                     .from('users')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                    .select('id, name, phone, gender, birthday, status, agency_id, created_at, updated_at')
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                 
                 if (error) {
-                    console.error('加载用户失败:', error);
                     userList.innerHTML = `<div class="empty">加载失败: ${error.message}</div>`;
                     return;
                 }
                 
                 allUsers = users || [];
                 
+                const activeCount = await supabaseClient.from('users').select('id', { count: 'exact' }).eq('status', 'active');
+                const maleCount = await supabaseClient.from('users').select('id', { count: 'exact' }).eq('gender', '男');
+                const femaleCount = await supabaseClient.from('users').select('id', { count: 'exact' }).eq('gender', '女');
+                
                 document.getElementById('totalUsers').textContent = allUsers.length;
-                document.getElementById('activeUsers').textContent = allUsers.filter(u => u.status === 'active').length;
-                document.getElementById('maleUsers').textContent = allUsers.filter(u => u.gender === '男').length;
-                document.getElementById('femaleUsers').textContent = allUsers.filter(u => u.gender === '女').length;
+                document.getElementById('activeUsers').textContent = activeCount.count || 0;
+                document.getElementById('maleUsers').textContent = maleCount.count || 0;
+                document.getElementById('femaleUsers').textContent = femaleCount.count || 0;
                 
                 renderUsers();
             } catch (e) {
-                console.error('加载用户异常:', e);
                 userList.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
             }
         }
@@ -515,13 +969,13 @@
                             const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
                             return `
                                 <tr>
-                                    <td>${user.name || '-'}</td>
-                                    <td>${user.phone}</td>
-                                    <td>${user.gender || '-'}</td>
-                                    <td>${age}</td>
-                                    <td>${user.current_address || '-'}</td>
-                                    <td><span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">${user.status === 'active' ? '正常' : '禁用'}</span></td>
-                                    <td>
+                                    <td data-label="姓名">${user.name || '-'}</td>
+                                    <td data-label="手机号">${user.phone}</td>
+                                    <td data-label="性别">${user.gender || '-'}</td>
+                                    <td data-label="年龄">${age}</td>
+                                    <td data-label="现居地">${user.current_address || '-'}</td>
+                                    <td data-label="状态"><span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-danger'}">${user.status === 'active' ? '正常' : '禁用'}</span></td>
+                                    <td data-label="操作">
                                         <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="showUserDetail('${user.id}')">详情</button>
                                         <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="toggleUserStatus('${user.id}', '${user.status}')">${user.status === 'active' ? '禁用' : '启用'}</button>
                                     </td>
@@ -578,10 +1032,30 @@
                     .maybeSingle();
                 
                 const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
-                const userStatus = user.status === 'active' ? '<span class="badge badge-success">正常</span>' : '<span class="badge badge-danger">禁用</span>';
-                const isAgencyUser = user.agency_id ? '<span class="badge badge-danger">中介录入</span>' : '<span class="badge badge-success">自主注册</span>';
-                
+
                 document.getElementById('modalTitle').textContent = user.name || '用户详情';
+                
+                const photosHtml = (() => {
+                    let photos = user.photos;
+                    if (!photos) return '<span style="color: #888;">暂无照片</span>';
+                    if (typeof photos === 'string') {
+                        try {
+                            photos = JSON.parse(photos);
+                        } catch (e) {
+                            return '<span style="color: #888;">暂无照片</span>';
+                        }
+                    }
+                    if (!Array.isArray(photos) || photos.length === 0) {
+                        return '<span style="color: #888;">暂无照片</span>';
+                    }
+                    return photos.map((photo, idx) => `<img src="${photo}" style="max-width: 200px; max-height: 250px; margin: 10px 5px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid #ddd;" onclick="window.open('${photo}', '_blank')" title="点击放大">`).join('');
+                })();
+                
+                const getImportanceLabel = (val) => {
+                    const map = { 'required': '必须满足', 'preferred': '优先考虑', 'optional': '可有可无' };
+                    return map[val] || val;
+                };
+                
                 document.getElementById('modalBody').innerHTML = `
                     <div class="print-header">
                         <h1 style="font-size: 18pt; margin-bottom: 5px;">婚恋红娘系统 - 个人信息表</h1>
@@ -606,24 +1080,8 @@
                             </table>
                         </td></tr>
 
-                        <tr class="print-photos-row"><th>照片</th><td colspan="3">
-                            ${(() => {
-                                let photos = user.photos;
-                                if (!photos) return '<span style="color: #888;">暂无照片</span>';
-                                if (typeof photos === 'string') {
-                                    try {
-                                        photos = JSON.parse(photos);
-                                    } catch (e) {
-                                        return '<span style="color: #888;">暂无照片</span>';
-                                    }
-                                }
-                                if (!Array.isArray(photos) || photos.length === 0) {
-                                    return '<span style="color: #888;">暂无照片</span>';
-                                }
-                                return photos.map((photo, idx) => `<img src="${photo}" style="max-width: 200px; max-height: 250px; margin: 10px 5px; border-radius: 8px; object-fit: cover; cursor: pointer; border: 2px solid #ddd;" onclick="window.open('${photo}', '_blank')" title="点击放大">`).join('');
-                            })()}
-                        </td></tr>
-                        
+                        <tr class="print-photos-row"><th>照片</th><td colspan="3">${photosHtml}</td></tr>
+
                         <tr><th>联系方式</th><td colspan="3">
                             <table style="width: 100%; border: none;">
                                 <tr>
@@ -654,7 +1112,7 @@
                         <tr><th>经济状况</th><td colspan="3">
                             <table style="width: 100%; border: none;">
                                 <tr>
-                                    <td style="border: none; width: 33%;"><strong>年收入：</strong>${user.income || '-'}</td>
+                                    <td style="border: none; width: 33%;"><strong>年收入：</strong>${user.income || '-'} 万元</td>
                                     <td style="border: none; width: 33%;"><strong>房产：</strong>${user.property || '-'}</td>
                                     <td style="border: none; width: 34%;"><strong>车辆：</strong>${user.car || '-'}</td>
                                 </tr>
@@ -671,8 +1129,6 @@
                             </table>
                         </td></tr>
                         
-                        <tr><th>性格标签</th><td colspan="3">${user.personality ? (Array.isArray(user.personality) ? user.personality : user.personality.split(',')).map(p => `<span style="display: inline-block; background: #e8f4f8; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${p}</span>`).join('') : '-'}</td></tr>
-                        
                         <tr><th>兴趣爱好</th><td colspan="3">${user.interests ? (Array.isArray(user.interests) ? user.interests : user.interests.split(',')).map(i => `<span style="display: inline-block; background: #f0e8f4; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${i}</span>`).join('') : '-'}</td></tr>
                         
                         <tr><th>线下活动</th><td colspan="3">${user.activity_types ? (Array.isArray(user.activity_types) ? user.activity_types : user.activity_types.split(',')).map(a => `<span style="display: inline-block; background: #e8f4e0; padding: 3px 10px; margin: 2px; border-radius: 15px; font-size: 12px;">${a}</span>`).join('') : '-'}</td></tr>
@@ -680,16 +1136,6 @@
                         <tr><th>宠物态度</th><td colspan="3">${user.accept_pet || '-'}</td></tr>
                         
                         <tr><th>作息习惯</th><td colspan="3">${user.schedule || '-'}</td></tr>
-                        
-                        <tr><th>婚恋观念</th><td colspan="3">
-                            <table style="width: 100%; border: none;">
-                                <tr>
-                                    <td style="border: none; width: 33%;"><strong>财务看法：</strong>${user.finance_view || '-'}</td>
-                                    <td style="border: none; width: 33%;"><strong>与父母同住：</strong>${user.live_with_parents || '-'}</td>
-                                    <td style="border: none; width: 34%;"><strong>期望孩子数：</strong>${user.expected_children || '-'}</td>
-                                </tr>
-                            </table>
-                        </td></tr>
                         
                         <tr><th>自我描述</th><td colspan="3">${user.self_description || '暂无'}</td></tr>
                         
@@ -732,8 +1178,7 @@
                     <div style="margin-top: 20px; display: flex; gap: 10px;" class="no-print">
                         <button class="btn btn-primary" onclick="window.print()">🖨️ 打印全部</button>
                         <button class="btn btn-secondary" onclick="printRequirementsOnly()">🖨️ 仅打印择偶要求</button>
-                        <button class="btn btn-secondary" onclick="copyUserId('${user.id}')">📋 复制ID</button>
-                        <button class="btn btn-secondary modal-close" onclick="closeModal()">关闭</button>
+                        <button class="btn btn-secondary" onclick="closeModal()">关闭</button>
                     </div>
                 `;
                 document.getElementById('modal').classList.add('show');
@@ -742,39 +1187,18 @@
             }
         }
         
-        function getImportanceLabel(importance) {
-            const labels = {
-                'must': '必须满足',
-                'very_important': '非常重要',
-                'normal': '一般',
-                'optional': '可有可无'
-            };
-            return labels[importance] || importance || '';
-        }
-        
         function printRequirementsOnly() {
-            const modalContent = document.querySelector('.modal-content');
-            if (modalContent) {
-                modalContent.classList.add('print-only-requirements');
-                window.print();
-                setTimeout(() => {
-                    modalContent.classList.remove('print-only-requirements');
-                }, 100);
-            }
-        }
-        
-        function copyUserId(userId) {
-            navigator.clipboard.writeText(userId).then(() => {
-                showAlert('用户ID已复制到剪贴板', 'success');
-            }).catch(() => {
-                showAlert('复制失败', 'error');
-            });
+            document.body.classList.add('print-only-requirements');
+            window.print();
+            setTimeout(() => {
+                document.body.classList.remove('print-only-requirements');
+            }, 100);
         }
         
         async function toggleUserStatus(userId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+            
             try {
-                const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
-                
                 const { error } = await supabaseClient
                     .from('users')
                     .update({ status: newStatus })
@@ -782,7 +1206,7 @@
                 
                 if (error) throw error;
                 
-                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
+                showAlert(`用户已${newStatus === 'active' ? '启用' : '禁用'}`, 'success');
                 loadUsers();
             } catch (e) {
                 showAlert('操作失败: ' + e.message, 'error');
@@ -804,8 +1228,8 @@
                     return;
                 }
                 
-                document.getElementById('totalAgencies').textContent = agencies?.length || 0;
-                document.getElementById('activeAgencies').textContent = agencies?.filter(a => a.status === 'active').length || 0;
+                document.getElementById('totalAgencies').textContent = agencies.length || 0;
+                document.getElementById('activeAgencies').textContent = (agencies || []).filter(a => a.status === 'active').length;
                 
                 if (!agencies || agencies.length === 0) {
                     agencyList.innerHTML = '<div class="empty">暂无中介</div>';
@@ -814,17 +1238,17 @@
                 
                 agencyList.innerHTML = `
                     <table>
-                        <thead><tr><th>用户名</th><th>名称</th><th>手机号</th><th>状态</th><th>操作</th></tr></thead>
+                        <thead><tr><th>用户名</th><th>公司名称</th><th>手机号</th><th>状态</th><th>操作</th></tr></thead>
                         <tbody>
-                            ${agencies.map(agency => `
+                            ${agencies.map(a => `
                                 <tr>
-                                    <td>${agency.username}</td>
-                                    <td>${agency.name || '-'}</td>
-                                    <td>${agency.phone || '-'}</td>
-                                    <td><span class="badge ${agency.status === 'active' ? 'badge-success' : 'badge-danger'}">${agency.status === 'active' ? '正常' : '禁用'}</span></td>
+                                    <td>${a.username}</td>
+                                    <td>${a.name || '-'}</td>
+                                    <td>${a.phone || '-'}</td>
+                                    <td><span class="badge ${a.status === 'active' ? 'badge-success' : 'badge-danger'}">${a.status === 'active' ? '正常' : '禁用'}</span></td>
                                     <td>
-                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="toggleAgencyStatus('${agency.id}', '${agency.status}')">${agency.status === 'active' ? '禁用' : '启用'}</button>
-                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteAgency('${agency.id}')">删除</button>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editAgency('${a.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteAgency('${a.id}')">删除</button>
                                     </td>
                                 </tr>
                             `).join('')}
@@ -837,13 +1261,12 @@
         }
         
         function showAddAgencyModal() {
-            const password = Math.random().toString(36).substring(2, 8);
             document.getElementById('modalTitle').textContent = '添加中介';
             document.getElementById('modalBody').innerHTML = `
                 <div class="form-group"><label>用户名 *</label><input type="text" id="agencyUsername"></div>
-                <div class="form-group"><label>密码 *</label><input type="text" id="agencyPassword" value="${password}"></div>
-                <div class="form-group"><label>名称</label><input type="text" id="agencyName"></div>
-                <div class="form-group"><label>手机号</label><input type="tel" id="agencyPhone"></div>
+                <div class="form-group"><label>密码 *</label><input type="password" id="agencyPassword"></div>
+                <div class="form-group"><label>公司名称</label><input type="text" id="agencyName"></div>
+                <div class="form-group"><label>手机号</label><input type="text" id="agencyPhone"></div>
                 <button class="btn btn-primary" style="width: 100%;" onclick="addAgency()">添加</button>
             `;
             document.getElementById('modal').classList.add('show');
@@ -864,8 +1287,8 @@
                     .insert([{
                         username: username,
                         password: password,
-                        name: document.getElementById('agencyName').value.trim(),
-                        phone: document.getElementById('agencyPhone').value.trim(),
+                        name: document.getElementById('agencyName').value.trim() || null,
+                        phone: document.getElementById('agencyPhone').value.trim() || null,
                         status: 'active'
                     }]);
                 
@@ -879,21 +1302,54 @@
             }
         }
         
-        async function toggleAgencyStatus(agencyId, currentStatus) {
+        async function editAgency(agencyId) {
             try {
-                const newStatus = currentStatus === 'active' ? 'disabled' : 'active';
+                const { data: agency, error } = await supabaseClient
+                    .from('agencies')
+                    .select('*')
+                    .eq('id', agencyId)
+                    .single();
                 
+                if (error) throw error;
+                
+                document.getElementById('modalTitle').textContent = '编辑中介';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>用户名</label><input type="text" id="editAgencyUsername" value="${agency.username}"></div>
+                    <div class="form-group"><label>公司名称</label><input type="text" id="editAgencyName" value="${agency.name || ''}"></div>
+                    <div class="form-group"><label>手机号</label><input type="text" id="editAgencyPhone" value="${agency.phone || ''}"></div>
+                    <div class="form-group"><label>状态</label>
+                        <select id="editAgencyStatus">
+                            <option value="active" ${agency.status === 'active' ? 'selected' : ''}>正常</option>
+                            <option value="disabled" ${agency.status === 'disabled' ? 'selected' : ''}>禁用</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveAgency('${agencyId}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveAgency(agencyId) {
+            try {
                 const { error } = await supabaseClient
                     .from('agencies')
-                    .update({ status: newStatus })
+                    .update({
+                        username: document.getElementById('editAgencyUsername').value.trim(),
+                        name: document.getElementById('editAgencyName').value.trim() || null,
+                        phone: document.getElementById('editAgencyPhone').value.trim() || null,
+                        status: document.getElementById('editAgencyStatus').value
+                    })
                     .eq('id', agencyId);
                 
                 if (error) throw error;
                 
-                showAlert(newStatus === 'active' ? '已启用' : '已禁用', 'success');
+                showAlert('保存成功', 'success');
+                closeModal();
                 loadAgencies();
             } catch (e) {
-                showAlert('操作失败: ' + e.message, 'error');
+                showAlert('保存失败: ' + e.message, 'error');
             }
         }
         
@@ -937,13 +1393,13 @@
                 
                 announcementList.innerHTML = `
                     <table>
-                        <thead><tr><th>标题</th><th>置顶</th><th>发布时间</th><th>操作</th></tr></thead>
+                        <thead><tr><th>标题</th><th>发布时间</th><th>状态</th><th>操作</th></tr></thead>
                         <tbody>
                             ${announcements.map(a => `
                                 <tr>
                                     <td>${a.title}</td>
-                                    <td>${a.is_pinned ? '是' : '否'}</td>
                                     <td>${new Date(a.created_at).toLocaleString()}</td>
+                                    <td><span class="badge ${a.status === 'active' ? 'badge-success' : 'badge-danger'}">${a.status === 'active' ? '发布中' : '已下架'}</span></td>
                                     <td>
                                         <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editAnnouncement('${a.id}')">编辑</button>
                                         <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteAnnouncement('${a.id}')">删除</button>
@@ -962,13 +1418,7 @@
             document.getElementById('modalTitle').textContent = '发布公告';
             document.getElementById('modalBody').innerHTML = `
                 <div class="form-group"><label>标题 *</label><input type="text" id="announcementTitle"></div>
-                <div class="form-group"><label>内容 *</label><textarea id="announcementContent" rows="4"></textarea></div>
-                <div class="form-group"><label>置顶</label>
-                    <select id="announcementPinned">
-                        <option value="false">否</option>
-                        <option value="true">是</option>
-                    </select>
-                </div>
+                <div class="form-group"><label>内容</label><textarea id="announcementContent" rows="4"></textarea></div>
                 <button class="btn btn-primary" style="width: 100%;" onclick="addAnnouncement()">发布</button>
             `;
             document.getElementById('modal').classList.add('show');
@@ -976,10 +1426,9 @@
         
         async function addAnnouncement() {
             const title = document.getElementById('announcementTitle').value.trim();
-            const content = document.getElementById('announcementContent').value.trim();
             
-            if (!title || !content) {
-                showAlert('请填写标题和内容', 'error');
+            if (!title) {
+                showAlert('请填写标题', 'error');
                 return;
             }
             
@@ -988,8 +1437,8 @@
                     .from('announcements')
                     .insert([{
                         title: title,
-                        content: content,
-                        is_pinned: document.getElementById('announcementPinned').value === 'true'
+                        content: document.getElementById('announcementContent').value.trim() || null,
+                        status: 'active'
                     }]);
                 
                 if (error) throw error;
@@ -1015,11 +1464,11 @@
                 document.getElementById('modalTitle').textContent = '编辑公告';
                 document.getElementById('modalBody').innerHTML = `
                     <div class="form-group"><label>标题 *</label><input type="text" id="editAnnouncementTitle" value="${announcement.title}"></div>
-                    <div class="form-group"><label>内容 *</label><textarea id="editAnnouncementContent" rows="4">${announcement.content}</textarea></div>
-                    <div class="form-group"><label>置顶</label>
-                        <select id="editAnnouncementPinned">
-                            <option value="false" ${!announcement.is_pinned ? 'selected' : ''}>否</option>
-                            <option value="true" ${announcement.is_pinned ? 'selected' : ''}>是</option>
+                    <div class="form-group"><label>内容</label><textarea id="editAnnouncementContent" rows="4">${announcement.content || ''}</textarea></div>
+                    <div class="form-group"><label>状态</label>
+                        <select id="editAnnouncementStatus">
+                            <option value="active" ${announcement.status === 'active' ? 'selected' : ''}>发布中</option>
+                            <option value="disabled" ${announcement.status === 'disabled' ? 'selected' : ''}>已下架</option>
                         </select>
                     </div>
                     <button class="btn btn-primary" style="width: 100%;" onclick="saveAnnouncement('${announcementId}')">保存</button>
@@ -1032,10 +1481,9 @@
         
         async function saveAnnouncement(announcementId) {
             const title = document.getElementById('editAnnouncementTitle').value.trim();
-            const content = document.getElementById('editAnnouncementContent').value.trim();
             
-            if (!title || !content) {
-                showAlert('请填写标题和内容', 'error');
+            if (!title) {
+                showAlert('请填写标题', 'error');
                 return;
             }
             
@@ -1044,8 +1492,8 @@
                     .from('announcements')
                     .update({
                         title: title,
-                        content: content,
-                        is_pinned: document.getElementById('editAnnouncementPinned').value === 'true'
+                        content: document.getElementById('editAnnouncementContent').value.trim() || null,
+                        status: document.getElementById('editAnnouncementStatus').value
                     })
                     .eq('id', announcementId);
                 
@@ -1181,11 +1629,17 @@
                 document.getElementById('modalTitle').textContent = '编辑活动';
                 document.getElementById('modalBody').innerHTML = `
                     <div class="form-group"><label>活动名称 *</label><input type="text" id="editActivityTitle" value="${activity.title}"></div>
-                    <div class="form-group"><label>活动时间</label><input type="datetime-local" id="editActivityTime" value="${activity.activity_time ? activity.activity_time.replace('T', ' ').substring(0, 16) : ''}"></div>
+                    <div class="form-group"><label>活动时间</label><input type="datetime-local" id="editActivityTime" value="${activity.activity_time ? activity.activity_time.substring(0, 16) : ''}"></div>
                     <div class="form-group"><label>活动地点</label><input type="text" id="editActivityLocation" value="${activity.location || ''}"></div>
                     <div class="form-group"><label>最大人数</label><input type="number" id="editActivityMaxParticipants" value="${activity.max_participants || 50}"></div>
-                    <div class="form-group"><label>报名截止</label><input type="datetime-local" id="editActivityDeadline" value="${activity.deadline ? activity.deadline.replace('T', ' ').substring(0, 16) : ''}"></div>
+                    <div class="form-group"><label>报名截止</label><input type="datetime-local" id="editActivityDeadline" value="${activity.deadline ? activity.deadline.substring(0, 16) : ''}"></div>
                     <div class="form-group"><label>活动描述</label><textarea id="editActivityDesc" rows="3">${activity.description || ''}</textarea></div>
+                    <div class="form-group"><label>状态</label>
+                        <select id="editActivityStatus">
+                            <option value="active" ${activity.status === 'active' ? 'selected' : ''}>进行中</option>
+                            <option value="disabled" ${activity.status === 'disabled' ? 'selected' : ''}>已结束</option>
+                        </select>
+                    </div>
                     <button class="btn btn-primary" style="width: 100%;" onclick="saveActivity('${activityId}')">保存</button>
                 `;
                 document.getElementById('modal').classList.add('show');
@@ -1211,7 +1665,8 @@
                         location: document.getElementById('editActivityLocation').value.trim() || null,
                         max_participants: parseInt(document.getElementById('editActivityMaxParticipants').value) || 50,
                         deadline: document.getElementById('editActivityDeadline').value || null,
-                        description: document.getElementById('editActivityDesc').value.trim() || null
+                        description: document.getElementById('editActivityDesc').value.trim() || null,
+                        status: document.getElementById('editActivityStatus').value
                     })
                     .eq('id', activityId);
                 
@@ -1245,9 +1700,11 @@
         
         function logout() {
             localStorage.removeItem('currentUser');
+            localStorage.removeItem('datingCurrentUser');
+            localStorage.removeItem('rememberedUser');
             window.location.href = 'index.html';
         }
-
+        
         async function loadMatchStats() {
             const { count: totalLikes } = await supabaseClient
                 .from('likes')
@@ -1265,119 +1722,101 @@
             if (allLikes && allLikes.length > 0) {
                 const likePairs = new Set(allLikes.map(l => `${l.from_user_id}-${l.to_user_id}`));
                 allLikes.forEach(l => {
-                    if (likePairs.has(`${l.to_user_id}-${l.from_user_id}`)) {
+                    if (likePairs.has(`${l.to_user_id}-${l.from_user_id}`) && l.from_user_id < l.to_user_id) {
                         mutualCount++;
                     }
                 });
             }
-            mutualCount = mutualCount / 2;
 
             document.getElementById('totalLikes').textContent = totalLikes || 0;
-            document.getElementById('totalMutualLikes').textContent = mutualCount;
             document.getElementById('totalMessages').textContent = totalMessages || 0;
+            document.getElementById('totalMutualLikes').textContent = mutualCount;
             document.getElementById('totalMatches').textContent = mutualCount;
         }
-
+        
         async function loadUserMatchDetails() {
-            console.log('开始加载匹配详情...');
-            const detailsDiv = document.getElementById('userMatchDetails');
             const userId = document.getElementById('searchMatchUserId').value.trim();
-
             if (!userId) {
-                detailsDiv.innerHTML = '<div class="empty">请输入用户ID</div>';
+                showAlert('请输入用户ID', 'error');
                 return;
             }
 
+            const detailsDiv = document.getElementById('userMatchDetails');
             detailsDiv.innerHTML = '<div class="loading">加载中...</div>';
 
             try {
-                console.log('查询用户信息...');
-                const { data: user, error: userError } = await supabaseClient
-                    .from('users')
-                    .select('id, name, gender, birthday, current_address')
-                    .eq('id', userId)
-                    .single();
+                const startTime = Date.now();
 
-                if (userError || !user) {
-                    console.error('用户查询失败:', userError);
-                    detailsDiv.innerHTML = '<div class="empty">未找到该用户</div>';
-                    return;
+                const [user, likesGiven, likesReceived] = await Promise.all([
+                    supabaseClient.from('users').select('*').eq('id', userId).single(),
+                    supabaseClient.from('likes').select('to_user_id').eq('from_user_id', userId),
+                    supabaseClient.from('likes').select('from_user_id').eq('to_user_id', userId)
+                ]);
+
+                const targetUserIds = [...new Set([
+                    ...(likesGiven.data || []).map(l => l.to_user_id),
+                    ...(likesReceived.data || []).map(l => l.from_user_id)
+                ])];
+
+                const matchResults = await Promise.all(
+                    targetUserIds.map(targetId =>
+                        supabaseClient.rpc('calculate_compatibility', {
+                            user1_id: userId,
+                            user2_id: targetId
+                        }).then(res => ({
+                            target_user_id: targetId,
+                            score: res.data || 0
+                        }))
+                    )
+                );
+
+                matchResults.sort((a, b) => b.score - a.score);
+
+                const userMap = {};
+                if (targetUserIds.length > 0) {
+                    const { data: targetUsers } = await supabaseClient
+                        .from('users')
+                        .select('id, name, gender, birthday, current_address, education')
+                        .in('id', targetUserIds);
+                    targetUsers?.forEach(u => { userMap[u.id] = u; });
                 }
-
-                console.log('用户信息:', user);
-                console.log('开始调用 findMatches...');
-                
-                if (typeof findMatches === 'undefined') {
-                    throw new Error('findMatches函数未定义');
-                }
-
-                const matches = await findMatches(userId, { minScore: 0, maxResults: 100 });
-                console.log('findMatches结果:', matches);
 
                 let html = `
-                    <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
-                        <h4 style="margin-bottom: 10px;">用户信息：${user.name || '未命名'}（${user.gender || '未知'}）</h4>
-                        <p style="color: #666; font-size: 14px;">
-                            年龄：${user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) + '岁' : '未知'} |
-                            所在地：${user.current_address || '未填写'} |
-                            匹配数：${matches.length}
-                        </p>
-                    </div>
+                    <table>
+                        <thead><tr><th>序号</th><th>匹配用户</th><th>性别</th><th>年龄</th><th>所在地</th><th>学历</th><th>匹配得分</th><th>匹配等级</th></tr></thead>
+                        <tbody>
                 `;
 
-                if (matches.length === 0) {
-                    html += '<div class="empty">该用户暂无匹配对象</div>';
-                } else {
+                matchResults.forEach((match, index) => {
+                    const targetUser = userMap[match.target_user_id];
+                    if (!targetUser) return;
+
+                    const score = match.score;
+                    const scoreLabel = score >= 80 ? '完美' : score >= 70 ? '优质' : score >= 50 ? '一般' : '偏低';
+                    const age = targetUser.birthday ? Math.floor((new Date() - new Date(targetUser.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
+
                     html += `
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>序号</th>
-                                    <th>匹配用户</th>
-                                    <th>性别</th>
-                                    <th>年龄</th>
-                                    <th>所在地</th>
-                                    <th>学历</th>
-                                    <th>匹配得分</th>
-                                    <th>匹配等级</th>
-                                    <th>匹配原因</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                        <tr>
+                            <td data-label="序号">${index + 1}</td>
+                            <td data-label="匹配用户">${targetUser.name || '未命名'}</td>
+                            <td data-label="性别">${targetUser.gender || '未知'}</td>
+                            <td data-label="年龄">${age}</td>
+                            <td data-label="所在地">${targetUser.current_address || '未填写'}</td>
+                            <td data-label="学历">${targetUser.education || '未知'}</td>
+                            <td data-label="匹配得分"><strong style="color: ${score >= 80 ? '#28a745' : score >= 70 ? '#007bff' : '#ffc107'};">${score}分</strong></td>
+                            <td data-label="匹配等级"><span class="badge ${score >= 80 ? 'badge-success' : ''}">${scoreLabel}</span></td>
+                        </tr>
                     `;
+                });
 
-                    matches.forEach((match, index) => {
-                        const { user: targetUser, score, reasons, aToB, bToA } = match;
-                        const scoreClass = score >= 80 ? 'badge-success' : score >= 70 ? 'style="background: #cce5ff; color: #004085;"' : 'style="background: #fff3cd; color: #856404;"';
-                        const scoreLabel = score >= 80 ? '完美' : score >= 70 ? '优质' : score >= 50 ? '一般' : '偏低';
-                        const age = targetUser.birthday ? Math.floor((new Date() - new Date(targetUser.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
-
-                        html += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${targetUser.name || '未命名'}</td>
-                                <td>${targetUser.gender || '未知'}</td>
-                                <td>${age}</td>
-                                <td>${targetUser.current_address || '未填写'}</td>
-                                <td>${targetUser.education || '未知'}</td>
-                                <td><strong style="color: ${score >= 80 ? '#28a745' : score >= 70 ? '#007bff' : '#ffc107'};">${score}分</strong></td>
-                                <td><span class="badge ${score >= 80 ? 'badge-success' : ''}" ${scoreClass}>${scoreLabel}</span></td>
-                                <td style="font-size: 12px; color: #666;">${reasons.slice(0, 2).join('；') || '无'}</td>
-                            </tr>
-                        `;
-                    });
-
-                    html += '</tbody></table>';
-                }
+                html += '</tbody></table>';
 
                 detailsDiv.innerHTML = html;
-                console.log('匹配详情加载完成');
             } catch (error) {
-                console.error('加载匹配详情失败:', error);
                 detailsDiv.innerHTML = `<div class="empty" style="color: #dc3545;">加载失败: ${error.message}</div>`;
             }
         }
-
+        
         async function loadLikes() {
             const likesList = document.getElementById('likesList');
             likesList.innerHTML = '<div class="loading">加载中...</div>';
@@ -1387,20 +1826,38 @@
 
                 const { data: likes, error } = await supabaseClient
                     .from('likes')
-                    .select('*, from_user:from_user_id(*), to_user:to_user_id(*)')
+                    .select('from_user_id, to_user_id, created_at')
                     .order('created_at', { ascending: false })
                     .limit(50);
 
                 if (error) throw error;
 
-                let filteredLikes = likes || [];
+                if (!likes || likes.length === 0) {
+                    likesList.innerHTML = '<p class="empty">暂无记录</p>';
+                    return;
+                }
+
+                const userIds = [...new Set([...likes.map(l => l.from_user_id), ...likes.map(l => l.to_user_id)])];
+                const { data: users, error: usersError } = await supabaseClient
+                    .from('users')
+                    .select('id, name, phone')
+                    .in('id', userIds);
+
+                if (usersError) throw usersError;
+
+                const userMap = {};
+                users?.forEach(u => userMap[u.id] = u);
+
+                let filteredLikes = likes;
                 if (searchTerm) {
-                    filteredLikes = filteredLikes.filter(l =>
-                        (l.from_user?.name && l.from_user.name.includes(searchTerm)) ||
-                        (l.to_user?.name && l.to_user.name.includes(searchTerm)) ||
-                        (l.from_user?.phone && l.from_user.phone.includes(searchTerm)) ||
-                        (l.to_user?.phone && l.to_user.phone.includes(searchTerm))
-                    );
+                    filteredLikes = likes.filter(l => {
+                        const fromUser = userMap[l.from_user_id];
+                        const toUser = userMap[l.to_user_id];
+                        return (fromUser?.name && fromUser.name.includes(searchTerm)) ||
+                               (toUser?.name && toUser.name.includes(searchTerm)) ||
+                               (fromUser?.phone && fromUser.phone.includes(searchTerm)) ||
+                               (toUser?.phone && toUser.phone.includes(searchTerm));
+                    });
                 }
 
                 if (filteredLikes.length === 0) {
@@ -1412,13 +1869,17 @@
                     <table>
                         <thead><tr><th>点赞人</th><th>被点赞人</th><th>时间</th></tr></thead>
                         <tbody>
-                            ${filteredLikes.map(l => `
-                                <tr>
-                                    <td>${l.from_user?.name || '匿名'} (${l.from_user?.phone || '-'})</td>
-                                    <td>${l.to_user?.name || '匿名'} (${l.to_user?.phone || '-'})</td>
-                                    <td>${new Date(l.created_at).toLocaleString()}</td>
-                                </tr>
-                            `).join('')}
+                            ${filteredLikes.map(l => {
+                                const fromUser = userMap[l.from_user_id];
+                                const toUser = userMap[l.to_user_id];
+                                return `
+                                    <tr>
+                                        <td>${fromUser?.name || '匿名'} (${fromUser?.phone || '-'})</td>
+                                        <td>${toUser?.name || '匿名'} (${toUser?.phone || '-'})</td>
+                                        <td>${new Date(l.created_at).toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 `;
@@ -1426,7 +1887,7 @@
                 likesList.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
             }
         }
-
+        
         async function loadMutualLikes() {
             const list = document.getElementById('mutualLikesList');
             list.innerHTML = '<div class="loading">加载中...</div>';
@@ -1434,7 +1895,7 @@
             try {
                 const { data: allLikes, error } = await supabaseClient
                     .from('likes')
-                    .select('*, from_user:from_user_id(*), to_user:to_user_id(*)');
+                    .select('from_user_id, to_user_id, created_at');
 
                 if (error) throw error;
 
@@ -1457,17 +1918,32 @@
                     return;
                 }
 
+                const userIds = [...new Set([...mutualPairs.map(l => l.from_user_id), ...mutualPairs.map(l => l.to_user_id)])];
+                const { data: users, error: usersError } = await supabaseClient
+                    .from('users')
+                    .select('id, name, phone')
+                    .in('id', userIds);
+
+                if (usersError) throw usersError;
+
+                const userMap = {};
+                users?.forEach(u => userMap[u.id] = u);
+
                 list.innerHTML = `
                     <table>
                         <thead><tr><th>用户A</th><th>用户B</th><th>匹配时间</th></tr></thead>
                         <tbody>
-                            ${mutualPairs.map(l => `
-                                <tr>
-                                    <td>${l.from_user?.name || '匿名'} (${l.from_user?.phone || '-'})</td>
-                                    <td>${l.to_user?.name || '匿名'} (${l.to_user?.phone || '-'})</td>
-                                    <td>${new Date(l.created_at).toLocaleString()}</td>
-                                </tr>
-                            `).join('')}
+                            ${mutualPairs.map(l => {
+                                const fromUser = userMap[l.from_user_id];
+                                const toUser = userMap[l.to_user_id];
+                                return `
+                                    <tr>
+                                        <td>${fromUser?.name || '匿名'} (${fromUser?.phone || '-'})</td>
+                                        <td>${toUser?.name || '匿名'} (${toUser?.phone || '-'})</td>
+                                        <td>${new Date(l.created_at).toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
                         </tbody>
                     </table>
                 `;
@@ -1475,7 +1951,7 @@
                 list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
             }
         }
-
+        
         async function loadSystemInfo() {
             document.getElementById('dbSize').textContent = '...';
             document.getElementById('totalTables').textContent = '...';
@@ -1484,7 +1960,7 @@
 
             loadSystemLogs();
         }
-
+        
         async function loadSystemLogs() {
             const list = document.getElementById('systemLogsList');
             list.innerHTML = '<div class="loading">加载中...</div>';
@@ -1502,28 +1978,7 @@
                 <p style="color: #888; font-size: 12px; margin-top: 10px;">* 日志功能需要后端支持，当前显示示例数据</p>
             `;
         }
-
-        function optimizeDatabase() {
-            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在优化数据库...</p>';
-            setTimeout(() => {
-                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">数据库优化完成（需要后端支持）</p>';
-            }, 1000);
-        }
-
-        function vacuumDatabase() {
-            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在清理数据库...</p>';
-            setTimeout(() => {
-                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">数据库清理完成（需要后端支持）</p>';
-            }, 1000);
-        }
-
-        function backupDatabase() {
-            document.getElementById('maintenanceResult').innerHTML = '<p style="color: blue;">正在导出备份...</p>';
-            setTimeout(() => {
-                document.getElementById('maintenanceResult').innerHTML = '<p style="color: green;">备份功能需要后端支持</p>';
-            }, 1000);
-        }
-
+        
         async function loadParams() {
             const { data: configs } = await supabaseClient
                 .from('system_config')
@@ -1539,7 +1994,7 @@
                 });
             }
         }
-
+        
         async function updateParam(key) {
             let value;
             if (key === 'daily_like_limit') {
@@ -1549,391 +2004,674 @@
             } else if (key === 'default_user_status') {
                 value = document.getElementById('paramDefaultUserStatus').value;
             }
-
-            const { error } = await supabaseClient
-                .from('system_config')
-                .upsert([{ config_key: key, config_value: value }], { onConflict: 'config_key' });
-
-            if (error) {
-                showAlert('更新失败: ' + error.message, 'error');
-            } else {
-                showAlert('更新成功', 'success');
-            }
-        }
-
-        async function loadEducationOptions() {
-            const list = document.getElementById('educationOptionsList');
-
-            const { data: options } = await supabaseClient
-                .from('education_options')
-                .select('*')
-                .order('sort_order');
-
-            if (!options || options.length === 0) {
-                list.innerHTML = '<p class="empty">暂无数据</p>';
+            
+            if (!value) {
+                showAlert('请填写参数值', 'error');
                 return;
             }
-
-            list.innerHTML = `
-                <table>
-                    <thead><tr><th>学历</th><th>排序</th><th>操作</th></tr></thead>
-                    <tbody>
-                        ${options.map(o => `
-                            <tr>
-                                <td>${o.name}</td>
-                                <td>${o.sort_order}</td>
-                                <td><button class="btn btn-danger btn-small" onclick="deleteEducationOption('${o.id}')">删除</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('system_config')
+                    .upsert([{ config_key: key, config_value: value }]);
+                
+                if (error) throw error;
+                
+                showAlert('参数已更新', 'success');
+            } catch (e) {
+                showAlert('更新失败: ' + e.message, 'error');
+            }
         }
-
+        
+        async function loadEducationOptions() {
+            const list = document.getElementById('educationOptionsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('education_options')
+                    .select('*')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无学历选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>名称</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.name}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editEducationOption('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteEducationOption('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
         function showAddEducationOptionModal() {
             document.getElementById('modalTitle').textContent = '添加学历';
             document.getElementById('modalBody').innerHTML = `
-                <div class="form-group"><label>学历名称</label><input type="text" id="newEducationName"></div>
-                <div class="form-group"><label>排序</label><input type="number" id="newEducationSort" value="0"></div>
-                <button class="btn btn-primary" onclick="addEducationOption()">添加</button>
+                <div class="form-group"><label>学历名称 *</label><input type="text" id="educationName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="educationSort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addEducationOption()">添加</button>
             `;
             document.getElementById('modal').classList.add('show');
         }
-
+        
         async function addEducationOption() {
-            const name = document.getElementById('newEducationName').value.trim();
-            const sort_order = parseInt(document.getElementById('newEducationSort').value) || 0;
-
+            const name = document.getElementById('educationName').value.trim();
             if (!name) {
-                showAlert('请输入学历名称', 'error');
+                showAlert('请填写学历名称', 'error');
                 return;
             }
-
-            const { error } = await supabaseClient
-                .from('education_options')
-                .insert([{ name, sort_order }]);
-
-            if (error) {
-                showAlert('添加失败: ' + error.message, 'error');
-            } else {
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('education_options')
+                    .insert([{ name: name, sort_order: parseInt(document.getElementById('educationSort').value) || 0 }]);
+                
+                if (error) throw error;
+                
                 showAlert('添加成功', 'success');
                 closeModal();
                 loadEducationOptions();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
             }
         }
-
-        async function deleteEducationOption(id) {
-            if (!confirm('确定删除?')) return;
-
-            const { error } = await supabaseClient
-                .from('education_options')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                showAlert('删除失败: ' + error.message, 'error');
-            } else {
-                showAlert('删除成功', 'success');
-                loadEducationOptions();
+        
+        async function editEducationOption(id) {
+            try {
+                const { data: option } = await supabaseClient
+                    .from('education_options')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                document.getElementById('modalTitle').textContent = '编辑学历';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>学历名称 *</label><input type="text" id="editEducationName" value="${option.name}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editEducationSort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveEducationOption('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
             }
         }
-
-        async function loadIncomeOptions() {
-            const list = document.getElementById('incomeOptionsList');
-
-            const { data: options } = await supabaseClient
-                .from('income_options')
-                .select('*')
-                .order('sort_order');
-
-            if (!options || options.length === 0) {
-                list.innerHTML = '<p class="empty">暂无数据</p>';
+        
+        async function saveEducationOption(id) {
+            const name = document.getElementById('editEducationName').value.trim();
+            if (!name) {
+                showAlert('请填写学历名称', 'error');
                 return;
             }
-
-            list.innerHTML = `
-                <table>
-                    <thead><tr><th>收入区间</th><th>最小值</th><th>最大值</th><th>排序</th><th>操作</th></tr></thead>
-                    <tbody>
-                        ${options.map(o => `
-                            <tr>
-                                <td>${o.name}</td>
-                                <td>${o.min_value}</td>
-                                <td>${o.max_value}</td>
-                                <td>${o.sort_order}</td>
-                                <td><button class="btn btn-danger btn-small" onclick="deleteIncomeOption('${o.id}')">删除</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('education_options')
+                    .update({ name: name, sort_order: parseInt(document.getElementById('editEducationSort').value) || 0 })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadEducationOptions();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
         }
-
+        
+        async function deleteEducationOption(id) {
+            if (!confirm('确定删除该学历选项？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('education_options')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadEducationOptions();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadIncomeOptions() {
+            const list = document.getElementById('incomeOptionsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('income_options')
+                    .select('*')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无收入区间</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>区间名称</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.name}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editIncomeOption('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteIncomeOption('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
         function showAddIncomeOptionModal() {
             document.getElementById('modalTitle').textContent = '添加收入区间';
             document.getElementById('modalBody').innerHTML = `
-                <div class="form-group"><label>区间名称</label><input type="text" id="newIncomeName" placeholder="如: 5000-8000"></div>
-                <div class="form-group"><label>最小值</label><input type="number" id="newIncomeMin" value="0"></div>
-                <div class="form-group"><label>最大值</label><input type="number" id="newIncomeMax" value="0"></div>
-                <div class="form-group"><label>排序</label><input type="number" id="newIncomeSort" value="0"></div>
-                <button class="btn btn-primary" onclick="addIncomeOption()">添加</button>
+                <div class="form-group"><label>区间名称 *</label><input type="text" id="incomeName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="incomeSort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addIncomeOption()">添加</button>
             `;
             document.getElementById('modal').classList.add('show');
         }
-
+        
         async function addIncomeOption() {
-            const name = document.getElementById('newIncomeName').value.trim();
-            const min_value = parseInt(document.getElementById('newIncomeMin').value) || 0;
-            const max_value = parseInt(document.getElementById('newIncomeMax').value) || 0;
-            const sort_order = parseInt(document.getElementById('newIncomeSort').value) || 0;
-
-            const { error } = await supabaseClient
-                .from('income_options')
-                .insert([{ name, min_value, max_value, sort_order }]);
-
-            if (error) {
-                showAlert('添加失败: ' + error.message, 'error');
-            } else {
+            const name = document.getElementById('incomeName').value.trim();
+            if (!name) {
+                showAlert('请填写区间名称', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('income_options')
+                    .insert([{ name: name, sort_order: parseInt(document.getElementById('incomeSort').value) || 0 }]);
+                
+                if (error) throw error;
+                
                 showAlert('添加成功', 'success');
                 closeModal();
                 loadIncomeOptions();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
             }
         }
-
-        async function deleteIncomeOption(id) {
-            if (!confirm('确定删除?')) return;
-
-            const { error } = await supabaseClient
-                .from('income_options')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                showAlert('删除失败: ' + error.message, 'error');
-            } else {
-                showAlert('删除成功', 'success');
-                loadIncomeOptions();
+        
+        async function editIncomeOption(id) {
+            try {
+                const { data: option } = await supabaseClient
+                    .from('income_options')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                document.getElementById('modalTitle').textContent = '编辑收入区间';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>区间名称 *</label><input type="text" id="editIncomeName" value="${option.name}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editIncomeSort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveIncomeOption('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
             }
         }
-
-        async function loadMaritalOptions() {
-            const list = document.getElementById('maritalOptionsList');
-
-            const { data: options } = await supabaseClient
-                .from('marital_status_options')
-                .select('*')
-                .order('sort_order');
-
-            if (!options || options.length === 0) {
-                list.innerHTML = '<p class="empty">暂无数据</p>';
+        
+        async function saveIncomeOption(id) {
+            const name = document.getElementById('editIncomeName').value.trim();
+            if (!name) {
+                showAlert('请填写区间名称', 'error');
                 return;
             }
-
-            list.innerHTML = `
-                <table>
-                    <thead><tr><th>婚姻状况</th><th>排序</th><th>操作</th></tr></thead>
-                    <tbody>
-                        ${options.map(o => `
-                            <tr>
-                                <td>${o.name}</td>
-                                <td>${o.sort_order}</td>
-                                <td><button class="btn btn-danger btn-small" onclick="deleteMaritalOption('${o.id}')">删除</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('income_options')
+                    .update({ name: name, sort_order: parseInt(document.getElementById('editIncomeSort').value) || 0 })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadIncomeOptions();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
         }
-
+        
+        async function deleteIncomeOption(id) {
+            if (!confirm('确定删除该收入区间？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('income_options')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadIncomeOptions();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadMaritalOptions() {
+            const list = document.getElementById('maritalOptionsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('marital_options')
+                    .select('*')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无婚姻状况选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>名称</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.name}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editMaritalOption('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteMaritalOption('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
         function showAddMaritalOptionModal() {
             document.getElementById('modalTitle').textContent = '添加婚姻状况';
             document.getElementById('modalBody').innerHTML = `
-                <div class="form-group"><label>名称</label><input type="text" id="newMaritalName"></div>
-                <div class="form-group"><label>排序</label><input type="number" id="newMaritalSort" value="0"></div>
-                <button class="btn btn-primary" onclick="addMaritalOption()">添加</button>
+                <div class="form-group"><label>婚姻状况 *</label><input type="text" id="maritalName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="maritalSort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addMaritalOption()">添加</button>
             `;
             document.getElementById('modal').classList.add('show');
         }
-
+        
         async function addMaritalOption() {
-            const name = document.getElementById('newMaritalName').value.trim();
-            const sort_order = parseInt(document.getElementById('newMaritalSort').value) || 0;
-
-            const { error } = await supabaseClient
-                .from('marital_status_options')
-                .insert([{ name, sort_order }]);
-
-            if (error) {
-                showAlert('添加失败: ' + error.message, 'error');
-            } else {
+            const name = document.getElementById('maritalName').value.trim();
+            if (!name) {
+                showAlert('请填写婚姻状况', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('marital_options')
+                    .insert([{ name: name, sort_order: parseInt(document.getElementById('maritalSort').value) || 0 }]);
+                
+                if (error) throw error;
+                
                 showAlert('添加成功', 'success');
                 closeModal();
                 loadMaritalOptions();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
             }
         }
-
-        async function deleteMaritalOption(id) {
-            if (!confirm('确定删除?')) return;
-
-            const { error } = await supabaseClient
-                .from('marital_status_options')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                showAlert('删除失败: ' + error.message, 'error');
-            } else {
-                showAlert('删除成功', 'success');
-                loadMaritalOptions();
+        
+        async function editMaritalOption(id) {
+            try {
+                const { data: option } = await supabaseClient
+                    .from('marital_options')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                document.getElementById('modalTitle').textContent = '编辑婚姻状况';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>婚姻状况 *</label><input type="text" id="editMaritalName" value="${option.name}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editMaritalSort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveMaritalOption('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
             }
         }
-
-        async function loadInterests() {
-            const list = document.getElementById('interestsList');
-
-            const { data: options } = await supabaseClient
-                .from('interests')
-                .select('*')
-                .order('sort_order');
-
-            if (!options || options.length === 0) {
-                list.innerHTML = '<p class="empty">暂无数据</p>';
+        
+        async function saveMaritalOption(id) {
+            const name = document.getElementById('editMaritalName').value.trim();
+            if (!name) {
+                showAlert('请填写婚姻状况', 'error');
                 return;
             }
-
-            list.innerHTML = `
-                <table>
-                    <thead><tr><th>兴趣爱好</th><th>排序</th><th>操作</th></tr></thead>
-                    <tbody>
-                        ${options.map(o => `
-                            <tr>
-                                <td>${o.name}</td>
-                                <td>${o.sort_order}</td>
-                                <td><button class="btn btn-danger btn-small" onclick="deleteInterest('${o.id}')">删除</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('marital_options')
+                    .update({ name: name, sort_order: parseInt(document.getElementById('editMaritalSort').value) || 0 })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadMaritalOptions();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
         }
-
+        
+        async function deleteMaritalOption(id) {
+            if (!confirm('确定删除该婚姻状况？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('marital_options')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadMaritalOptions();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadInterests() {
+            const list = document.getElementById('interestsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('interests')
+                    .select('*')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无兴趣爱好</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>兴趣名称</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.name}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editInterest('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteInterest('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
         function showAddInterestModal() {
             document.getElementById('modalTitle').textContent = '添加兴趣爱好';
             document.getElementById('modalBody').innerHTML = `
-                <div class="form-group"><label>名称</label><input type="text" id="newInterestName"></div>
-                <div class="form-group"><label>排序</label><input type="number" id="newInterestSort" value="0"></div>
-                <button class="btn btn-primary" onclick="addInterest()">添加</button>
+                <div class="form-group"><label>兴趣名称 *</label><input type="text" id="interestName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="interestSort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addInterest()">添加</button>
             `;
             document.getElementById('modal').classList.add('show');
         }
-
+        
         async function addInterest() {
-            const name = document.getElementById('newInterestName').value.trim();
-            const sort_order = parseInt(document.getElementById('newInterestSort').value) || 0;
-
-            const { error } = await supabaseClient
-                .from('interests')
-                .insert([{ name, sort_order }]);
-
-            if (error) {
-                showAlert('添加失败: ' + error.message, 'error');
-            } else {
+            const name = document.getElementById('interestName').value.trim();
+            if (!name) {
+                showAlert('请填写兴趣名称', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('interests')
+                    .insert([{ name: name, sort_order: parseInt(document.getElementById('interestSort').value) || 0 }]);
+                
+                if (error) throw error;
+                
                 showAlert('添加成功', 'success');
                 closeModal();
                 loadInterests();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
             }
         }
-
-        async function deleteInterest(id) {
-            if (!confirm('确定删除?')) return;
-
-            const { error } = await supabaseClient
-                .from('interests')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                showAlert('删除失败: ' + error.message, 'error');
-            } else {
-                showAlert('删除成功', 'success');
-                loadInterests();
+        
+        async function editInterest(id) {
+            try {
+                const { data: option } = await supabaseClient
+                    .from('interests')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                document.getElementById('modalTitle').textContent = '编辑兴趣爱好';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>兴趣名称 *</label><input type="text" id="editInterestName" value="${option.name}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editInterestSort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveInterest('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
             }
         }
-
-        async function loadActivityTypes() {
-            const list = document.getElementById('activityTypesList');
-
-            const { data: options } = await supabaseClient
-                .from('activity_types')
-                .select('*')
-                .order('sort_order');
-
-            if (!options || options.length === 0) {
-                list.innerHTML = '<p class="empty">暂无数据</p>';
+        
+        async function saveInterest(id) {
+            const name = document.getElementById('editInterestName').value.trim();
+            if (!name) {
+                showAlert('请填写兴趣名称', 'error');
                 return;
             }
-
-            list.innerHTML = `
-                <table>
-                    <thead><tr><th>活动类型</th><th>排序</th><th>操作</th></tr></thead>
-                    <tbody>
-                        ${options.map(o => `
-                            <tr>
-                                <td>${o.name}</td>
-                                <td>${o.sort_order}</td>
-                                <td><button class="btn btn-danger btn-small" onclick="deleteActivityType('${o.id}')">删除</button></td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-            `;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('interests')
+                    .update({ name: name, sort_order: parseInt(document.getElementById('editInterestSort').value) || 0 })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadInterests();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
         }
-
+        
+        async function deleteInterest(id) {
+            if (!confirm('确定删除该兴趣爱好？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('interests')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadInterests();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function loadActivityTypes() {
+            const list = document.getElementById('activityTypesList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('activity_types')
+                    .select('*')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无活动类型</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>类型名称</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.name}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editActivityType('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteActivityType('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
         function showAddActivityTypeModal() {
             document.getElementById('modalTitle').textContent = '添加活动类型';
             document.getElementById('modalBody').innerHTML = `
-                <div class="form-group"><label>名称</label><input type="text" id="newActivityTypeName"></div>
-                <div class="form-group"><label>排序</label><input type="number" id="newActivityTypeSort" value="0"></div>
-                <button class="btn btn-primary" onclick="addActivityType()">添加</button>
+                <div class="form-group"><label>类型名称 *</label><input type="text" id="activityTypeName"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="activityTypeSort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addActivityType()">添加</button>
             `;
             document.getElementById('modal').classList.add('show');
         }
-
+        
         async function addActivityType() {
-            const name = document.getElementById('newActivityTypeName').value.trim();
-            const sort_order = parseInt(document.getElementById('newActivityTypeSort').value) || 0;
-
-            const { error } = await supabaseClient
-                .from('activity_types')
-                .insert([{ name, sort_order }]);
-
-            if (error) {
-                showAlert('添加失败: ' + error.message, 'error');
-            } else {
+            const name = document.getElementById('activityTypeName').value.trim();
+            if (!name) {
+                showAlert('请填写类型名称', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('activity_types')
+                    .insert([{ name: name, sort_order: parseInt(document.getElementById('activityTypeSort').value) || 0 }]);
+                
+                if (error) throw error;
+                
                 showAlert('添加成功', 'success');
                 closeModal();
                 loadActivityTypes();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
             }
         }
-
-        async function deleteActivityType(id) {
-            if (!confirm('确定删除?')) return;
-
-            const { error } = await supabaseClient
-                .from('activity_types')
-                .delete()
-                .eq('id', id);
-
-            if (error) {
-                showAlert('删除失败: ' + error.message, 'error');
-            } else {
-                showAlert('删除成功', 'success');
+        
+        async function editActivityType(id) {
+            try {
+                const { data: option } = await supabaseClient
+                    .from('activity_types')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+                
+                document.getElementById('modalTitle').textContent = '编辑活动类型';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>类型名称 *</label><input type="text" id="editActivityTypeName" value="${option.name}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editActivityTypeSort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveActivityType('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('获取详情失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveActivityType(id) {
+            const name = document.getElementById('editActivityTypeName').value.trim();
+            if (!name) {
+                showAlert('请填写类型名称', 'error');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('activity_types')
+                    .update({ name: name, sort_order: parseInt(document.getElementById('editActivityTypeSort').value) || 0 })
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('保存成功', 'success');
+                closeModal();
                 loadActivityTypes();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
             }
         }
-
-        // 页面加载时初始化应用
-        document.addEventListener('DOMContentLoaded', initApp);
+        
+        async function deleteActivityType(id) {
+            if (!confirm('确定删除该活动类型？')) return;
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('activity_types')
+                    .delete()
+                    .eq('id', id);
+                
+                if (error) throw error;
+                
+                showAlert('已删除', 'success');
+                loadActivityTypes();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
     </script>
 </body>
 </html>

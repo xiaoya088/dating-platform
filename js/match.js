@@ -76,11 +76,6 @@ function calculateMultiSelectScore(myValues, reqValues) {
     return jaccardSimilarity(myValues, reqValues) * 100;
 }
 
-function getCurrentUser() {
-    const userStr = localStorage.getItem('currentUser');
-    return userStr ? JSON.parse(userStr) : null;
-}
-
 async function fetchUserData(userId) {
     const supabase = getSupabaseClient();
     if (!supabase) {
@@ -110,7 +105,6 @@ async function fetchUserData(userId) {
         console.warn('Error fetching requirements:', reqError);
     }
 
-    // 获取用户照片
     const { data: photos, error: photosError } = await supabase
         .from('user_photos')
         .select('photo_url')
@@ -121,6 +115,10 @@ async function fetchUserData(userId) {
         console.warn('Error fetching photos:', photosError);
     }
 
+    return enrichUserData(user, requirements || {}, photos ? photos.map(p => p.photo_url) : []);
+}
+
+function enrichUserData(user, requirements, photos) {
     const toArray = (val) => {
         if (!val) return [];
         if (Array.isArray(val)) return val;
@@ -129,12 +127,57 @@ async function fetchUserData(userId) {
     
     return {
         ...user,
-        requirements: requirements || {},
+        requirements: requirements,
         interests: toArray(user.interests),
         activity_types: toArray(user.activity_types),
         personality: toArray(user.personality),
-        photos: photos ? photos.map(p => p.photo_url) : []
+        photos: photos || []
     };
+}
+
+async function fetchUsersDataBatch(userIds) {
+    const supabase = getSupabaseClient();
+    if (!supabase || !userIds || userIds.length === 0) {
+        console.error('Supabase client not available or no user IDs provided');
+        return {};
+    }
+
+    console.log(`批量获取 ${userIds.length} 个用户数据...`);
+    
+    const startTime = Date.now();
+    
+    const [usersResult, requirementsResult, photosResult] = await Promise.all([
+        supabase.from('users').select('*').in('id', userIds),
+        supabase.from('user_requirements').select('*').in('user_id', userIds).eq('scheme_type', 'standard'),
+        supabase.from('user_photos').select('user_id, photo_url').in('user_id', userIds).order('created_at', { ascending: true })
+    ]);
+
+    const users = usersResult.data || [];
+    const requirementsMap = new Map();
+    (requirementsResult.data || []).forEach(req => {
+        requirementsMap.set(req.user_id, req);
+    });
+    
+    const photosMap = new Map();
+    (photosResult.data || []).forEach(photo => {
+        if (!photosMap.has(photo.user_id)) {
+            photosMap.set(photo.user_id, []);
+        }
+        photosMap.get(photo.user_id).push(photo.photo_url);
+    });
+
+    const result = {};
+    users.forEach(user => {
+        result[user.id] = enrichUserData(
+            user,
+            requirementsMap.get(user.id) || {},
+            photosMap.get(user.id) || []
+        );
+    });
+
+    console.log(`批量获取完成，耗时 ${Date.now() - startTime}ms`);
+    
+    return result;
 }
 
 function hardFilter(myData, targetRequirements) {
@@ -193,7 +236,7 @@ function hardFilter(myData, targetRequirements) {
     return { passed: true, reason: null };
 }
 
-async function calculateWeightedScore(myData, targetRequirements) {
+function calculateWeightedScore(myData, targetRequirements) {
     let totalScore = 0;
     let totalWeight = 0;
     const details = [];
@@ -472,6 +515,8 @@ async function findMatches(userId, options = {}) {
         throw new Error('Supabase客户端未初始化');
     }
 
+    const startTime = Date.now();
+
     const {
         minScore = 0,
         maxResults = 50,
@@ -494,6 +539,8 @@ async function findMatches(userId, options = {}) {
 
     if (gender) {
         query = query.eq('gender', gender);
+    } else if (myData.gender) {
+        query = query.eq('gender', myData.gender === '男' ? '女' : '男');
     }
 
     if (city) {
@@ -507,6 +554,11 @@ async function findMatches(userId, options = {}) {
     }
     console.log('找到候选用户数:', candidates?.length || 0);
 
+    if (!candidates || candidates.length === 0) {
+        console.log('未找到候选用户');
+        return [];
+    }
+
     const { data: blocked } = await supabase
         .from('blacklist')
         .select('blocked_user_id')
@@ -514,44 +566,82 @@ async function findMatches(userId, options = {}) {
 
     const blockedIds = blocked?.map(b => b.blocked_user_id) || [];
 
-    const matchPromises = candidates
-        .filter(c => !blockedIds.includes(c.id))
-        .map(async (candidate) => {
-            try {
-                const matchResult = await calculateMatchScore(userId, candidate.id);
+    const filteredCandidates = candidates.filter(c => !blockedIds.includes(c.id));
+    console.log('过滤后候选用户数:', filteredCandidates.length);
 
-                if (matchResult.filtered) {
-                    return null;
-                }
+    const candidateIds = filteredCandidates.map(c => c.id);
+    const usersDataMap = await fetchUsersDataBatch(candidateIds);
 
-                if (matchResult.score < minScore) {
-                    return null;
-                }
+    const results = [];
+    for (const candidate of filteredCandidates) {
+        const targetData = usersDataMap[candidate.id];
+        if (!targetData) {
+            console.warn(`未找到用户 ${candidate.id} 的详细数据`);
+            continue;
+        }
 
-                return {
-                    user: candidate,
-                    ...matchResult,
-                    userType: getUserType(candidate, myData)
-                };
-            } catch (e) {
-                console.error(`计算匹配分失败 for ${candidate.id}:`, e);
-                return null;
-            }
+        if (myData.gender && targetData.gender && myData.gender === targetData.gender) {
+            continue;
+        }
+
+        const myFilterResult = hardFilter(myData, targetData.requirements);
+        const targetFilterResult = hardFilter(targetData, myData.requirements);
+
+        if (!myFilterResult.passed || !targetFilterResult.passed) {
+            continue;
+        }
+
+        const myScoreResult = calculateWeightedScore(myData, targetData.requirements);
+        const targetScoreResult = calculateWeightedScore(targetData, myData.requirements);
+
+        const myInterestResult = applyInterestCorrection(myScoreResult.score, myData.interests, targetData.requirements);
+        const targetInterestResult = applyInterestCorrection(targetScoreResult.score, targetData.interests, myData.requirements);
+
+        const myActivityResult = applyActivityBonus(myInterestResult, myData.activity_types, targetData.requirements);
+        const targetActivityResult = applyActivityBonus(targetInterestResult, targetData.activity_types, myData.requirements);
+
+        const aToBScore = Math.min(100, myActivityResult.score);
+        const bToAScore = Math.min(100, targetActivityResult.score);
+        const finalScore = Math.round((aToBScore + bToAScore) / 2);
+
+        if (finalScore < minScore) {
+            continue;
+        }
+
+        const allReasons = [];
+        if (myInterestResult.commonInterests && myInterestResult.commonInterests.length > 0) {
+            allReasons.push(`共同兴趣：${myInterestResult.commonInterests.join('、')}`);
+        }
+        if (myActivityResult.commonActivities && myActivityResult.commonActivities.length > 0) {
+            allReasons.push(`共同活动偏好：${myActivityResult.commonActivities.join('、')}`);
+        }
+        myScoreResult.details.forEach(d => {
+            if (d.score >= 80) allReasons.push(d.reason);
         });
 
-    const allMatches = await Promise.all(matchPromises);
-    console.log('计算完成，总匹配数:', allMatches.length);
+        results.push({
+            user: targetData,
+            score: finalScore,
+            filtered: false,
+            aToB: { score: Math.round(aToBScore), details: myScoreResult.details },
+            bToA: { score: Math.round(bToAScore), details: targetScoreResult.details },
+            reasons: allReasons,
+            displayReasons: allReasons.slice(0, 3),
+            interestBonus: myInterestResult.bonus,
+            activityBonus: myActivityResult.bonus,
+            userType: getUserType(targetData, myData)
+        });
+    }
 
-    const validMatches = allMatches
-        .filter(m => m !== null)
-        .sort((a, b) => {
-            if (b.score >= 70 && a.score < 70) return 1;
-            if (a.score >= 70 && b.score < 70) return -1;
-            return b.score - a.score;
-        })
-        .slice(0, maxResults);
+    results.sort((a, b) => {
+        if (b.score >= 70 && a.score < 70) return 1;
+        if (a.score >= 70 && b.score < 70) return -1;
+        return b.score - a.score;
+    });
 
-    console.log('有效匹配数:', validMatches.length);
+    const validMatches = results.slice(0, maxResults);
+    console.log(`匹配计算完成，有效匹配数: ${validMatches.length}，总耗时: ${Date.now() - startTime}ms`);
+    
     return validMatches;
 }
 
@@ -613,7 +703,10 @@ function formatMatchCard(match, currentUserGender) {
             height: user.height || '?',
             city: user.current_address || '',
             education: user.education || '',
-            declaration: user.declaration || ''
+            declaration: user.declaration || '',
+            income: user.income || '',
+            marital: user.marital_status || '',
+            occupation: user.occupation || ''
         };
         actions = [
             { type: 'primary', label: '点赞', onClick: `likeUser('${user.id}')` },
@@ -679,8 +772,8 @@ async function checkUnreadMessages(userId) {
     try {
         const { data, error } = await supabase
             .from('messages')
-            .select('id, sender_id, created_at')
-            .eq('receiver_id', userId)
+            .select('id, from_user_id, to_user_id, created_at')
+            .eq('to_user_id', userId)
             .eq('is_read', false);
         
         if (error) {

@@ -11,7 +11,7 @@
 </head>
 <body>
     <nav class="navbar">
-        <div class="navbar-brand">💕 婚恋红娘系统</div>
+        <div class="navbar-brand">💕 婚恋红娘系统 <span id="userNameDisplay" style="font-size: 14px; color: #888; font-weight: normal; margin-left: 10px;"></span></div>
         <ul class="navbar-nav">
             <li><a href="match.html" class="active">匹配推荐</a></li>
             <li><a href="messages.html">私信 <span id="msgBadge" class="badge" style="display:none; background:#ff4757; color:#fff; border-radius:10px; padding:2px 8px; font-size:12px; margin-left:5px;">0</span></a></li>
@@ -56,37 +56,54 @@
         </div>
     </div>
 
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 400px; padding: 20px;">
+            <div class="modal-header" style="margin-bottom: 15px;">
+                <span id="messageModalTitle">发送私信</span>
+                <button class="modal-close" onclick="closeMessageModal()">×</button>
+            </div>
+            <div id="messageModalBody">
+                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
+                    <img id="messageTargetAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <div id="messageTargetName" style="font-weight: 600;"></div>
+                        <div id="messageTargetInfo" style="font-size: 12px; color: #888;"></div>
+                    </div>
+                </div>
+                <textarea id="messageContent" placeholder="输入私信内容..." style="width: 100%; height: 120px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; resize: none;"></textarea>
+                <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-secondary" onclick="closeMessageModal()">取消</button>
+                    <button class="btn btn-primary" onclick="confirmSendMessage()">发送</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="alertBox" class="hidden"></div>
 
     <script>
         console.log('match.html 页面加载，开始检查用户登录状态');
 
         let currentUser = null;
-
-        const urlParams = new URLSearchParams(window.location.search);
-        const encodedUser = urlParams.get('user');
-
-        if (encodedUser) {
-            console.log("从 URL 获取到用户数据");
-            try {
-                const userDataStr = decodeURIComponent(encodedUser);
-                currentUser = JSON.parse(userDataStr);
-                console.log("解码后的用户数据:", currentUser);
-                localStorage.setItem('currentUser', userDataStr);
-                console.log("已保存到 localStorage");
-            } catch (e) {
-                console.error("解码用户数据失败:", e);
+        let redirecting = false;
+        
+        try {
+            const storedUser = sessionStorage.getItem('currentUser');
+            if (storedUser) {
+                currentUser = JSON.parse(storedUser);
             }
-        } else {
-            console.log("从 localStorage 获取用户数据");
-            currentUser = getCurrentUser();
+        } catch (e) {
+            console.log('解析用户信息失败:', e);
         }
 
-        if (!currentUser) {
-            console.log('用户未登录，重定向到登录页');
-            window.location.href = 'index.html';
-        } else {
-            console.log('用户已登录:', currentUser.name, currentUser.role);
+        if (!currentUser && !redirecting) {
+            redirecting = true;
+            console.log('用户未登录，跳转到登录页面');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 100);
+        } else if (currentUser) {
+            document.getElementById('userNameDisplay').textContent = `欢迎, ${currentUser.name || '用户'}`;
             if (typeof initMessageNotification === 'function') {
                 initMessageNotification(currentUser.id);
             }
@@ -102,6 +119,22 @@
             alertBox.textContent = message;
             alertBox.classList.remove('hidden');
             setTimeout(() => alertBox.classList.add('hidden'), 3000);
+        }
+
+        function getUserPhotoUrl(user) {
+            if (!user) return 'https://via.placeholder.com/40?text=无头像';
+            let photos = user.photos;
+            if (typeof photos === 'string') {
+                try {
+                    photos = JSON.parse(photos);
+                } catch (e) {
+                    photos = [];
+                }
+            }
+            if (Array.isArray(photos) && photos.length > 0) {
+                return photos[0];
+            }
+            return 'https://via.placeholder.com/40?text=无头像';
         }
 
         async function loadMatches(useCache = true) {
@@ -243,6 +276,11 @@
                                 <span>${card.displayInfo.city || user.province || '未知'}</span>
                             </div>
                             <div class="match-education">${card.displayInfo.education || '学历未填写'}</div>
+                            <div class="match-extra">
+                                ${card.displayInfo.income ? `<span class="match-tag-item">💰 ${card.displayInfo.income}</span>` : ''}
+                                ${card.displayInfo.marital ? `<span class="match-tag-item">💍 ${card.displayInfo.marital}</span>` : ''}
+                                ${card.displayInfo.occupation ? `<span class="match-tag-item">💼 ${card.displayInfo.occupation}</span>` : ''}
+                            </div>
                             ${card.displayInfo.declaration ? `<div class="match-declaration">"${card.displayInfo.declaration}"</div>` : ''}
                             ${reasons && reasons.length > 0 ? `
                                 <div class="match-tags">
@@ -466,21 +504,89 @@
             }
         }
 
+        let messageTargetUserId = null;
+
         async function sendMessage(targetId) {
-            const supabase = getSupabase();
-
-            const { data: targetPrivacy } = await supabase
-                .from('user_privacy')
-                .select('contact_visibility')
-                .eq('user_id', targetId)
-                .single();
-
-            if (targetPrivacy?.contact_visibility === 'agency_only') {
-                showAlert('该用户仅通过中介联系，请点击"联系中介"', 'info');
+            console.log('sendMessage called with:', targetId);
+            
+            const currentUser = getCurrentUser();
+            if (!currentUser) {
+                showAlert('请先登录', 'error');
                 return;
             }
+            
+            const supabase = getSupabase();
+            if (!supabase) {
+                showAlert('系统错误，请刷新页面', 'error');
+                return;
+            }
+            
+            const { data: targetUser, error } = await supabase
+                .from('users')
+                .select('id, name, photos, province, city, birthday, height, education')
+                .eq('id', targetId)
+                .single();
+            
+            if (error || !targetUser) {
+                console.error('获取用户信息失败:', error);
+                showAlert('获取用户信息失败', 'error');
+                return;
+            }
+            
+            messageTargetUserId = targetId;
+            
+            const avatar = getUserPhotoUrl(targetUser);
+            document.getElementById('messageTargetAvatar').src = avatar;
+            document.getElementById('messageTargetName').textContent = targetUser.name || '匿名用户';
+            const age = targetUser.birthday ? calculateAge(targetUser.birthday) : '?';
+            document.getElementById('messageTargetInfo').textContent =
+                `${age}岁 · ${targetUser.height || '?'}cm · ${targetUser.province || ''}${targetUser.city || ''}`;
 
-            window.location.href = `messages.html?to=${targetId}`;
+            document.getElementById('messageContent').value = '';
+            document.getElementById('messageModal').classList.remove('hidden');
+        }
+
+        function closeMessageModal() {
+            document.getElementById('messageModal').classList.add('hidden');
+            messageTargetUserId = null;
+        }
+
+        async function confirmSendMessage() {
+            const content = document.getElementById('messageContent').value.trim();
+            
+            if (!content) {
+                showAlert('请输入私信内容', 'error');
+                return;
+            }
+            
+            if (!messageTargetUserId) {
+                showAlert('目标用户无效', 'error');
+                return;
+            }
+            
+            const currentUser = getCurrentUser();
+            if (!currentUser) {
+                showAlert('请先登录', 'error');
+                return;
+            }
+            
+            const supabase = getSupabase();
+            
+            const { error } = await supabase
+                .from('messages')
+                .insert([{
+                    from_user_id: currentUser.id,
+                    to_user_id: messageTargetUserId,
+                    content: content,
+                    is_read: false
+                }]);
+            
+            if (error) {
+                showAlert('发送失败: ' + error.message, 'error');
+            } else {
+                showAlert('私信已发送', 'success');
+                closeMessageModal();
+            }
         }
 
         async function requestAgencyContact(targetId) {
@@ -539,20 +645,11 @@
         }
 
         function updateNavLinks() {
-            console.log("updateNavLinks() 被调用");
-            console.log("currentUser:", currentUser);
             const links = document.querySelectorAll('a[href="profile.html"]');
-            console.log("找到的链接数量:", links.length);
             if (links.length > 0 && currentUser) {
-                const userDataStr = JSON.stringify(currentUser);
-                const encodedData = encodeURIComponent(userDataStr);
-                console.log("生成的链接:", "profile.html?user=" + encodedData.substring(0, 50) + "...");
                 links.forEach(link => {
-                    link.href = 'profile.html?user=' + encodedData;
+                    link.href = 'profile.html';
                 });
-                console.log("链接已更新");
-            } else {
-                console.log("未更新链接，原因:", !links.length ? "没有找到链接" : !currentUser ? "currentUser 为空" : "未知");
             }
         }
 
@@ -630,6 +727,19 @@
             color: #888;
             font-size: 12px;
             margin-bottom: 3px;
+        }
+        .match-extra {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 3px;
+        }
+        .match-tag-item {
+            font-size: 11px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
         }
         .match-declaration {
             color: #999;
