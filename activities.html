@@ -23,66 +23,71 @@
     
     <div class="container">
         <div class="card">
-            <div class="card-header">线下活动</div>
+            <div class="card-header">报名活动</div>
             
-            <div class="tabs">
-                <button class="tab-btn active" data-tab="available">可报名活动</button>
-                <button class="tab-btn" data-tab="registered">已报名活动</button>
-            </div>
-            
-            <div id="availableTab" class="tab-content active">
-                <div id="activityList">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>加载中...</p>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="registeredTab" class="tab-content hidden">
-                <div id="registeredList">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                        <p>加载中...</p>
-                    </div>
+            <div id="activityList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>加载中...</p>
                 </div>
             </div>
         </div>
     </div>
     
-    <div id="activityDetailModal" class="modal hidden">
+    <div id="cancelModal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <span id="modalTitle">活动详情</span>
-                <button class="modal-close" onclick="closeModal()">×</button>
+                <span>取消报名</span>
+                <button class="modal-close" onclick="closeCancelModal()">×</button>
             </div>
-            <div id="modalBody"></div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>取消原因 *</label>
+                    <textarea id="cancelReason" rows="4" placeholder="请填写取消原因"></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button class="btn btn-secondary" onclick="closeCancelModal()">取消</button>
+                    <button class="btn btn-danger" onclick="confirmCancel()">确认取消</button>
+                </div>
+            </div>
         </div>
     </div>
     
     <div id="alertBox" class="hidden"></div>
     
     <script>
-        const currentUser = getCurrentUser();
-        if (!currentUser) {
-            window.location.href = 'index.html';
-        } else {
+        let currentUser = null;
+        let cancelActivityId = null;
+        let userRegistrations = [];
+        
+        async function initPage() {
+            console.log('activities.html initializing...');
+            
+            currentUser = getCurrentUser();
+            console.log('currentUser from sessionStorage:', currentUser);
+            console.log('currentUser.id:', currentUser?.id);
+            
+            if (!currentUser) {
+                console.log('No currentUser, redirecting to index.html');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            if (!currentUser.id) {
+                console.error('currentUser has no id field!');
+                showAlert('用户信息不完整，请重新登录', 'error');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+                return;
+            }
+            
             document.getElementById('userNameDisplay').textContent = `欢迎, ${currentUser.name || '用户'}`;
+            
+            loadActivities();
         }
         
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-                
-                this.classList.add('active');
-                document.getElementById(this.dataset.tab + 'Tab').classList.remove('hidden');
-                
-                if (this.dataset.tab === 'registered') {
-                    loadRegisteredActivities();
-                }
-            });
-        });
+        document.addEventListener('DOMContentLoaded', initPage);
         
         function showAlert(message, type) {
             const alertBox = document.getElementById('alertBox');
@@ -95,222 +100,251 @@
             }, 3000);
         }
         
-        async function loadActivities() {
-            const supabase = getSupabase();
+        function showCancelModal(activityId) {
+            cancelActivityId = activityId;
+            document.getElementById('cancelReason').value = '';
+            document.getElementById('cancelModal').classList.remove('hidden');
+        }
+        
+        function closeCancelModal() {
+            cancelActivityId = null;
+            document.getElementById('cancelReason').value = '';
+            document.getElementById('cancelModal').classList.add('hidden');
+        }
+        
+        async function confirmCancel() {
+            const reason = document.getElementById('cancelReason').value.trim();
             
-            const { data: activities } = await supabase
-                .from('activities')
-                .select('*')
-                .eq('status', 'active')
-                .gte('deadline', new Date().toISOString())
-                .order('activity_time', { ascending: true });
-            
-            const { data: registered } = await supabase
-                .from('activity_registrations')
-                .select('activity_id')
-                .eq('user_id', currentUser.id);
-            
-            const registeredIds = registered?.map(r => r.activity_id) || [];
-            
-            const activityList = document.getElementById('activityList');
-            
-            if (!activities || activities.length === 0) {
-                activityList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无可报名活动</p>';
+            if (!reason) {
+                showAlert('请填写取消原因', 'error');
                 return;
             }
             
-            activityList.innerHTML = activities.map(activity => {
-                const isRegistered = registeredIds.includes(activity.id);
-                const remaining = activity.max_participants - activity.current_participants;
+            if (!cancelActivityId) {
+                showAlert('操作无效', 'error');
+                return;
+            }
+            
+            const supabase = getSupabase();
+            
+            try {
+                const { data: regData, error: fetchError } = await supabase
+                    .from('activity_registrations')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('activity_id', cancelActivityId)
+                    .single();
                 
-                return `
-                    <div class="activity-card">
-                        <div class="activity-title">${activity.title}</div>
-                        <div class="activity-meta">
-                            📅 ${new Date(activity.activity_time).toLocaleString()} | 📍 ${activity.location} | 👥 剩余名额: ${remaining}
-                        </div>
-                        <div class="activity-description">${activity.description || '暂无详细描述'}</div>
-                        <div class="activity-footer">
-                            <div>
-                                报名截止: ${new Date(activity.deadline).toLocaleString()}
-                            </div>
-                            <div>
-                                ${isRegistered 
-                                    ? '<span class="badge badge-success">已报名</span>'
-                                    : remaining > 0 
-                                        ? `<button class="btn btn-primary btn-small" onclick="registerActivity('${activity.id}')">报名</button>`
-                                        : '<span class="badge badge-warning">已满</span>'
-                                }
-                                <button class="btn btn-secondary btn-small" onclick="showActivityDetail('${activity.id}')">详情</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        async function loadRegisteredActivities() {
-            const supabase = getSupabase();
-            
-            const { data: registrations } = await supabase
-                .from('activity_registrations')
-                .select('activity_id, registered_at, activities(*)')
-                .eq('user_id', currentUser.id)
-                .order('registered_at', { ascending: false });
-            
-            const registeredList = document.getElementById('registeredList');
-            
-            if (!registrations || registrations.length === 0) {
-                registeredList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无已报名活动</p>';
-                return;
+                if (fetchError && fetchError.code !== 'PGRST116') {
+                    throw fetchError;
+                }
+                
+                if (regData) {
+                    const { error: updateError } = await supabase
+                        .from('activity_registrations')
+                        .update({
+                            status: 'cancelled',
+                            cancel_reason: reason,
+                            cancelled_at: new Date().toISOString()
+                        })
+                        .eq('id', regData.id);
+                    
+                    if (updateError) {
+                        throw updateError;
+                    }
+                }
+                
+                const { data: activityData, error: actError } = await supabase
+                    .from('activities')
+                    .select('current_participants')
+                    .eq('id', cancelActivityId)
+                    .single();
+                
+                if (!actError && activityData) {
+                    await supabase
+                        .from('activities')
+                        .update({
+                            current_participants: Math.max(0, (activityData.current_participants || 0) - 1)
+                        })
+                        .eq('id', cancelActivityId);
+                }
+                
+                showAlert('取消报名成功', 'success');
+                closeCancelModal();
+                loadActivities();
+            } catch (e) {
+                console.error('取消报名失败:', e);
+                showAlert('取消报名失败: ' + e.message, 'error');
             }
-            
-            registeredList.innerHTML = registrations.map(reg => {
-                const activity = reg.activities;
-                return `
-                    <div class="activity-card">
-                        <div class="activity-title">${activity?.title || '活动已取消'}</div>
-                        <div class="activity-meta">
-                            📅 ${activity ? new Date(activity.activity_time).toLocaleString() : '-'} | 📍 ${activity?.location || '-'}
-                        </div>
-                        <div class="activity-footer">
-                            <div>
-                                报名时间: ${new Date(reg.registered_at).toLocaleString()}
-                            </div>
-                            <div>
-                                ${activity?.status === 'active' 
-                                    ? `<button class="btn btn-danger btn-small" onclick="cancelRegistration('${activity.id}')">取消报名</button>`
-                                    : '<span class="badge badge-danger">已取消</span>'
-                                }
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        async function showActivityDetail(activityId) {
-            const supabase = getSupabase();
-            
-            const { data: activity } = await supabase
-                .from('activities')
-                .select('*')
-                .eq('id', activityId)
-                .single();
-            
-            if (!activity) return;
-            
-            document.getElementById('modalTitle').textContent = activity.title;
-            document.getElementById('modalBody').innerHTML = `
-                <div style="margin-bottom: 20px;">
-                    <p><strong>活动时间：</strong>${new Date(activity.activity_time).toLocaleString()}</p>
-                    <p><strong>活动地点：</strong>${activity.location}</p>
-                    <p><strong>报名人数：</strong>${activity.current_participants}/${activity.max_participants}</p>
-                    <p><strong>报名截止：</strong>${new Date(activity.deadline).toLocaleString()}</p>
-                </div>
-                <div style="margin-bottom: 20px;">
-                    <strong>活动详情：</strong>
-                    <p style="color: #666; margin-top: 10px;">${activity.description || '暂无详细描述'}</p>
-                </div>
-            `;
-            
-            document.getElementById('activityDetailModal').classList.remove('hidden');
-        }
-        
-        function closeModal() {
-            document.getElementById('activityDetailModal').classList.add('hidden');
         }
         
         async function registerActivity(activityId) {
             const supabase = getSupabase();
             
-            const { data: existing } = await supabase
-                .from('activity_registrations')
-                .select('id')
-                .eq('activity_id', activityId)
-                .eq('user_id', currentUser.id)
-                .single();
-            
-            if (existing) {
-                showAlert('您已报名该活动', 'info');
-                return;
-            }
-            
-            const { data: activity } = await supabase
-                .from('activities')
-                .select('current_participants, max_participants')
-                .eq('id', activityId)
-                .single();
-            
-            if (activity.current_participants >= activity.max_participants) {
-                showAlert('活动名额已满', 'error');
-                return;
-            }
-            
-            const { error: regError } = await supabase
-                .from('activity_registrations')
-                .insert([{
-                    activity_id: activityId,
-                    user_id: currentUser.id
-                }]);
-            
-            if (regError) {
-                showAlert('报名失败', 'error');
-                return;
-            }
-            
-            await supabase
-                .from('activities')
-                .update({ current_participants: activity.current_participants + 1 })
-                .eq('id', activityId);
-            
-            showAlert('报名成功', 'success');
-            loadActivities();
-        }
-        
-        async function cancelRegistration(activityId) {
-            const supabase = getSupabase();
-            
-            const { error: deleteError } = await supabase
-                .from('activity_registrations')
-                .delete()
-                .eq('activity_id', activityId)
-                .eq('user_id', currentUser.id);
-            
-            if (deleteError) {
-                showAlert('取消失败', 'error');
-                return;
-            }
-            
-            const { data: activity } = await supabase
-                .from('activities')
-                .select('current_participants')
-                .eq('id', activityId)
-                .single();
-            
-            if (activity) {
-                await supabase
+            try {
+                const { data: existing, error: checkError } = await supabase
+                    .from('activity_registrations')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .eq('activity_id', activityId)
+                    .maybeSingle();
+                
+                if (checkError && checkError.code !== 'PGRST116') {
+                    throw checkError;
+                }
+                
+                if (existing) {
+                    if (existing.status === 'cancelled') {
+                        const { error: updateError } = await supabase
+                            .from('activity_registrations')
+                            .update({
+                                status: 'active',
+                                cancel_reason: null,
+                                cancelled_at: null,
+                                registered_at: new Date().toISOString()
+                            })
+                            .eq('id', existing.id);
+                        
+                        if (updateError) throw updateError;
+                    } else {
+                        showAlert('您已经报名过此活动', 'warning');
+                        return;
+                    }
+                } else {
+                    const { error: insertError } = await supabase
+                        .from('activity_registrations')
+                        .insert([{
+                            user_id: currentUser.id,
+                            activity_id: activityId,
+                            status: 'active',
+                            registered_at: new Date().toISOString()
+                        }]);
+                    
+                    if (insertError) throw insertError;
+                }
+                
+                const { data: activityData, error: actError } = await supabase
                     .from('activities')
-                    .update({ current_participants: activity.current_participants - 1 })
-                    .eq('id', activityId);
+                    .select('current_participants')
+                    .eq('id', activityId)
+                    .single();
+                
+                if (!actError && activityData) {
+                    await supabase
+                        .from('activities')
+                        .update({
+                            current_participants: (activityData.current_participants || 0) + 1
+                        })
+                        .eq('id', activityId);
+                }
+                
+                showAlert('报名成功', 'success');
+                loadActivities();
+            } catch (e) {
+                console.error('报名失败:', e);
+                showAlert('报名失败: ' + e.message, 'error');
             }
-            
-            showAlert('已取消报名', 'success');
-            loadRegisteredActivities();
-            loadActivities();
         }
         
-        function updateNavLinks() {
-            const links = document.querySelectorAll('a[href="profile.html"]');
-            if (links.length > 0 && currentUser) {
-                links.forEach(link => {
-                    link.href = 'profile.html';
+        async function loadActivities() {
+            const supabase = getSupabase();
+            const activityList = document.getElementById('activityList');
+            
+            console.log('loadActivities called, currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                activityList.innerHTML = '<p style="text-align: center; color: #e74c3c; padding: 40px;">用户未登录或登录已过期</p>';
+                return;
+            }
+            
+            activityList.innerHTML = '<div class="loading"><div class="spinner"></div><p>加载中...</p></div>';
+            
+            try {
+                const { data: activities, error: actError } = await supabase
+                    .from('activities')
+                    .select('*')
+                    .order('activity_time', { ascending: true });
+                
+                console.log('activities result:', activities);
+                console.log('actError:', actError);
+                
+                if (actError) {
+                    activityList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ${actError.message}</p>`;
+                    return;
+                }
+                
+                const { data: registrations, error: regError } = await supabase
+                    .from('activity_registrations')
+                    .select('*')
+                    .eq('user_id', currentUser.id);
+                
+                console.log('registrations result:', registrations);
+                console.log('regError:', regError);
+                
+                if (regError) {
+                    activityList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ${regError.message}</p>`;
+                    return;
+                }
+                
+                userRegistrations = registrations || [];
+                const registrationMap = {};
+                userRegistrations.forEach(reg => {
+                    registrationMap[reg.activity_id] = reg;
                 });
+                
+                if (!activities || activities.length === 0) {
+                    activityList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无可报名活动</p>';
+                    return;
+                }
+                
+                const now = new Date();
+                const upcomingActivities = activities.filter(a => new Date(a.activity_time) >= now).sort((a, b) => new Date(a.activity_time) - new Date(b.activity_time));
+                const pastActivities = activities.filter(a => new Date(a.activity_time) < now).sort((a, b) => new Date(b.activity_time) - new Date(a.activity_time));
+                const sortedActivities = [...upcomingActivities, ...pastActivities];
+                
+                activityList.innerHTML = sortedActivities.map(activity => {
+                    const reg = registrationMap[activity.id];
+                    const isRegistered = reg && reg.status === 'active';
+                    const isCancelled = reg && reg.status === 'cancelled';
+                    const remaining = activity.max_participants - activity.current_participants;
+                    const isFull = remaining <= 0 && !isRegistered;
+                    const isPast = new Date(activity.activity_time) < now;
+                    
+                    let actionHtml = '';
+                    if (isPast) {
+                        actionHtml = '<span class="badge badge-secondary">已结束</span>';
+                    } else if (isRegistered) {
+                        actionHtml = `<span class="badge badge-success">已报名</span><button class="btn btn-danger btn-small" style="min-width: 80px;" onclick="showCancelModal('${activity.id}')">取消报名</button>`;
+                    } else if (isFull) {
+                        actionHtml = '<span class="badge badge-warning">已满</span>';
+                    } else {
+                        actionHtml = `<button class="btn btn-primary btn-small" style="min-width: 80px;" onclick="registerActivity('${activity.id}')">${isCancelled ? '重新报名' : '报名'}</button>`;
+                    }
+                    
+                    return `
+                        <div class="activity-card" style="${isCancelled ? 'opacity: 0.7;' : ''}${isPast ? 'opacity: 0.6;' : ''}">
+                            <div class="activity-title">${activity.title}</div>
+                            <div class="activity-meta">
+                                📅 ${new Date(activity.activity_time).toLocaleString()} | 📍 ${activity.location} | 👥 剩余名额: ${remaining}
+                            </div>
+                            <div class="activity-description">${activity.description || '暂无详细描述'}</div>
+                            <div class="activity-footer">
+                                <div>
+                                    ${isRegistered ? `报名时间: ${new Date(reg.registered_at).toLocaleString()}` : ''}
+                                    ${isCancelled ? `<span style="color: #e74c3c;">取消原因: ${reg.cancel_reason || ''}</span>` : ''}
+                                </div>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    ${actionHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {
+                console.error('loadActivities exception:', e);
+                activityList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ${e.message}</p>`;
             }
         }
-
-        loadActivities();
-        updateNavLinks();
     </script>
 </body>
 </html>

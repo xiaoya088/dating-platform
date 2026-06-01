@@ -510,27 +510,43 @@ function getUserType(user, targetData) {
 }
 
 async function findMatches(userId, options = {}) {
-    const supabase = getSupabaseClient();
-    if (!supabase) {
-        throw new Error('Supabase客户端未初始化');
-    }
-
     const startTime = Date.now();
-
     const {
         minScore = 0,
         maxResults = 50,
         gender = null,
         city = null,
-        schemeType = 'standard'
+        forceRefresh = false
     } = options;
 
-    console.log('开始获取用户数据:', userId);
+    if (MATCH_CONFIG.useCacheFirst && !forceRefresh) {
+        console.log('优先使用缓存匹配结果...');
+        const cachedMatches = await getCachedMatches(userId);
+        
+        if (cachedMatches.length > 0) {
+            const filtered = filterCachedMatches(cachedMatches, { minScore, maxResults, gender, city });
+            console.log(`从缓存获取匹配结果 ${filtered.length} 条，耗时 ${Date.now() - startTime}ms`);
+            return filtered;
+        }
+        
+        console.log('缓存为空，回退到实时计算');
+    }
+
+    if (!MATCH_CONFIG.enableRealTimeCalculation) {
+        console.log('实时计算已禁用，返回空结果');
+        return [];
+    }
+
+    const supabase = getSupabaseClient();
+    if (!supabase) {
+        throw new Error('Supabase客户端未初始化');
+    }
+
+    console.log('开始实时计算匹配...');
+
     const myData = await fetchUserData(userId);
     if (!myData) throw new Error('无法获取当前用户数据');
-    console.log('用户数据获取成功:', myData.name);
 
-    console.log('开始查询候选用户...');
     let query = supabase
         .from('users')
         .select('*')
@@ -552,10 +568,8 @@ async function findMatches(userId, options = {}) {
         console.error('查询候选用户失败:', error);
         throw error;
     }
-    console.log('找到候选用户数:', candidates?.length || 0);
 
     if (!candidates || candidates.length === 0) {
-        console.log('未找到候选用户');
         return [];
     }
 
@@ -565,9 +579,7 @@ async function findMatches(userId, options = {}) {
         .eq('user_id', userId);
 
     const blockedIds = blocked?.map(b => b.blocked_user_id) || [];
-
     const filteredCandidates = candidates.filter(c => !blockedIds.includes(c.id));
-    console.log('过滤后候选用户数:', filteredCandidates.length);
 
     const candidateIds = filteredCandidates.map(c => c.id);
     const usersDataMap = await fetchUsersDataBatch(candidateIds);
@@ -575,10 +587,7 @@ async function findMatches(userId, options = {}) {
     const results = [];
     for (const candidate of filteredCandidates) {
         const targetData = usersDataMap[candidate.id];
-        if (!targetData) {
-            console.warn(`未找到用户 ${candidate.id} 的详细数据`);
-            continue;
-        }
+        if (!targetData) continue;
 
         if (myData.gender && targetData.gender && myData.gender === targetData.gender) {
             continue;
@@ -640,9 +649,40 @@ async function findMatches(userId, options = {}) {
     });
 
     const validMatches = results.slice(0, maxResults);
-    console.log(`匹配计算完成，有效匹配数: ${validMatches.length}，总耗时: ${Date.now() - startTime}ms`);
+    console.log(`实时匹配计算完成，有效匹配数: ${validMatches.length}，总耗时: ${Date.now() - startTime}ms`);
     
     return validMatches;
+}
+
+function filterCachedMatches(cachedMatches, options) {
+    const { minScore = 0, maxResults = 50, gender = null, city = null } = options;
+    
+    let filtered = cachedMatches.filter(m => {
+        if (m.score < minScore) return false;
+        if (gender && m.user && m.user.gender !== gender) return false;
+        if (city && m.user && m.user.city !== city) return false;
+        return true;
+    });
+
+    filtered.sort((a, b) => {
+        if (b.score >= 70 && a.score < 70) return 1;
+        if (a.score >= 70 && b.score < 70) return -1;
+        return b.score - a.score;
+    });
+
+    return filtered.slice(0, maxResults).map(m => ({
+        user: m.user,
+        score: m.score,
+        filtered: false,
+        aToB: m.aToB,
+        bToA: m.bToA,
+        reasons: [],
+        displayReasons: [],
+        interestBonus: 0,
+        activityBonus: 0,
+        userType: getUserType(m.user, {}),
+        matchTime: m.matchTime
+    }));
 }
 
 async function getMatchDetails(userId, targetId) {
@@ -1030,7 +1070,19 @@ async function calculateMatchesForAllUsers() {
 
 let matchCalculationInterval = null;
 
-function startPeriodicMatchCalculation(userId, intervalMinutes = 30, forAllUsers = true) {
+const MATCH_CONFIG = {
+    useCacheFirst: true,
+    enableRealTimeCalculation: false,
+    cacheTtlMinutes: 60,
+    periodicIntervalMinutes: 60
+};
+
+function setMatchConfig(config) {
+    Object.assign(MATCH_CONFIG, config);
+    console.log('匹配配置已更新:', MATCH_CONFIG);
+}
+
+function startPeriodicMatchCalculation(userId, intervalMinutes = MATCH_CONFIG.periodicIntervalMinutes, forAllUsers = true) {
     if (matchCalculationInterval) {
         clearInterval(matchCalculationInterval);
     }
@@ -1068,4 +1120,6 @@ if (typeof module === 'undefined') {
     window.calculateMatchesForAllUsers = calculateMatchesForAllUsers;
     window.startPeriodicMatchCalculation = startPeriodicMatchCalculation;
     window.stopPeriodicMatchCalculation = stopPeriodicMatchCalculation;
+    window.MATCH_CONFIG = MATCH_CONFIG;
+    window.setMatchConfig = setMatchConfig;
 }

@@ -695,7 +695,43 @@
     
     <script>
         let currentUser = null;
-        let currentVersion = null;
+        let currentPhotoPreview = null;
+
+        function openPhotoPreview(url) {
+            if (currentPhotoPreview) {
+                document.body.removeChild(currentPhotoPreview);
+            }
+            currentPhotoPreview = document.createElement('div');
+            currentPhotoPreview.className = 'photo-preview-modal';
+            currentPhotoPreview.innerHTML = `
+                <button class="close-btn" onclick="closePhotoPreview()">×</button>
+                <div class="img-container">
+                    <img src="${url}" alt="照片预览">
+                </div>
+                <div class="hint">点击任意处关闭</div>
+            `;
+            currentPhotoPreview.addEventListener('click', function(e) {
+                if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
+                    closePhotoPreview();
+                }
+            });
+            document.body.appendChild(currentPhotoPreview);
+            document.addEventListener('keydown', handlePhotoPreviewKeydown);
+        }
+
+        function closePhotoPreview() {
+            if (currentPhotoPreview) {
+                document.body.removeChild(currentPhotoPreview);
+                currentPhotoPreview = null;
+            }
+            document.removeEventListener('keydown', handlePhotoPreviewKeydown);
+        }
+
+        function handlePhotoPreviewKeydown(e) {
+            if (e.key === 'Escape') {
+                closePhotoPreview();
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Profile page loaded, initializing...');
@@ -804,14 +840,10 @@
                     })
                     .eq('id', userId);
                 
-                // 如果有版本号，添加乐观锁检查
-                if (currentVersion !== null) {
-                    query = query.eq('version', currentVersion);
-                }
-                
                 const { error } = await query;
                 
                 if (error) {
+                    console.error('Save error:', error);
                     if (error.code === '409' || error.message.includes('conflict')) {
                         showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
                         setTimeout(() => {
@@ -879,19 +911,12 @@
                     })
                     .eq('id', userId);
                 
-                if (currentVersion !== null) {
-                    query = query.eq('version', currentVersion);
-                }
-                
                 const { error } = await query;
                 
                 if (error) {
-                    if (error.code === '409' || error.message.includes('conflict')) {
-                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
-                        setTimeout(() => { loadUserData(); }, 1000);
-                        return;
-                    }
-                    throw error;
+                    console.error('Save error:', error);
+                    showAlert('保存失败: ' + error.message, 'error');
+                    return;
                 }
                 
                 showAlert('保存成功！', 'success');
@@ -966,10 +991,6 @@
                 document.getElementById('liveWithParents').value = data.live_with_parents || '';
                 document.getElementById('expectedChildren').value = data.expected_children || '';
                 document.getElementById('selfDescription').value = data.self_description || '';
-                
-                // 保存乐观锁版本号
-                currentVersion = data.version || null;
-                console.log('Loaded version:', currentVersion);
             } catch (e) {
                 console.error('加载数据失败:', e);
             }
@@ -998,7 +1019,7 @@
                     const photoItem = document.createElement('div');
                     photoItem.style.cssText = 'position: relative; width: 100px; height: 100px;';
                     photoItem.innerHTML = `
-                        <img src="${photo.photo_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                        <img src="${photo.photo_url}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px; cursor: pointer;" onclick="openPhotoPreview('${photo.photo_url}')">
                         ${photo.is_avatar ? '<span style="position: absolute; bottom: 5px; left: 5px; background: #667eea; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px;">封面</span>' : ''}
                         <button onclick="setAvatar('${photo.id}')" style="position: absolute; top: 5px; right: 5px; background: rgba(0,0,0,0.5); color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;">封面</button>
                         <button onclick="deletePhoto('${photo.id}')" style="position: absolute; top: 5px; left: 5px; background: rgba(220,53,69,0.8); color: white; border: none; border-radius: 4px; padding: 4px 6px; font-size: 10px; cursor: pointer;">删除</button>
@@ -1201,19 +1222,12 @@
                     })
                     .eq('id', userId);
                 
-                if (currentVersion !== null) {
-                    query = query.eq('version', currentVersion);
-                }
-                
                 const { error } = await query;
                 
                 if (error) {
-                    if (error.code === '409' || error.message.includes('conflict')) {
-                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
-                        setTimeout(() => { loadUserData(); }, 1000);
-                        return;
-                    }
-                    throw error;
+                    console.error('Save error:', error);
+                    showAlert('保存失败: ' + error.message, 'error');
+                    return;
                 }
                 
                 showAlert('保存成功！', 'success');
@@ -1255,19 +1269,12 @@
                     })
                     .eq('id', userId);
                 
-                if (currentVersion !== null) {
-                    query = query.eq('version', currentVersion);
-                }
-                
                 const { error } = await query;
                 
                 if (error) {
-                    if (error.code === '409' || error.message.includes('conflict')) {
-                        showAlert('数据已被其他用户修改，请刷新页面后重新编辑', 'error');
-                        setTimeout(() => { loadUserData(); }, 1000);
-                        return;
-                    }
-                    throw error;
+                    console.error('Save error:', error);
+                    showAlert('保存失败: ' + error.message, 'error');
+                    return;
                 }
                 
                 showAlert('保存成功！', 'success');
@@ -1577,7 +1584,7 @@
                     const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
                     return `
                         <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
                                 <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
@@ -1635,7 +1642,7 @@
                     const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
                     return `
                         <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
                                 <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
@@ -1706,7 +1713,7 @@
                     const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
                     return `
                         <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
-                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
+                            <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
                             <div style="flex: 1;">
                                 <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
                                 <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
@@ -1734,8 +1741,7 @@
             } else {
                 showAlert('回赞成功！', 'success');
                 loadMatchStats();
-                loadLikedMe();
-                loadMutualLikes();
+                loadAllLikesOptimized();
             }
         }
 
@@ -1751,9 +1757,117 @@
         function loadMatchStatusData() {
             loadMatchStats();
             loadMatches();
-            loadMyLikes();
-            loadLikedMe();
-            loadMutualLikes();
+            loadAllLikesOptimized();
+        }
+
+        async function loadAllLikesOptimized() {
+            const supabase = getSupabase();
+            const myLikesList = document.getElementById('myLikesList');
+            const likedMeList = document.getElementById('likedMeList');
+            const mutualLikesList = document.getElementById('mutualLikesList');
+            
+            myLikesList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
+            likedMeList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
+            mutualLikesList.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
+
+            try {
+                const [myLikesResult, likedMeResult] = await Promise.all([
+                    supabase.from('likes').select('to_user_id, created_at').eq('from_user_id', currentUser.id).order('created_at', { ascending: false }),
+                    supabase.from('likes').select('from_user_id, created_at').eq('to_user_id', currentUser.id).order('created_at', { ascending: false })
+                ]);
+
+                const myLikeIds = myLikesResult.data?.map(l => l.to_user_id) || [];
+                const likedMeIds = likedMeResult.data?.map(l => l.from_user_id) || [];
+                const mutualUserIds = myLikeIds.filter(id => likedMeIds.includes(id));
+
+                const allUserIds = [...new Set([...myLikeIds, ...likedMeIds])];
+                let userMap = {};
+                if (allUserIds.length > 0) {
+                    const usersResult = await supabase.from('users').select('id, name, photos, province, city').in('id', allUserIds);
+                    usersResult.data?.forEach(u => userMap[u.id] = u);
+                }
+
+                renderMyLikes(myLikesResult.data || [], userMap);
+                renderLikedMe(likedMeResult.data || [], userMap);
+                renderMutualLikes(mutualUserIds, userMap);
+            } catch (e) {
+                console.error('loadAllLikesOptimized failed:', e);
+                myLikesList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">加载失败</p>`;
+                likedMeList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">加载失败</p>`;
+                mutualLikesList.innerHTML = `<p style="text-align: center; color: #e74c3c; padding: 20px;">加载失败</p>`;
+            }
+        }
+
+        function renderMyLikes(likes, userMap) {
+            const list = document.getElementById('myLikesList');
+            if (likes.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
+                return;
+            }
+            list.innerHTML = likes.map(like => {
+                const user = userMap[like.to_user_id];
+                if (!user) return '';
+                const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
+                return `
+                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                        </div>
+                        <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="viewUserProfile('${user.id}')">查看</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderLikedMe(likes, userMap) {
+            const list = document.getElementById('likedMeList');
+            if (likes.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
+                return;
+            }
+            list.innerHTML = likes.map(like => {
+                const user = userMap[like.from_user_id];
+                if (!user) return '';
+                const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
+                const hasLikedBack = like.from_user_id in userMap;
+                return `
+                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                        </div>
+                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="likeUserBack('${user.id}')">回赞</button>
+                        <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="viewUserProfile('${user.id}')">查看</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderMutualLikes(mutualUserIds, userMap) {
+            const list = document.getElementById('mutualLikesList');
+            if (mutualUserIds.length === 0) {
+                list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无互相喜欢的用户</p>';
+                return;
+            }
+            list.innerHTML = mutualUserIds.map(userId => {
+                const user = userMap[userId];
+                if (!user) return '';
+                const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
+                return `
+                    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
+                        <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
+                        <div style="flex: 1;">
+                            <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
+                            <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
+                        </div>
+                        <span style="color: #27ae60; font-size: 12px; margin-right: 10px;">💕 互相喜欢</span>
+                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="sendMessage('${user.id}')">发消息</button>
+                    </div>
+                `;
+            }).join('');
         }
 
         async function loadMatches() {

@@ -85,7 +85,44 @@
         console.log('match.html 页面加载，开始检查用户登录状态');
 
         let currentUser = null;
+        let currentPhotoPreview = null;
         let redirecting = false;
+
+        function openPhotoPreview(url) {
+            if (currentPhotoPreview) {
+                document.body.removeChild(currentPhotoPreview);
+            }
+            currentPhotoPreview = document.createElement('div');
+            currentPhotoPreview.className = 'photo-preview-modal';
+            currentPhotoPreview.innerHTML = `
+                <button class="close-btn" onclick="closePhotoPreview()">×</button>
+                <div class="img-container">
+                    <img src="${url}" alt="照片预览">
+                </div>
+                <div class="hint">点击任意处关闭</div>
+            `;
+            currentPhotoPreview.addEventListener('click', function(e) {
+                if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
+                    closePhotoPreview();
+                }
+            });
+            document.body.appendChild(currentPhotoPreview);
+            document.addEventListener('keydown', handlePhotoPreviewKeydown);
+        }
+
+        function closePhotoPreview() {
+            if (currentPhotoPreview) {
+                document.body.removeChild(currentPhotoPreview);
+                currentPhotoPreview = null;
+            }
+            document.removeEventListener('keydown', handlePhotoPreviewKeydown);
+        }
+
+        function handlePhotoPreviewKeydown(e) {
+            if (e.key === 'Escape') {
+                closePhotoPreview();
+            }
+        }
         
         try {
             const storedUser = sessionStorage.getItem('currentUser');
@@ -261,7 +298,7 @@
                     <div class="match-card" onclick="showUserDetail('${user.id}')">
                         <div class="match-left">
                             <div class="match-avatar-wrap">
-                                <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/100?text=无头像'">
+                                <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/100?text=无头像'" onclick="event.stopPropagation(); openPhotoPreview('${card.displayInfo.avatar}')" style="cursor: pointer;">
                                 ${photoCount > 1 ? `<span class="photo-count">${photoCount}</span>` : ''}
                             </div>
                         </div>
@@ -385,10 +422,10 @@
                 modalBody.innerHTML = `
                     <div class="modal-user-section">
                         <div class="modal-photos">
-                            <img src="${card.displayInfo.avatar}" style="width: 100%; max-width: 150px; border-radius: 8px;" onerror="this.src='https://via.placeholder.com/150?text=无头像'">
+                            <img src="${card.displayInfo.avatar}" style="width: 100%; max-width: 150px; border-radius: 8px; cursor: pointer;" onerror="this.src='https://via.placeholder.com/150?text=无头像'" onclick="openPhotoPreview('${card.displayInfo.avatar}')">
                             ${userPhotos.length > 1 ? `
                                 <div style="display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap;">
-                                    ${userPhotos.slice(1, 4).map(p => `<img src="${p}" style="width: 45px; height: 45px; border-radius: 4px; object-fit: cover;">`).join('')}
+                                    ${userPhotos.slice(1, 4).map(p => `<img src="${p}" style="width: 45px; height: 45px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${p}')">`).join('')}
                                 </div>
                             ` : ''}
                         </div>

@@ -144,3 +144,81 @@ function logout() {
     clearCurrentUser();
     window.location.href = 'index.html';
 }
+
+let currentPhotoPreview = null;
+
+function openPhotoPreview(url) {
+    if (currentPhotoPreview) {
+        document.body.removeChild(currentPhotoPreview);
+    }
+    
+    currentPhotoPreview = document.createElement('div');
+    currentPhotoPreview.className = 'photo-preview-modal';
+    currentPhotoPreview.innerHTML = `
+        <button class="close-btn" onclick="closePhotoPreview()">×</button>
+        <div class="img-container">
+            <img src="${url}" alt="照片预览">
+        </div>
+        <div class="hint">点击任意处关闭</div>
+    `;
+    
+    currentPhotoPreview.addEventListener('click', function(e) {
+        if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
+            closePhotoPreview();
+        }
+    });
+    
+    document.body.appendChild(currentPhotoPreview);
+    
+    document.addEventListener('keydown', handlePhotoPreviewKeydown);
+}
+
+function closePhotoPreview() {
+    if (currentPhotoPreview) {
+        document.body.removeChild(currentPhotoPreview);
+        currentPhotoPreview = null;
+    }
+    document.removeEventListener('keydown', handlePhotoPreviewKeydown);
+}
+
+function handlePhotoPreviewKeydown(e) {
+    if (e.key === 'Escape') {
+        closePhotoPreview();
+    }
+}
+
+function createPhotoHtml(photos, size = 'normal') {
+    if (!photos) return '<span style="color: #888;">暂无照片</span>';
+    if (typeof photos === 'string') {
+        try {
+            photos = JSON.parse(photos);
+        } catch (e) {
+            return '<span style="color: #888;">暂无照片</span>';
+        }
+    }
+    if (!Array.isArray(photos) || photos.length === 0) {
+        return '<span style="color: #888;">暂无照片</span>';
+    }
+    
+    if (size === 'large') {
+        return photos.map((photo, idx) => 
+            `<div class="photo-item" style="width: 200px; height: 250px;">
+                <img src="${photo}" class="photo-clickable" onclick="openPhotoPreview('${photo}')" alt="照片${idx + 1}">
+            </div>`
+        ).join('');
+    } else {
+        return photos.map((photo, idx) => 
+            `<img src="${photo}" class="photo-clickable" style="max-width: 120px; max-height: 150px; margin: 5px; border-radius: 8px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photo}')" alt="照片${idx + 1}">`
+        ).join('');
+    }
+}
+
+function getUserPhotoUrl(user) {
+    if (!user) return 'https://via.placeholder.com/100?text=无头像';
+    let photos = user.photos;
+    if (typeof photos === 'string') {
+        try { photos = JSON.parse(photos); } catch (e) { photos = []; }
+    }
+    if (Array.isArray(photos) && photos.length > 0) return photos[0];
+    return 'https://via.placeholder.com/100?text=无头像';
+}
