@@ -462,43 +462,6 @@
     <script>
         console.log("=== admin.html 页面加载 ===");
         let currentUser = null;
-        let currentPhotoPreview = null;
-
-        function openPhotoPreview(url) {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-            }
-            currentPhotoPreview = document.createElement('div');
-            currentPhotoPreview.className = 'photo-preview-modal';
-            currentPhotoPreview.innerHTML = `
-                <button class="close-btn" onclick="closePhotoPreview()">×</button>
-                <div class="img-container">
-                    <img src="${url}" alt="照片预览">
-                </div>
-                <div class="hint">点击任意处关闭</div>
-            `;
-            currentPhotoPreview.addEventListener('click', function(e) {
-                if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
-                    closePhotoPreview();
-                }
-            });
-            document.body.appendChild(currentPhotoPreview);
-            document.addEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function closePhotoPreview() {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-                currentPhotoPreview = null;
-            }
-            document.removeEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function handlePhotoPreviewKeydown(e) {
-            if (e.key === 'Escape') {
-                closePhotoPreview();
-            }
-        }
         
         document.addEventListener('DOMContentLoaded', function() {
             // 获取当前用户
@@ -515,6 +478,10 @@
         function initApp() {
             console.log('🔄 开始初始化应用...');
             try {
+                console.log('📦 检查 Supabase 库:', typeof supabase);
+                console.log('🔑 SUPABASE_URL:', typeof SUPABASE_URL !== 'undefined' ? '已配置' : '未定义');
+                console.log('🔑 SUPABASE_ANON_KEY:', typeof SUPABASE_ANON_KEY !== 'undefined' ? '已配置' : '未定义');
+                
                 if (typeof supabase === 'undefined') {
                     throw new Error('Supabase 库未加载');
                 }
@@ -523,9 +490,16 @@
                     throw new Error('Supabase 配置未定义');
                 }
                 
+                console.log('🔗 创建 Supabase 客户端...');
                 supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                 console.log('✅ Supabase 客户端初始化成功');
                 
+                // 添加认证状态监听
+                supabaseClient.auth.onAuthStateChange((event, session) => {
+                    console.log('🔐 Auth state changed:', event, session ? '已登录' : '未登录');
+                });
+                
+                console.log('📥 开始加载用户数据...');
                 loadUsers();
                 loadActivities();
                 loadAgencies();
@@ -948,8 +922,16 @@
         async function loadUsers() {
             const userList = document.getElementById('userList');
             userList.innerHTML = '<div class="loading">加载中...</div>';
+            console.log('🔄 loadUsers: 开始加载用户数据');
             
             try {
+                console.log('🔄 loadUsers: 检查 supabaseClient:', supabaseClient ? '已初始化' : '未初始化');
+                
+                if (!supabaseClient) {
+                    throw new Error('Supabase 客户端未初始化');
+                }
+                
+                console.log('🔄 loadUsers: 开始执行数据库查询...');
                 const [{ data: users, error: userError }, { data: agencies }] = await Promise.all([
                     supabaseClient
                         .from('users')
@@ -961,30 +943,43 @@
                         .select('id, name')
                 ]);
                 
+                console.log('🔄 loadUsers: 查询完成 - 用户数:', users?.length || 0, '中介数:', agencies?.length || 0);
+                
                 if (userError) {
+                    console.error('❌ loadUsers: 用户查询失败:', userError);
                     userList.innerHTML = `<div class="empty">加载失败: ${userError.message}</div>`;
                     return;
+                }
+                
+                if (!users || users.length === 0) {
+                    console.log('⚠️ loadUsers: 未查询到用户数据');
                 }
                 
                 // 创建中介映射
                 const agencyMap = {};
                 const agencyList = [];
-                agencies.forEach(agency => {
+                agencies?.forEach(agency => {
                     agencyMap[agency.id] = agency.name;
                     agencyList.push({ id: agency.id, name: agency.name });
                 });
                 
                 // 填充中介下拉框
                 const agencyFilter = document.getElementById('userAgencyFilter');
-                agencyFilter.innerHTML = '<option value="">全部中介</option>';
-                agencyList.forEach(agency => {
-                    agencyFilter.innerHTML += `<option value="${agency.id}">${agency.name}</option>`;
-                });
+                if (agencyFilter) {
+                    agencyFilter.innerHTML = '<option value="">全部中介</option>';
+                    agencyList.forEach(agency => {
+                        agencyFilter.innerHTML += `<option value="${agency.id}">${agency.name}</option>`;
+                    });
+                } else {
+                    console.warn('⚠️ loadUsers: userAgencyFilter 元素不存在');
+                }
                 
-                allUsers = users.map(user => ({
+                allUsers = users?.map(user => ({
                     ...user,
                     agency_name: agencyMap[user.agency_id] || '未分配'
                 })) || [];
+                
+                console.log('🔄 loadUsers: allUsers 数据:', allUsers.length, '条');
                 
                 const activeCount = await supabaseClient.from('users').select('id', { count: 'exact' }).eq('status', 'active');
                 const maleCount = await supabaseClient.from('users').select('id', { count: 'exact' }).eq('gender', '男');
@@ -996,7 +991,9 @@
                 document.getElementById('femaleUsers').textContent = femaleCount.count || 0;
                 
                 renderUsers();
+                console.log('✅ loadUsers: 用户数据加载完成');
             } catch (e) {
+                console.error('❌ loadUsers: 加载失败:', e);
                 userList.innerHTML = `<div class="empty">加载失败: ${e.message}</div>`;
             }
         }

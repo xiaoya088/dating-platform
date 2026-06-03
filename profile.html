@@ -17,7 +17,13 @@
         .card-header { font-size: 18px; font-weight: 600; margin-bottom: 15px; color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 6px; font-weight: 500; color: #555; font-size: 14px; }
-        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e1e5eb; border-radius: 8px; font-size: 16px; -webkit-appearance: none; appearance: none; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 14px; border: 2px solid #e1e5eb; border-radius: 8px; font-size: 15px; -webkit-appearance: none; appearance: none; min-height: 44px; line-height: 1.4; background-color: white; }
+        .form-group select { background-image: url('data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23667eea" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>'); background-repeat: no-repeat; background-position: right 10px center; background-size: 10px 12px; padding-right: 32px; cursor: pointer; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkbox-item { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f0f2f5; border: 1px solid #e1e5eb; border-radius: 20px; cursor: pointer; font-size: 14px; transition: all 0.2s; min-height: 36px; }
+        .checkbox-item:hover { background: #667eea; color: white; border-color: #667eea; }
+        .checkbox-item input { width: 16px; height: 16px; cursor: pointer; accent-color: #667eea; }
+        .checkbox-item:has(input:checked) { background: #667eea; color: white; border-color: #667eea; }
         .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
         .form-row { display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 15px; }
         .form-col { flex: 1; min-width: 45%; }
@@ -30,10 +36,6 @@
         .tab-btn.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
-        .checkbox-item { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: #f0f2f5; border-radius: 20px; cursor: pointer; font-size: 14px; }
-        .checkbox-item input { width: 18px; height: 18px; }
-        .checkbox-item.selected { background: #667eea; color: white; }
         .alert { padding: 12px 15px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; }
         .alert-success { background: #d4edda; color: #155724; }
         .alert-error { background: #f8d7da; color: #721c24; }
@@ -46,7 +48,8 @@
             .tab-btn { padding: 8px 12px; font-size: 12px; }
             .form-group { margin-bottom: 12px; }
             .form-group label { font-size: 14px; margin-bottom: 6px; display: block; }
-            .checkbox-item { padding: 8px 10px; font-size: 13px; }
+            .form-group input, .form-group select, .form-group textarea { padding: 12px 14px; font-size: 15px; min-height: 44px; }
+            .checkbox-item { padding: 6px 10px; font-size: 13px; min-height: 34px; }
             .btn { padding: 12px; font-size: 15px; min-height: 44px; }
             .back-link { padding: 8px 12px; font-size: 14px; }
             .navbar { padding: 10px; gap: 10px; }
@@ -695,43 +698,6 @@
     
     <script>
         let currentUser = null;
-        let currentPhotoPreview = null;
-
-        function openPhotoPreview(url) {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-            }
-            currentPhotoPreview = document.createElement('div');
-            currentPhotoPreview.className = 'photo-preview-modal';
-            currentPhotoPreview.innerHTML = `
-                <button class="close-btn" onclick="closePhotoPreview()">×</button>
-                <div class="img-container">
-                    <img src="${url}" alt="照片预览">
-                </div>
-                <div class="hint">点击任意处关闭</div>
-            `;
-            currentPhotoPreview.addEventListener('click', function(e) {
-                if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
-                    closePhotoPreview();
-                }
-            });
-            document.body.appendChild(currentPhotoPreview);
-            document.addEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function closePhotoPreview() {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-                currentPhotoPreview = null;
-            }
-            document.removeEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function handlePhotoPreviewKeydown(e) {
-            if (e.key === 'Escape') {
-                closePhotoPreview();
-            }
-        }
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Profile page loaded, initializing...');
@@ -1787,8 +1753,8 @@
                     usersResult.data?.forEach(u => userMap[u.id] = u);
                 }
 
-                renderMyLikes(myLikesResult.data || [], userMap);
-                renderLikedMe(likedMeResult.data || [], userMap);
+                renderMyLikes(myLikesResult.data || [], userMap, myLikeIds);
+                renderLikedMe(likedMeResult.data || [], userMap, myLikeIds);
                 renderMutualLikes(mutualUserIds, userMap);
             } catch (e) {
                 console.error('loadAllLikesOptimized failed:', e);
@@ -1798,7 +1764,7 @@
             }
         }
 
-        function renderMyLikes(likes, userMap) {
+        function renderMyLikes(likes, userMap, myLikeIds) {
             const list = document.getElementById('myLikesList');
             if (likes.length === 0) {
                 list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
@@ -1821,7 +1787,7 @@
             }).join('');
         }
 
-        function renderLikedMe(likes, userMap) {
+        function renderLikedMe(likes, userMap, myLikeIds) {
             const list = document.getElementById('likedMeList');
             if (likes.length === 0) {
                 list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">暂无记录</p>';
@@ -1831,7 +1797,7 @@
                 const user = userMap[like.from_user_id];
                 if (!user) return '';
                 const photos = typeof user.photos === 'string' ? JSON.parse(user.photos) : user.photos;
-                const hasLikedBack = like.from_user_id in userMap;
+                const hasLikedBack = myLikeIds && myLikeIds.includes(user.id);
                 return `
                     <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee;">
                         <img src="${photos?.[0] || user.avatar_url || 'https://via.placeholder.com/50'}" style="width: 50px; height: 50px; border-radius: 50%; margin-right: 10px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${photos?.[0] || user.avatar_url}')">
@@ -1839,7 +1805,7 @@
                             <div style="font-weight: 600;">${user.name || '匿名用户'}</div>
                             <div style="font-size: 12px; color: #888;">${user.province || ''} ${user.city || ''}</div>
                         </div>
-                        <button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="likeUserBack('${user.id}')">回赞</button>
+                        ${hasLikedBack ? '<span style="color: #667eea; font-size: 14px; font-weight: 500; margin-right: 10px;">已回赞</span>' : '<button class="btn btn-primary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="likeUserBack(\'' + user.id + '\')">回赞</button>'}
                         <button class="btn btn-secondary" style="width: auto; padding: 8px 12px; margin: 0;" onclick="viewUserProfile('${user.id}')">查看</button>
                     </div>
                 `;

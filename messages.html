@@ -70,43 +70,7 @@
         let replyToMessageId = null;
         let replyToContent = '';
         let replyToName = '';
-        let currentPhotoPreview = null;
 
-        function openPhotoPreview(url) {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-            }
-            currentPhotoPreview = document.createElement('div');
-            currentPhotoPreview.className = 'photo-preview-modal';
-            currentPhotoPreview.innerHTML = `
-                <button class="close-btn" onclick="closePhotoPreview()">×</button>
-                <div class="img-container">
-                    <img src="${url}" alt="照片预览">
-                </div>
-                <div class="hint">点击任意处关闭</div>
-            `;
-            currentPhotoPreview.addEventListener('click', function(e) {
-                if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
-                    closePhotoPreview();
-                }
-            });
-            document.body.appendChild(currentPhotoPreview);
-            document.addEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function closePhotoPreview() {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-                currentPhotoPreview = null;
-            }
-            document.removeEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function handlePhotoPreviewKeydown(e) {
-            if (e.key === 'Escape') {
-                closePhotoPreview();
-            }
-        }
         
         function getCurrentUser() {
             const data = sessionStorage.getItem('currentUser');

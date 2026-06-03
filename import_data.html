@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据导入工具</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .card { background: white; border-radius: 10px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card-header { font-size: 18px; font-weight: 600; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #667eea; }
+        .btn { padding: 12px 24px; border: none; border-radius: 8px; font-size: 16px; font-weight: 500; cursor: pointer; margin-right: 10px; margin-bottom: 10px; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; }
+        .btn-secondary { background: #f0f2f5; color: #333; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .log { background: #f8f9fa; border: 1px solid #e1e5eb; border-radius: 6px; padding: 15px; font-family: monospace; font-size: 14px; height: 300px; overflow-y: auto; margin-top: 15px; }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        .progress-bar { height: 8px; background: #e1e5eb; border-radius: 4px; margin-top: 15px; overflow: hidden; }
+        .progress-bar-inner { height: 100%; background: linear-gradient(135deg, #667eea, #764ba2); width: 0%; transition: width 0.3s; }
+        .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-top: 15px; }
+        .stat-item { background: #f8f9fa; padding: 15px; border-radius: 8px; text-align: center; }
+        .stat-number { font-size: 24px; font-weight: 700; color: #667eea; }
+        .stat-label { font-size: 12px; color: #888; margin-top: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="card-header">📊 数据导入工具</div>
+            
+            <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据（保留管理员）</button>
+            <button class="btn btn-primary" onclick="importTestData()">📥 导入测试数据</button>
+            <button class="btn btn-secondary" onclick="refreshStats()">🔄 刷新统计</button>
+            <button class="btn btn-secondary" onclick="clearLog()">🧹 清空日志</button>
+            
+            <div class="stats" id="stats">
+                <div class="stat-item"><div class="stat-number" id="usersCount">-</div><div class="stat-label">用户数</div></div>
+                <div class="stat-item"><div class="stat-number" id="agenciesCount">-</div><div class="stat-label">中介数</div></div>
+                <div class="stat-item"><div class="stat-number" id="requirementsCount">-</div><div class="stat-label">择偶需求数</div></div>
+                <div class="stat-item"><div class="stat-number" id="adminsCount">-</div><div class="stat-label">管理员数</div></div>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-bar-inner" id="progress"></div>
+            </div>
+            
+            <div class="log" id="log"></div>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://awhpfdhxcoycxgfhpfoy.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA';
+        
+        let supabaseClient = null;
+        const PASSWORD = '111111';
+
+        async function init() {
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                log('✅ Supabase 客户端初始化成功', 'success');
+                await refreshStats();
+            } catch (e) {
+                log('❌ 初始化失败: ' + e.message, 'error');
+            }
+        }
+
+        function log(message, type = 'info') {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString('zh-CN');
+            logEl.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+        }
+
+        function setProgress(percent) {
+            document.getElementById('progress').style.width = percent + '%';
+        }
+
+        async function refreshStats() {
+            try {
+                const [usersRes, agenciesRes, reqRes, adminsRes] = await Promise.all([
+                    supabaseClient.from('users').select('id', { count: 'exact' }),
+                    supabaseClient.from('agencies').select('id', { count: 'exact' }),
+                    supabaseClient.from('user_requirements').select('id', { count: 'exact' }),
+                    supabaseClient.from('admins').select('id', { count: 'exact' })
+                ]);
+                
+                document.getElementById('usersCount').textContent = usersRes.count || 0;
+                document.getElementById('agenciesCount').textContent = agenciesRes.count || 0;
+                document.getElementById('requirementsCount').textContent = reqRes.count || 0;
+                document.getElementById('adminsCount').textContent = adminsRes.count || 0;
+            } catch (e) {
+                log('❌ 刷新统计失败: ' + e.message, 'error');
+            }
+        }
+
+        async function clearAllData() {
+            if (!confirm('⚠️ 确定要清空所有数据吗？管理员账号将被保留。')) {
+                return;
+            }
+            
+            log('🗑️ 开始清空数据...', 'warning');
+            setProgress(0);
+            
+            try {
+                const tables = ['users', 'user_requirements', 'agencies', 'likes', 'messages', 'match_results', 'activity_registrations'];
+                
+                for (let i = 0; i < tables.length; i++) {
+                    const table = tables[i];
+                    log(`   清空 ${table} 表...`);
+                    await supabaseClient.from(table).delete().neq('id', '0');
+                    setProgress((i + 1) / tables.length * 100);
+                }
+                
+                log('✅ 数据清空完成', 'success');
+                await refreshStats();
+            } catch (e) {
+                log('❌ 清空数据失败: ' + e.message, 'error');
+            }
+        }
+
+        async function importTestData() {
+            log('📥 开始导入测试数据...', 'info');
+            setProgress(0);
+            
+            try {
+                const response = await fetch('data/test_data.json');
+                const data = await response.json();
+                
+                log('   创建中介...', 'info');
+                for (const agency of data.agencies) {
+                    const { error } = await supabaseClient.from('agencies').insert({
+                        name: agency.name,
+                        phone: agency.phone,
+                        address: agency.address
+                    });
+                    if (error) log('⚠️ 创建中介失败: ' + error.message, 'warning');
+                }
+                setProgress(20);
+                
+                log('   创建用户...', 'info');
+                const createdUsers = [];
+                for (let i = 0; i < data.users.length; i++) {
+                    const user = data.users[i];
+                    
+                    try {
+                        // 创建认证用户
+                        const { data: authUser, error: authError } = await supabaseClient.auth.signUp({
+                            phone: user.phone,
+                            password: PASSWORD
+                        });
+                        
+                        if (authError) {
+                            log('⚠️ 创建认证用户失败 (' + user.phone + '): ' + authError.message, 'warning');
+                            continue;
+                        }
+                        
+                        // 创建用户资料
+                        const { error: profileError } = await supabaseClient.from('users').insert({
+                            id: authUser.user.id,
+                            name: user.name,
+                            phone: user.phone,
+                            gender: user.gender,
+                            birthday: user.birthday,
+                            province: user.province,
+                            city: user.city,
+                            current_address: user.current_address,
+                            height: user.height,
+                            weight: user.weight,
+                            education: user.education,
+                            occupation: user.occupation,
+                            income: user.income,
+                            marital_status: user.marital_status,
+                            status: user.status,
+                            photos: user.photos
+                        });
+                        
+                        if (profileError) {
+                            log('⚠️ 创建用户资料失败 (' + user.phone + '): ' + profileError.message, 'warning');
+                            continue;
+                        }
+                        
+                        createdUsers.push({ id: authUser.user.id, ...user });
+                        log(`   ✓ ${user.name} (${user.phone})`);
+                    } catch (e) {
+                        log('⚠️ 导入用户失败 (' + user.phone + '): ' + e.message, 'warning');
+                    }
+                    
+                    setProgress(20 + (i + 1) / data.users.length * 60);
+                }
+                
+                log('   创建择偶需求...', 'info');
+                for (let i = 0; i < data.user_requirements.length && i < createdUsers.length; i++) {
+                    const req = data.user_requirements[i];
+                    const user = createdUsers[i];
+                    
+                    const { error } = await supabaseClient.from('user_requirements').insert({
+                        user_id: user.id,
+                        target_gender: req.target_gender,
+                        min_age: req.min_age,
+                        max_age: req.max_age,
+                        min_height: req.min_height,
+                        max_height: req.max_height,
+                        education: req.education,
+                        marital_status: req.marital_status
+                    });
+                    
+                    if (error) log('⚠️ 创建择偶需求失败: ' + error.message, 'warning');
+                }
+                setProgress(90);
+                
+                log('   计算匹配度...', 'info');
+                await supabaseClient.rpc('calculate_all_matches');
+                setProgress(100);
+                
+                log('✅ 测试数据导入完成！', 'success');
+                log(`📝 已创建 ${createdUsers.length} 个测试用户，密码均为: ${PASSWORD}`, 'info');
+                await refreshStats();
+                
+            } catch (e) {
+                log('❌ 导入数据失败: ' + e.message, 'error');
+            }
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        init();
+    </script>
+</body>
+</html>

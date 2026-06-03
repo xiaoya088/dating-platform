@@ -85,44 +85,6 @@
         console.log('match.html 页面加载，开始检查用户登录状态');
 
         let currentUser = null;
-        let currentPhotoPreview = null;
-        let redirecting = false;
-
-        function openPhotoPreview(url) {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-            }
-            currentPhotoPreview = document.createElement('div');
-            currentPhotoPreview.className = 'photo-preview-modal';
-            currentPhotoPreview.innerHTML = `
-                <button class="close-btn" onclick="closePhotoPreview()">×</button>
-                <div class="img-container">
-                    <img src="${url}" alt="照片预览">
-                </div>
-                <div class="hint">点击任意处关闭</div>
-            `;
-            currentPhotoPreview.addEventListener('click', function(e) {
-                if (e.target === currentPhotoPreview || e.target.classList.contains('img-container') === false) {
-                    closePhotoPreview();
-                }
-            });
-            document.body.appendChild(currentPhotoPreview);
-            document.addEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function closePhotoPreview() {
-            if (currentPhotoPreview) {
-                document.body.removeChild(currentPhotoPreview);
-                currentPhotoPreview = null;
-            }
-            document.removeEventListener('keydown', handlePhotoPreviewKeydown);
-        }
-
-        function handlePhotoPreviewKeydown(e) {
-            if (e.key === 'Escape') {
-                closePhotoPreview();
-            }
-        }
         
         try {
             const storedUser = sessionStorage.getItem('currentUser');
