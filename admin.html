@@ -270,7 +270,7 @@
                     <button class="btn btn-primary" onclick="loadUserMatchDetails()">查询</button>
                 </div>
                 <div id="userMatchDetails" style="margin-top: 15px;">
-                    <div class="empty">请输入姓名或手机号查询该用户的匹配情况</div>
+                    <div class="loading">正在加载所有用户匹配情况...</div>
                 </div>
             </div>
 
@@ -646,7 +646,7 @@
             else if (tabName === 'agencies') loadAgencies();
             else if (tabName === 'announcements') loadAnnouncements();
             else if (tabName === 'activities') loadActivities();
-            else if (tabName === 'matches') { loadMatchStats(); loadLikes(); loadMutualLikes(); }
+            else if (tabName === 'matches') { loadMatchStats(); loadAllUsersMatchOverview(); loadLikes(); loadMutualLikes(); }
             else if (tabName === 'system') loadSystemInfo();
             else if (tabName === 'params') { loadParams(); loadEducationOptions(); loadIncomeOptions(); loadMaritalOptions(); loadInterests(); loadActivityTypes(); loadAllFamilyOptions(); }
             else if (tabName === 'qrCode') { renderAdminQrCode(); }
@@ -1962,10 +1962,101 @@
         }
         
         function logout() {
+            // 清空所有本地存储
             localStorage.removeItem('currentUser');
             localStorage.removeItem('datingCurrentUser');
             localStorage.removeItem('rememberedUser');
+            localStorage.removeItem('adminToken');
+            localStorage.clear();
+            
+            // 清除所有 sessionStorage
+            sessionStorage.clear();
+            
+            // 清除 Supabase 缓存
+            if (typeof supabaseClient !== 'undefined') {
+                supabaseClient.auth.signOut();
+            }
+            
+            // 返回登录界面
             window.location.href = 'index.html';
+        }
+        // 默认加载所有用户的匹配情况
+        async function loadAllUsersMatchOverview() {
+            const detailsDiv = document.getElementById('userMatchDetails');
+            detailsDiv.innerHTML = '<div class="loading">正在加载所有用户匹配情况...</div>';
+
+            try {
+                // 获取所有用户
+                const { data: users, error: usersError } = await supabaseClient
+                    .from('users')
+                    .select('id, name, phone, gender, birthday, current_address, education')
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (usersError) throw usersError;
+                if (!users || users.length === 0) {
+                    detailsDiv.innerHTML = '<div class="empty">暂无用户数据</div>';
+                    return;
+                }
+
+                // 获取所有点赞关系
+                const { data: allLikes } = await supabaseClient
+                    .from('likes')
+                    .select('from_user_id, to_user_id');
+
+                const likesMap = {};
+                (allLikes || []).forEach(like => {
+                    if (!likesMap[like.from_user_id]) likesMap[like.from_user_id] = new Set();
+                    likesMap[like.from_user_id].add(like.to_user_id);
+                });
+
+                // 计算每个用户的匹配情况
+                const userMatchData = [];
+                for (const user of users) {
+                    const likedUsers = likesMap[user.id] || new Set();
+                    const mutualCount = [...likedUsers].filter(uid => 
+                        likesMap[uid] && likesMap[uid].has(user.id)
+                    ).length;
+                    
+                    userMatchData.push({
+                        ...user,
+                        likesCount: likedUsers.size,
+                        mutualCount: mutualCount
+                    });
+                }
+
+                // 按互相喜欢数排序
+                userMatchData.sort((a, b) => b.mutualCount - a.mutualCount);
+
+                let html = `
+                    <div style="margin-bottom: 15px; color: #666;">显示前50个用户的匹配情况（按互相喜欢数排序）</div>
+                    <table>
+                        <thead><tr><th>序号</th><th>用户</th><th>性别</th><th>年龄</th><th>所在地</th><th>学历</th><th>点赞数</th><th>互相喜欢</th></tr></thead>
+                        <tbody>
+                `;
+
+                userMatchData.forEach((user, index) => {
+                    const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
+
+                    html += `
+                        <tr>
+                            <td data-label="序号">${index + 1}</td>
+                            <td data-label="用户">${user.name || '未命名'}<br><small style="color:#666">${user.phone || '无手机号'}</small></td>
+                            <td data-label="性别">${user.gender || '未知'}</td>
+                            <td data-label="年龄">${age}</td>
+                            <td data-label="所在地">${user.current_address || '未填写'}</td>
+                            <td data-label="学历">${user.education || '未知'}</td>
+                            <td data-label="点赞数">${user.likesCount}</td>
+                            <td data-label="互相喜欢"><strong style="color: #28a745;">${user.mutualCount}</strong></td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                detailsDiv.innerHTML = html;
+            } catch (error) {
+                detailsDiv.innerHTML = `<div class="empty" style="color: #dc3545;">加载失败: ${error.message}</div>`;
+            }
         }
         
         async function loadMatchStats() {

@@ -389,7 +389,17 @@
         }
         
         async function sendChatMessage() {
-            const content = document.getElementById('messageInput').value.trim();
+            console.log('📤 ========== 用户端发送私信开始 ==========');
+            const input = document.getElementById('messageInput');
+            
+            if (!input) {
+                console.error('❌ 找不到输入框');
+                showAlert('页面错误：找不到输入框', 'error');
+                return;
+            }
+            
+            const content = input.value.trim();
+            console.log('📝 输入内容:', content);
             
             if (!content) {
                 showAlert('请输入消息内容', 'error');
@@ -397,9 +407,13 @@
             }
             
             if (!currentChatUserId) {
+                console.error('❌ currentChatUserId 为空');
                 showAlert('请先选择聊天对象', 'error');
                 return;
             }
+            
+            console.log('👤 currentChatUserId:', currentChatUserId);
+            console.log('👤 currentUser.id:', currentUser.id);
             
             const supabase = getSupabase();
             
@@ -417,22 +431,28 @@
                 messageData.reply_to_name = replyToName;
             }
             
+            console.log('📦 消息数据:', messageData);
+            
             try {
-                const { error } = await supabase
+                console.log('🔄 正在调用 supabase insert...');
+                const { data, error } = await supabase
                     .from('messages')
-                    .insert([messageData]);
+                    .insert([messageData])
+                    .select();
                 
                 if (error) {
-                    console.error('send error:', error);
+                    console.error('❌ Supabase 插入错误:', error);
                     showAlert('发送失败: ' + error.message, 'error');
                 } else {
-                    document.getElementById('messageInput').value = '';
+                    console.log('✅ Supabase 插入成功:', data);
+                    input.value = '';
                     cancelReply();
                     await loadChatMessages();
                     await loadMessageList();
+                    console.log('✅ ========== 发送完成 ==========');
                 }
             } catch (e) {
-                console.error('sendChatMessage exception:', e);
+                console.error('❌ 发送异常:', e);
                 showAlert('发送失败: ' + e.message, 'error');
             }
         }

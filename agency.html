@@ -808,6 +808,7 @@
         
         // 用户信息
         let currentUser = null;
+        let selectedPhotos = []; // 存储选中的照片
 
         const urlParams = new URLSearchParams(window.location.search);
         const encodedUser = urlParams.get('user');
@@ -1699,7 +1700,7 @@
                                         '<span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">待处理</span>';
                     return `
                     <div class="message-item" style="cursor: pointer;" onclick="openRequestDetail('${req.id}')">
-                        <img class="message-avatar" src="${getAgencyUserPhoto(req.from_user)}">
+                                                    <img class="message-avatar" src="${defaultAvatarSVG}" style="background:#ddd;" alt="头像">
                         <div class="message-content" style="flex: 1;">
                             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
                                 <span style="font-weight: 600;">${req.from_user?.name || '匿名用户'} (${req.from_user?.phone || '无电话'})</span>
@@ -1742,8 +1743,20 @@
         }
 
         // 获取用户照片
-        function getAgencyUserPhoto(user) {
-            if (!user) return 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27 viewBox=%270 0 40 40%27%3E%3Crect fill=%27%23ddd%27 width=%2740%27 height=%2740%27/%3E%3Ctext x=%2720%27 y=%2722%27 font-size=%2710%27 text-anchor=%27middle%27 fill=%27%23666%27%3E%3C/text%3E%3C/svg%3E';
+        // 照片缓存，避免重复解析
+        const photoCache = new Map();
+        
+        // 默认头像SVG
+        const defaultAvatarSVG = 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27 viewBox=%270 0 40 40%27%3E%3Crect fill=%27%23ddd%27 width=%2740%27 height=%2740%27/%3E%3Ctext x=%2720%27 y=%2722%27 font-size=%2710%27 text-anchor=%27middle%27 fill=%27%23666%27%3E%3C/text%3E%3C/svg%3E';
+        
+        function getAgencyUserPhoto(user, useCache = true) {
+            if (!user) return defaultAvatarSVG;
+            
+            const cacheKey = user.id;
+            if (useCache && photoCache.has(cacheKey)) {
+                return photoCache.get(cacheKey);
+            }
+            
             let photos = user.photos;
             if (typeof photos === 'string') {
                 try {
@@ -1752,10 +1765,36 @@
                     photos = [];
                 }
             }
+            
+            let result = defaultAvatarSVG;
+            
             if (Array.isArray(photos) && photos.length > 0) {
-                return photos[0];
+                result = photos[0];
             }
-            return 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27 viewBox=%270 0 40 40%27%3E%3Crect fill=%27%23ddd%27 width=%2740%27 height=%2740%27/%3E%3Ctext x=%2720%27 y=%2722%27 font-size=%2710%27 text-anchor=%27middle%27 fill=%27%23666%27%3E%3C/text%3E%3C/svg%3E';
+            
+            if (useCache) {
+                photoCache.set(cacheKey, result);
+            }
+            return result;
+        }
+        
+        // 创建带懒加载的头像元素
+        function createLazyAvatar(user, size = 40) {
+            const photoUrl = getAgencyUserPhoto(user);
+            const isDataUrl = photoUrl.startsWith('data:');
+            
+            if (isDataUrl) {
+                // base64图片直接使用
+                return `<img class="message-avatar" src="${photoUrl}" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.src='${defaultAvatarSVG}'">`;
+            } else {
+                // 外部URL使用懒加载
+                return `<img class="message-avatar" src="${photoUrl}" loading="lazy" style="width:${size}px;height:${size}px;" onerror="this.src='${defaultAvatarSVG}'">`;
+            }
+        }
+        
+        // 清除照片缓存
+        function clearPhotoCache() {
+            photoCache.clear();
         }
 
         // ============================================
@@ -1898,8 +1937,17 @@
 
         // 发送请求回复
         async function sendRequestReply() {
-            console.log('📤 尝试发送私信');
-            const content = document.getElementById('requestReplyInput').value.trim();
+            console.log('📤 ========== 发送私信开始 ==========');
+            const input = document.getElementById('requestReplyInput');
+            
+            if (!input) {
+                console.error('❌ 找不到输入框元素');
+                showAlert('页面错误：找不到输入框', 'error');
+                return;
+            }
+            
+            const content = input.value.trim();
+            console.log('📝 输入内容:', content);
             
             if (!content) {
                 showAlert('请输入回复内容', 'error');
@@ -1907,13 +1955,26 @@
             }
             
             if (!currentRequestDetail) {
+                console.error('❌ currentRequestDetail 为空');
                 showAlert('请先选择请求', 'error');
                 return;
             }
             
-            console.log('📝 发送内容:', content);
-            console.log('👤 目标用户ID:', currentRequestDetail.from_user_id);
-            console.log('👤 当前用户:', currentUser);
+            console.log('🔍 currentRequestDetail:', currentRequestDetail);
+            console.log('👤 from_user_id:', currentRequestDetail.from_user_id);
+            console.log('👤 currentUser.id:', currentUser.id);
+            
+            if (!currentRequestDetail.from_user_id) {
+                console.error('❌ 找不到 from_user_id');
+                showAlert('用户ID缺失，请刷新页面', 'error');
+                return;
+            }
+            
+            if (!currentUser.id) {
+                console.error('❌ 找不到当前用户ID');
+                showAlert('当前用户信息缺失，请重新登录', 'error');
+                return;
+            }
             
             const supabase = getSupabase();
             
@@ -1925,22 +1986,32 @@
                 created_at: new Date().toISOString()
             };
             
-            console.log('📦 消息数据:', messageData);
+            console.log('📦 准备插入的消息数据:', messageData);
             
-            const { error } = await supabase
-                .from('messages')
-                .insert([messageData]);
-            
-            if (error) {
-                console.error('❌ 发送失败:', error);
-                showAlert('发送失败: ' + error.message, 'error');
-                return;
+            try {
+                console.log('🔄 正在调用 supabase insert...');
+                const { data, error } = await supabase
+                    .from('messages')
+                    .insert([messageData])
+                    .select();
+                
+                if (error) {
+                    console.error('❌ Supabase 插入错误:', error);
+                    showAlert('发送失败: ' + error.message, 'error');
+                    return;
+                }
+                
+                console.log('✅ Supabase 插入成功:', data);
+                
+                input.value = '';
+                await loadRequestChatMessages(currentRequestDetail.from_user_id);
+                showAlert('回复成功', 'success');
+                console.log('✅ ========== 发送完成 ==========');
+                
+            } catch (e) {
+                console.error('❌ 发送异常:', e);
+                showAlert('发送异常: ' + e.message, 'error');
             }
-            
-            document.getElementById('requestReplyInput').value = '';
-            await loadRequestChatMessages(currentRequestDetail.from_user_id);
-            showAlert('回复成功', 'success');
-            console.log('✅ 发送成功');
         }
 
         // ============================================
@@ -1952,63 +2023,80 @@
         async function loadAgencyMatches() {
             const supabase = getSupabase();
             const matchUserList = document.getElementById('matchUserList');
-            matchUserList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            matchUserList.innerHTML = '<div class="loading"><div class="spinner"></div><p style="text-align:center;color:#666;margin-top:10px;">加载中...</p></div>';
             
             console.log('🔍 开始加载匹配信息...');
             const startTime = Date.now();
             
+            // 30秒超时
+            const timeoutId = setTimeout(() => {
+                console.warn('⚠️ 查询超时');
+                matchUserList.innerHTML = '<p style="text-align:center;color:#f60;padding:40px;">查询超时，请检查网络或数据库连接</p>';
+            }, 30000);
+            
             try {
-                // 使用单个查询获取用户及其匹配数量
+                // 查询本中介录入的用户（不查询photos，使用默认头像）
                 const { data: myUsers, error: usersError } = await supabase
                     .from('users')
-                    .select('id, name, phone, photos, gender, birthday')
+                    .select('id, name, phone, gender, birthday')
                     .eq('agency_id', currentUser.id)
-                    .order('created_at', { ascending: false })
-                    .limit(100); // 添加数量限制
+                    .limit(30); // 减少数量
+                
+                clearTimeout(timeoutId);
                 
                 if (usersError) {
                     console.error('查询用户失败:', usersError);
-                    matchUserList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + usersError.message + '</p>';
+                    matchUserList.innerHTML = '<p style="text-align:center;color:#f00;padding:40px;">加载失败: ' + usersError.message + '</p>';
                     return;
                 }
                 
                 if (!myUsers || myUsers.length === 0) {
-                    matchUserList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无录入的客户</p>';
+                    matchUserList.innerHTML = '<p style="text-align:center;color:#888;padding:40px;">暂无录入的客户</p>';
                     return;
                 }
                 
-                // 批量查询匹配数量（使用单个查询）
-                const userIds = myUsers.map(u => u.id);
-                const { data: matchCounts, error: matchError } = await supabase
-                    .from('match_results')
-                    .select('user_id')
-                    .in('user_id', userIds)
-                    .eq('is_filtered', false);
-                
-                if (matchError) console.error('查询匹配数量失败:', matchError);
+                console.log(`✅ 查询到 ${myUsers.length} 个用户`);
                 
                 // 统计每个用户的匹配数量
                 const countMap = {};
-                (matchCounts || []).forEach(m => {
-                    countMap[m.user_id] = (countMap[m.user_id] || 0) + 1;
+                myUsers.forEach(user => {
+                    countMap[user.id] = 0;
                 });
                 
-                const elapsed = Date.now() - startTime;
-                console.log(`✅ 加载完成，耗时: ${elapsed}ms，用户数: ${myUsers.length}`);
+                // 查询匹配数量（分批查询，每批10个用户）
+                for (let i = 0; i < myUsers.length; i += 10) {
+                    const batch = myUsers.slice(i, i + 10);
+                    const userIds = batch.map(u => u.id);
+                    
+                    const { data: matchCounts } = await supabase
+                        .from('match_results')
+                        .select('user_id')
+                        .in('user_id', userIds)
+                        .eq('is_filtered', false)
+                        .limit(100);
+                    
+                    (matchCounts || []).forEach(m => {
+                        if (countMap[m.user_id] !== undefined) {
+                            countMap[m.user_id]++;
+                        }
+                    });
+                }
+                
+                console.log('✅ 匹配数量统计完成');
                 
                 matchUserList.innerHTML = myUsers.map(user => {
                     const matchCount = countMap[user.id] || 0;
                     const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
                     
                     return `
-                        <div class="message-item" style="cursor: pointer;" onclick="openMatchDetail('${user.id}')">
-                            <img class="message-avatar" src="${getAgencyUserPhoto(user)}">
-                            <div class="message-content" style="flex: 1;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
-                                    <span style="font-weight: 600;">${user.name || '匿名'} (${user.phone || '无电话'})</span>
-                                    <span style="background: ${matchCount > 0 ? '#667eea' : '#ccc'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${matchCount} 个匹配</span>
+                        <div class="message-item" style="cursor:pointer;" onclick="openMatchDetail('${user.id}')">
+                            <img class="message-avatar" src="${defaultAvatarSVG}" style="background:#ddd;" alt="头像" onerror="this.src='${defaultAvatarSVG}'">
+                            <div class="message-content" style="flex:1;">
+                                <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:5px;">
+                                    <span style="font-weight:600;">${user.name || '匿名'} (${user.phone || '无电话'})</span>
+                                    <span style="background:${matchCount > 0 ? '#667eea' : '#ccc'};color:white;padding:2px 8px;border-radius:4px;font-size:12px;">${matchCount} 个匹配</span>
                                 </div>
-                                <div style="color: #888; margin-top: 5px;">${user.gender || '-'} | ${age}岁</div>
+                                <div style="color:#888;margin-top:5px;">${user.gender || '-'} | ${age}岁</div>
                             </div>
                             <div onclick="event.stopPropagation();">
                                 <button class="btn btn-secondary btn-small" onclick="openMatchDetail('${user.id}')">查看匹配</button>
@@ -2018,8 +2106,9 @@
                 }).join('');
                 
             } catch (e) {
+                clearTimeout(timeoutId);
                 console.error('加载匹配信息失败:', e);
-                matchUserList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载异常: ' + e.message + '</p>';
+                matchUserList.innerHTML = '<p style="text-align:center;color:#f00;padding:40px;">加载失败: ' + e.message + '</p>';
             }
         }
 
@@ -2072,7 +2161,7 @@
                     
                     return `
                         <div class="message-item" style="cursor: pointer;" onclick="openMatchDetail('${user.id}')">
-                            <img class="message-avatar" src="${getAgencyUserPhoto(user)}">
+                            <img class="message-avatar" src="${defaultAvatarSVG}" style="background:#ddd;" alt="头像">
                             <div class="message-content" style="flex: 1;">
                                 <div style="display: flex; justify-content: space-between; align-items: center;">
                                     <span style="font-weight: 600;">${user.name || '匿名'} (${user.phone || '无电话'})</span>

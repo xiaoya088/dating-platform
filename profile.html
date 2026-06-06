@@ -555,12 +555,6 @@
             <div class="card">
                 <div class="card-header">择偶要求</div>
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-                    <button class="btn btn-secondary" onclick="loadRequirementScheme('standard')" style="flex: 1;">标准方案</button>
-                    <button class="btn btn-secondary" onclick="loadRequirementScheme('relaxed')" style="flex: 1;">宽松方案</button>
-                    <button class="btn btn-primary" onclick="saveCurrentScheme()" style="flex: 1;">保存当前方案</button>
-                </div>
-                
                 <div class="form-row">
                     <div class="form-col">
                         <div class="form-group">
@@ -1519,7 +1513,7 @@
                     activities: activityValues.length > 0 ? activityValues : null,
                     min_activity_overlap: document.getElementById('reqMinActivityOverlap').value ? parseInt(document.getElementById('reqMinActivityOverlap').value) : null,
                     values: document.getElementById('reqValues').value,
-                    scheme_type: currentSchemeType || 'standard',
+                    scheme_type: 'standard',
                     updated_at: new Date().toISOString()
                 };
                 
@@ -1527,7 +1521,7 @@
                     .from('user_requirements')
                     .select('id')
                     .eq('user_id', userId)
-                    .eq('scheme_type', currentSchemeType || 'standard')
+                    .eq('scheme_type', 'standard')
                     .single();
                 
                 if (selectError && selectError.code !== 'PGRST116') throw selectError;
@@ -1554,15 +1548,14 @@
         
         let currentSchemeType = 'standard';
         
-        async function loadRequirementScheme(schemeType) {
-            currentSchemeType = schemeType;
+        async function loadRequirementScheme(schemeType = 'standard') {
             try {
                 const supabase = getSupabase();
                 const { data: requirements, error } = await supabase
                     .from('user_requirements')
                     .select('*')
                     .eq('user_id', currentUser.id)
-                    .eq('scheme_type', schemeType)
+                    .eq('scheme_type', 'standard')
                     .single();
                 
                 if (error && error.code !== 'PGRST116') throw error;
@@ -1641,7 +1634,7 @@
                     });
                 }
                 
-                showAlert(`已加载${schemeType === 'standard' ? '标准' : '宽松'}方案`, 'success');
+                showAlert('已加载择偶要求', 'success');
             } catch (e) {
                 showAlert('加载失败: ' + e.message, 'error');
             }
@@ -1685,8 +1678,7 @@
         }
         
         async function saveCurrentScheme() {
-            const schemeName = currentSchemeType === 'standard' ? '标准方案' : '宽松方案';
-            if (confirm(`确定保存当前设置为${schemeName}吗？`)) {
+            if (confirm('确定保存当前择偶要求吗？')) {
                 await saveRequirements();
             }
         }
