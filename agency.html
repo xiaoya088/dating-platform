@@ -40,8 +40,8 @@
         <div class="navbar-brand">💕 中介后台</div>
         <ul class="navbar-nav">
             <li><a href="#" onclick="showTab('clients'); return false;" class="active" id="navClients">客户管理</a></li>
+            <li><a href="#" onclick="showTab('matches'); return false;" id="navMatches">匹配信息</a></li>
             <li><a href="#" onclick="showTab('requests'); return false;">联系请求</a></li>
-            <li><a href="#" onclick="showTab('messages'); return false;">私信</a></li>
             <li><a href="#" onclick="logout(); return false;">退出</a></li>
         </ul>
     </nav>
@@ -75,9 +75,9 @@
             }
             
             // 根据标签加载数据
-            if (tabName === 'messages') {
-                backToAgencyList();
-                loadAgencyMessageList();
+            if (tabName === 'matches') {
+                backToMatchList();
+                loadAgencyMatches();
             }
         }
         
@@ -128,8 +128,8 @@
     <div class="container">
         <div class="tabs">
             <button class="tab-btn active" data-tab="clients">客户管理</button>
+            <button class="tab-btn" data-tab="matches">匹配信息</button>
             <button class="tab-btn" data-tab="requests">联系请求</button>
-            <button class="tab-btn" data-tab="messages">私信</button>
             <button class="tab-btn" data-tab="add">录入客户</button>
         </div>
         
@@ -150,46 +150,75 @@
             </div>
         </div>
         
-        <div id="requestsTab" class="tab-content hidden">
+        <div id="matchesTab" class="tab-content hidden">
             <div class="card">
-                <div class="card-header">联系请求</div>
+                <div class="card-header">匹配信息</div>
                 
-                <div id="requestList">
-                    <div class="loading">
-                        <div class="spinner"></div>
-                    </div>
+                <div class="search-box" style="margin-bottom: 15px;">
+                    <input type="text" id="searchMatchUser" placeholder="搜索客户姓名或手机号" style="flex: 1;">
+                    <button class="btn btn-secondary" onclick="searchMatchUsers()">搜索</button>
+                    <button class="btn btn-secondary" onclick="loadAgencyMatches()">显示全部</button>
                 </div>
-            </div>
-        </div>
-        
-        <div id="messagesTab" class="tab-content hidden">
-            <div class="card">
-                <div class="card-header">私信管理</div>
                 
-                <div id="messageListView">
-                    <div id="messageList">
+                <div id="matchListView">
+                    <div id="matchUserList">
                         <div class="loading">
                             <div class="spinner"></div>
                         </div>
                     </div>
                 </div>
                 
-                <div id="chatView" class="hidden">
-                    <div id="chatHeader" style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
-                        <button class="btn btn-secondary btn-small" onclick="backToAgencyList()">← 返回</button>
-                        <img id="chatAvatar" class="match-avatar" style="width: 45px; height: 45px;" src="">
+                <div id="matchDetailView" class="hidden">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-small" onclick="backToMatchList()">← 返回列表</button>
+                        <img id="matchUserAvatar" class="match-avatar" style="width: 45px; height: 45px;" src="">
                         <div style="flex: 1; min-width: 150px;">
-                            <div id="chatName" style="font-weight: 600;"></div>
-                            <div id="chatMeta" style="color: #888; font-size: 13px;"></div>
+                            <div id="matchUserName" style="font-weight: 600;"></div>
+                            <div id="matchUserMeta" style="color: #888; font-size: 13px;"></div>
                         </div>
                     </div>
                     
-                    <div id="chatMessages" style="height: 50vh; max-height: 400px; min-height: 250px; overflow-y: auto; border: 1px solid #e1e5eb; border-radius: 8px; padding: 15px; background: #f8f9fa;"></div>
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #333;">💕 匹配列表</div>
+                    <div id="matchResultsList" style="max-height: 60vh; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="requestsTab" class="tab-content hidden">
+            <div class="card">
+                <div class="card-header">联系请求</div>
+                
+                <div id="requestListView">
+                    <div id="requestList">
+                        <div class="loading">
+                            <div class="spinner"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="requestDetailView" class="hidden">
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px; flex-wrap: wrap;">
+                        <button class="btn btn-secondary btn-small" onclick="backToRequestList()">← 返回列表</button>
+                        <img id="requestUserAvatar" class="match-avatar" style="width: 45px; height: 45px;" src="">
+                        <div style="flex: 1; min-width: 150px;">
+                            <div id="requestUserName" style="font-weight: 600;"></div>
+                            <div id="requestUserMeta" style="color: #888; font-size: 13px;"></div>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: 15px; padding: 15px; background: #f0f4ff; border-radius: 8px; border-left: 4px solid #667eea;">
+                        <div style="font-weight: 600; margin-bottom: 8px; color: #667eea;">📋 联系请求</div>
+                        <div id="requestMessage" style="color: #333;"></div>
+                        <div id="requestTime" style="color: #888; font-size: 12px; margin-top: 8px;"></div>
+                    </div>
+                    
+                    <div style="font-weight: 600; margin-bottom: 10px; color: #333;">💬 往来私信</div>
+                    <div id="requestChatMessages" style="height: 35vh; max-height: 300px; min-height: 200px; overflow-y: auto; border: 1px solid #e1e5eb; border-radius: 8px; padding: 15px; background: #f8f9fa;"></div>
                     
                     <div style="margin-top: 15px;">
                         <div style="display: flex; gap: 10px; align-items: center;">
-                            <input type="text" id="messageInput" placeholder="输入消息..." style="flex: 1; font-size: 16px; padding: 12px; min-height: 44px;">
-                            <button class="btn btn-primary" onclick="sendAgencyMessage()" style="padding: 12px 20px; min-height: 44px;">发送</button>
+                            <input type="text" id="requestReplyInput" placeholder="输入回复内容..." style="flex: 1; font-size: 16px; padding: 12px; min-height: 44px;">
+                            <button class="btn btn-primary" onclick="sendRequestReply()" style="padding: 12px 20px; min-height: 44px;">发送</button>
                         </div>
                     </div>
                 </div>
@@ -1664,20 +1693,30 @@
                     return;
                 }
 
-                requestList.innerHTML = requests.map(req => `
-                    <div class="message-item">
+                requestList.innerHTML = requests.map(req => {
+                    const statusBadge = req.status === 'accepted' ? '<span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">已接受</span>' :
+                                        req.status === 'rejected' ? '<span style="background: #e74c3c; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">已拒绝</span>' :
+                                        '<span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">待处理</span>';
+                    return `
+                    <div class="message-item" style="cursor: pointer;" onclick="openRequestDetail('${req.id}')">
                         <img class="message-avatar" src="${getAgencyUserPhoto(req.from_user)}">
-                        <div class="message-content">
-                            <div style="font-weight: 600;">${req.from_user?.name || '匿名用户'} (${req.from_user?.phone || '无电话'})</div>
+                        <div class="message-content" style="flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+                                <span style="font-weight: 600;">${req.from_user?.name || '匿名用户'} (${req.from_user?.phone || '无电话'})</span>
+                                ${statusBadge}
+                            </div>
                             <div style="color: #888; margin-top: 5px;">${req.message || '希望与您联系'}</div>
                             <div class="message-time">${new Date(req.created_at).toLocaleString()}</div>
                         </div>
-                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;" onclick="event.stopPropagation();">
+                            ${req.status === 'pending' ? `
                             <button class="btn btn-success btn-small" onclick="handleRequest('${req.id}', 'accepted')">✓ 接受</button>
                             <button class="btn btn-danger btn-small" onclick="handleRequest('${req.id}', 'rejected')">✗ 拒绝</button>
+                            ` : ''}
+                            <button class="btn btn-secondary btn-small" onclick="openRequestDetail('${req.id}')">💬 回复</button>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             } catch (e) {
                 console.error('❌ 加载异常:', e);
                 const requestList = document.getElementById('requestList');
@@ -1702,140 +1741,6 @@
             }
         }
 
-        // ============================================
-        // 私信功能
-        // ============================================
-        let currentAgencyChatUserId = null;
-        let currentAgencyChatUser = null;
-        let agencyMessagePollInterval = null;
-
-        // 从联系请求快速打开聊天
-        async function openAgencyChatFromRequest(userId, userName) {
-            // 先切换到消息标签
-            showTab('messages');
-            // 然后打开聊天
-            await openAgencyChat(userId);
-        }
-
-        // 返回到消息列表
-        function backToAgencyList() {
-            document.getElementById('messageListView').classList.remove('hidden');
-            document.getElementById('chatView').classList.add('hidden');
-            currentAgencyChatUserId = null;
-            currentAgencyChatUser = null;
-            if (agencyMessagePollInterval) {
-                clearInterval(agencyMessagePollInterval);
-                agencyMessagePollInterval = null;
-            }
-        }
-
-        // 加载消息列表
-        async function loadAgencyMessageList() {
-            const supabase = getSupabase();
-            const messageList = document.getElementById('messageList');
-            messageList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
-            
-            try {
-                // 获取中介发送和接收的所有消息
-                const { data: sentMessages, error: sentError } = await supabase
-                    .from('messages')
-                    .select('*')
-                    .eq('from_user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-                
-                if (sentError) console.error('查询已发送消息失败:', sentError);
-                
-                const { data: receivedMessages, error: receivedError } = await supabase
-                    .from('messages')
-                    .select('*')
-                    .eq('to_user_id', currentUser.id)
-                    .order('created_at', { ascending: false });
-                
-                if (receivedError) console.error('查询接收消息失败:', receivedError);
-                
-                const allMessages = [...(sentMessages || []), ...(receivedMessages || [])];
-                const messages = allMessages.sort((a, b) => {
-                    const dateA = new Date(a.created_at || a.createdAt || 0);
-                    const dateB = new Date(b.created_at || b.createdAt || 0);
-                    return dateB - dateA;
-                });
-                
-                if (!messages || messages.length === 0) {
-                    messageList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无私信记录</p>';
-                    return;
-                }
-                
-                // 获取所有相关用户
-                const userIds = new Set();
-                messages.forEach(m => {
-                    if (m.from_user_id !== currentUser.id) userIds.add(m.from_user_id);
-                    if (m.to_user_id !== currentUser.id) userIds.add(m.to_user_id);
-                });
-                
-                const { data: users, error: usersError } = await supabase
-                    .from('users')
-                    .select('id, name, photos')
-                    .in('id', Array.from(userIds));
-                
-                if (usersError) console.error('查询用户失败:', usersError);
-                
-                const userMap = {};
-                users?.forEach(u => userMap[u.id] = u);
-                
-                // 按对话分组
-                const conversations = {};
-                messages.forEach(m => {
-                    const otherId = m.from_user_id === currentUser.id ? m.to_user_id : m.from_user_id;
-                    if (!conversations[otherId]) {
-                        conversations[otherId] = {
-                            user: userMap[otherId],
-                            lastMessage: m,
-                            unreadCount: 0
-                        };
-                    }
-                    if (m.to_user_id === currentUser.id && m.is_read === false) {
-                        conversations[otherId].unreadCount++;
-                    }
-                });
-                
-                // 渲染消息列表
-                const userIds2 = Object.keys(conversations);
-                if (userIds2.length === 0) {
-                    messageList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无私信记录</p>';
-                    return;
-                }
-                
-                messageList.innerHTML = userIds2.map(userId => {
-                    const conv = conversations[userId];
-                    const user = conv.user || {};
-                    const lastMsg = conv.lastMessage;
-                    const isSent = lastMsg.from_user_id === currentUser.id;
-                    const displayTime = new Date(lastMsg.created_at).toLocaleString();
-                    const preview = lastMsg.content ? (lastMsg.content.length > 30 ? lastMsg.content.substring(0, 30) + '...' : lastMsg.content) : '[图片]';
-                    
-                    return `
-                        <div class="message-item" onclick="openAgencyChat('${userId}')" style="cursor: pointer;">
-                            <img class="message-avatar" src="${getAgencyUserPhoto(user)}">
-                            <div class="message-content" style="flex: 1;">
-                                <div style="display: flex; justify-content: space-between; align-items: center;">
-                                    <span style="font-weight: 600;">${user.name || '匿名用户'}</span>
-                                    <span class="message-time">${displayTime}</span>
-                                </div>
-                                <div style="color: #888; margin-top: 5px; display: flex; justify-content: space-between; align-items: center;">
-                                    <span>${isSent ? '我: ' : ''}${preview}</span>
-                                    ${conv.unreadCount > 0 ? `<span class="badge" style="background: #e74c3c; color: white; padding: 2px 6px; border-radius: 10px; font-size: 12px;">${conv.unreadCount}</span>` : ''}
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-            } catch (e) {
-                console.error('加载消息列表失败:', e);
-                messageList.innerHTML = '<p style="text-align: center; color: #e74c3c; padding: 40px;">加载失败: ' + e.message + '</p>';
-            }
-        }
-
         // 获取用户照片
         function getAgencyUserPhoto(user) {
             if (!user) return 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27 viewBox=%270 0 40 40%27%3E%3Crect fill=%27%23ddd%27 width=%2740%27 height=%2740%27/%3E%3Ctext x=%2720%27 y=%2722%27 font-size=%2710%27 text-anchor=%27middle%27 fill=%27%23666%27%3E%3C/text%3E%3C/svg%3E';
@@ -1853,53 +1758,74 @@
             return 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2740%27 height=%2740%27 viewBox=%270 0 40 40%27%3E%3Crect fill=%27%23ddd%27 width=%2740%27 height=%2740%27/%3E%3Ctext x=%2720%27 y=%2722%27 font-size=%2710%27 text-anchor=%27middle%27 fill=%27%23666%27%3E%3C/text%3E%3C/svg%3E';
         }
 
-        // 打开聊天对话
-        async function openAgencyChat(userId) {
+        // ============================================
+        // 请求详情与回复功能
+        // ============================================
+        let currentRequestDetail = null;
+        let requestMessagePollInterval = null;
+
+        // 打开请求详情
+        async function openRequestDetail(requestId) {
+            console.log('🔍 打开请求详情, requestId:', requestId);
             const supabase = getSupabase();
             
-            // 获取用户信息
-            const { data: user, error } = await supabase
-                .from('users')
-                .select('id, name, photos')
-                .eq('id', userId)
+            // 获取请求详情
+            const { data: request, error } = await supabase
+                .from('agency_requests')
+                .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
+                .eq('id', requestId)
                 .single();
             
-            if (error || !user) {
-                showAlert('获取用户信息失败', 'error');
+            console.log('📊 请求详情查询结果:', { request, error });
+            
+            if (error || !request) {
+                showAlert('获取请求详情失败', 'error');
                 return;
             }
             
-            currentAgencyChatUserId = userId;
-            currentAgencyChatUser = user;
+            currentRequestDetail = request;
+            console.log('✅ 当前请求详情:', currentRequestDetail);
             
-            // 显示聊天界面
-            document.getElementById('messageListView').classList.add('hidden');
-            document.getElementById('chatView').classList.remove('hidden');
-            document.getElementById('chatAvatar').src = getAgencyUserPhoto(user);
-            document.getElementById('chatName').textContent = user.name || '匿名用户';
-            document.getElementById('chatMeta').textContent = '中介 - ' + user.name;
+            // 显示详情视图
+            document.getElementById('requestListView').classList.add('hidden');
+            document.getElementById('requestDetailView').classList.remove('hidden');
+            document.getElementById('requestUserAvatar').src = getAgencyUserPhoto(request.from_user);
+            document.getElementById('requestUserName').textContent = request.from_user?.name || '匿名用户';
+            document.getElementById('requestUserMeta').textContent = request.from_user?.phone || '无电话';
+            document.getElementById('requestMessage').textContent = request.message || '希望与您联系';
+            document.getElementById('requestTime').textContent = '请求时间: ' + new Date(request.created_at).toLocaleString();
             
-            // 加载消息
-            await loadAgencyChatMessages();
-            
-            // 标记消息为已读
-            await markAgencyMessagesAsRead(userId);
+            // 加载往来私信
+            console.log('🔄 开始加载往来私信, userId:', request.from_user_id);
+            await loadRequestChatMessages(request.from_user_id);
             
             // 启动轮询
-            if (agencyMessagePollInterval) clearInterval(agencyMessagePollInterval);
-            agencyMessagePollInterval = setInterval(async () => {
-                await loadAgencyChatMessages();
-                await markAgencyMessagesAsRead(userId);
+            if (requestMessagePollInterval) clearInterval(requestMessagePollInterval);
+            requestMessagePollInterval = setInterval(() => {
+                if (currentRequestDetail) {
+                    loadRequestChatMessages(currentRequestDetail.from_user_id);
+                }
             }, 5000);
         }
 
-        // 加载聊天消息
-        async function loadAgencyChatMessages() {
+        // 返回请求列表
+        function backToRequestList() {
+            document.getElementById('requestListView').classList.remove('hidden');
+            document.getElementById('requestDetailView').classList.add('hidden');
+            currentRequestDetail = null;
+            if (requestMessagePollInterval) {
+                clearInterval(requestMessagePollInterval);
+                requestMessagePollInterval = null;
+            }
+        }
+
+        // 加载请求相关的聊天消息
+        async function loadRequestChatMessages(userId) {
             const supabase = getSupabase();
-            const chatMessages = document.getElementById('chatMessages');
+            const chatMessages = document.getElementById('requestChatMessages');
             
-            if (!currentAgencyChatUserId) {
-                chatMessages.innerHTML = '<p style="text-align: center; color: #888;">请选择聊天对象</p>';
+            if (!userId) {
+                chatMessages.innerHTML = '<p style="text-align: center; color: #888;">无法加载消息</p>';
                 return;
             }
             
@@ -1909,7 +1835,7 @@
                     .from('messages')
                     .select('*')
                     .eq('from_user_id', currentUser.id)
-                    .eq('to_user_id', currentAgencyChatUserId)
+                    .eq('to_user_id', userId)
                     .order('created_at', { ascending: true });
                 
                 if (sentError) console.error('加载已发送消息失败:', sentError);
@@ -1917,7 +1843,7 @@
                 const { data: receivedMessages, error: receivedError } = await supabase
                     .from('messages')
                     .select('*')
-                    .eq('from_user_id', currentAgencyChatUserId)
+                    .eq('from_user_id', userId)
                     .eq('to_user_id', currentUser.id)
                     .order('created_at', { ascending: true });
                 
@@ -1931,20 +1857,21 @@
                 });
                 
                 if (!messages || messages.length === 0) {
-                    chatMessages.innerHTML = '<p style="text-align: center; color: #888;">暂无消息，开始对话吧</p>';
+                    chatMessages.innerHTML = '<p style="text-align: center; color: #888;">暂无私信记录</p>';
                     return;
                 }
+                
+                const otherName = currentRequestDetail?.from_user?.name || '用户';
                 
                 chatMessages.innerHTML = messages.map(m => {
                     const isMine = m.from_user_id === currentUser.id;
                     const messageContent = m.content ? m.content : (m.image_url ? `<img src="${m.image_url}" style="max-width: 100%; cursor: pointer;">` : '[空消息]');
-                    const senderName = isMine ? '我' : (currentAgencyChatUser?.name || '对方');
                     const displayTime = new Date(m.created_at).toLocaleTimeString();
                     
                     return `
                         <div style="display: flex; flex-direction: ${isMine ? 'row-reverse' : 'row'}; margin-bottom: 12px; align-items: flex-start;">
                             <div style="max-width: 75%; padding: 10px 14px; border-radius: 12px; background: ${isMine ? '#667eea' : '#e1e5eb'}; color: ${isMine ? 'white' : '#333'}; word-wrap: break-word;">
-                                ${!isMine ? `<div style="font-size: 12px; color: #888; margin-bottom: 4px;">${senderName}</div>` : ''}
+                                ${!isMine ? `<div style="font-size: 12px; color: #888; margin-bottom: 4px;">${otherName}</div>` : ''}
                                 <div>${messageContent}</div>
                                 <div style="font-size: 11px; color: ${isMine ? 'rgba(255,255,255,0.7)' : '#999'}; margin-top: 4px;">${displayTime}</div>
                             </div>
@@ -1955,67 +1882,338 @@
                 // 滚动到底部
                 chatMessages.scrollTop = chatMessages.scrollHeight;
                 
+                // 标记消息为已读
+                await supabase
+                    .from('messages')
+                    .update({ is_read: true })
+                    .eq('from_user_id', userId)
+                    .eq('to_user_id', currentUser.id)
+                    .eq('is_read', false);
+                
             } catch (e) {
                 console.error('加载聊天消息失败:', e);
                 chatMessages.innerHTML = '<p style="text-align: center; color: #e74c3c;">加载失败: ' + e.message + '</p>';
             }
         }
 
-        // 标记消息为已读
-        async function markAgencyMessagesAsRead(fromUserId) {
-            const supabase = getSupabase();
-            try {
-                await supabase
-                    .from('messages')
-                    .update({ is_read: true })
-                    .eq('from_user_id', fromUserId)
-                    .eq('to_user_id', currentUser.id)
-                    .eq('is_read', false);
-            } catch (e) {
-                console.error('标记已读失败:', e);
-            }
-        }
-
-        // 发送私信
-        async function sendAgencyMessage() {
-            const content = document.getElementById('messageInput').value.trim();
+        // 发送请求回复
+        async function sendRequestReply() {
+            console.log('📤 尝试发送私信');
+            const content = document.getElementById('requestReplyInput').value.trim();
             
             if (!content) {
-                showAlert('请输入消息内容', 'error');
+                showAlert('请输入回复内容', 'error');
                 return;
             }
             
-            if (!currentAgencyChatUserId) {
-                showAlert('请先选择聊天对象', 'error');
+            if (!currentRequestDetail) {
+                showAlert('请先选择请求', 'error');
                 return;
             }
+            
+            console.log('📝 发送内容:', content);
+            console.log('👤 目标用户ID:', currentRequestDetail.from_user_id);
+            console.log('👤 当前用户:', currentUser);
             
             const supabase = getSupabase();
             
             const messageData = {
                 from_user_id: currentUser.id,
-                to_user_id: currentAgencyChatUserId,
+                to_user_id: currentRequestDetail.from_user_id,
                 content: content,
                 is_read: false,
                 created_at: new Date().toISOString()
             };
             
+            console.log('📦 消息数据:', messageData);
+            
+            const { error } = await supabase
+                .from('messages')
+                .insert([messageData]);
+            
+            if (error) {
+                console.error('❌ 发送失败:', error);
+                showAlert('发送失败: ' + error.message, 'error');
+                return;
+            }
+            
+            document.getElementById('requestReplyInput').value = '';
+            await loadRequestChatMessages(currentRequestDetail.from_user_id);
+            showAlert('回复成功', 'success');
+            console.log('✅ 发送成功');
+        }
+
+        // ============================================
+        // 匹配信息功能
+        // ============================================
+        let currentMatchUser = null;
+
+        // 加载中介录入用户的匹配信息
+        async function loadAgencyMatches() {
+            const supabase = getSupabase();
+            const matchUserList = document.getElementById('matchUserList');
+            matchUserList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            console.log('🔍 开始加载匹配信息...');
+            const startTime = Date.now();
+            
             try {
-                const { error } = await supabase
-                    .from('messages')
-                    .insert([messageData]);
+                // 使用单个查询获取用户及其匹配数量
+                const { data: myUsers, error: usersError } = await supabase
+                    .from('users')
+                    .select('id, name, phone, photos, gender, birthday')
+                    .eq('agency_id', currentUser.id)
+                    .order('created_at', { ascending: false })
+                    .limit(100); // 添加数量限制
+                
+                if (usersError) {
+                    console.error('查询用户失败:', usersError);
+                    matchUserList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + usersError.message + '</p>';
+                    return;
+                }
+                
+                if (!myUsers || myUsers.length === 0) {
+                    matchUserList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无录入的客户</p>';
+                    return;
+                }
+                
+                // 批量查询匹配数量（使用单个查询）
+                const userIds = myUsers.map(u => u.id);
+                const { data: matchCounts, error: matchError } = await supabase
+                    .from('match_results')
+                    .select('user_id')
+                    .in('user_id', userIds)
+                    .eq('is_filtered', false);
+                
+                if (matchError) console.error('查询匹配数量失败:', matchError);
+                
+                // 统计每个用户的匹配数量
+                const countMap = {};
+                (matchCounts || []).forEach(m => {
+                    countMap[m.user_id] = (countMap[m.user_id] || 0) + 1;
+                });
+                
+                const elapsed = Date.now() - startTime;
+                console.log(`✅ 加载完成，耗时: ${elapsed}ms，用户数: ${myUsers.length}`);
+                
+                matchUserList.innerHTML = myUsers.map(user => {
+                    const matchCount = countMap[user.id] || 0;
+                    const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
+                    
+                    return `
+                        <div class="message-item" style="cursor: pointer;" onclick="openMatchDetail('${user.id}')">
+                            <img class="message-avatar" src="${getAgencyUserPhoto(user)}">
+                            <div class="message-content" style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 5px;">
+                                    <span style="font-weight: 600;">${user.name || '匿名'} (${user.phone || '无电话'})</span>
+                                    <span style="background: ${matchCount > 0 ? '#667eea' : '#ccc'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${matchCount} 个匹配</span>
+                                </div>
+                                <div style="color: #888; margin-top: 5px;">${user.gender || '-'} | ${age}岁</div>
+                            </div>
+                            <div onclick="event.stopPropagation();">
+                                <button class="btn btn-secondary btn-small" onclick="openMatchDetail('${user.id}')">查看匹配</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                console.error('加载匹配信息失败:', e);
+                matchUserList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载异常: ' + e.message + '</p>';
+            }
+        }
+
+        // 搜索匹配用户
+        async function searchMatchUsers() {
+            const keyword = document.getElementById('searchMatchUser').value.trim();
+            if (!keyword) {
+                loadAgencyMatches();
+                return;
+            }
+            
+            const supabase = getSupabase();
+            const matchUserList = document.getElementById('matchUserList');
+            matchUserList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            try {
+                // 搜索本中介录入的用户
+                const { data: myUsers, error } = await supabase
+                    .from('users')
+                    .select('id, name, phone, photos, gender, birthday')
+                    .eq('agency_id', currentUser.id)
+                    .or(`name.ilike.%${keyword}%,phone.ilike.%${keyword}%`);
                 
                 if (error) {
-                    console.error('发送失败:', error);
-                    showAlert('发送失败: ' + error.message, 'error');
-                } else {
-                    document.getElementById('messageInput').value = '';
-                    await loadAgencyChatMessages();
-                    await loadAgencyMessageList();
+                    matchUserList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">搜索失败</p>';
+                    return;
                 }
+                
+                if (!myUsers || myUsers.length === 0) {
+                    matchUserList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">未找到匹配的客户</p>';
+                    return;
+                }
+                
+                // 查询匹配数量
+                const userIds = myUsers.map(u => u.id);
+                const { data: matchCounts } = await supabase
+                    .from('match_results')
+                    .select('user_id')
+                    .in('user_id', userIds)
+                    .eq('is_filtered', false);
+                
+                const countMap = {};
+                (matchCounts || []).forEach(m => {
+                    countMap[m.user_id] = (countMap[m.user_id] || 0) + 1;
+                });
+                
+                matchUserList.innerHTML = myUsers.map(user => {
+                    const matchCount = countMap[user.id] || 0;
+                    const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
+                    
+                    return `
+                        <div class="message-item" style="cursor: pointer;" onclick="openMatchDetail('${user.id}')">
+                            <img class="message-avatar" src="${getAgencyUserPhoto(user)}">
+                            <div class="message-content" style="flex: 1;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 600;">${user.name || '匿名'} (${user.phone || '无电话'})</span>
+                                    <span style="background: ${matchCount > 0 ? '#667eea' : '#ccc'}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">${matchCount} 个匹配</span>
+                                </div>
+                                <div style="color: #888; margin-top: 5px;">${user.gender || '-'} | ${age}岁</div>
+                            </div>
+                            <div onclick="event.stopPropagation();">
+                                <button class="btn btn-secondary btn-small" onclick="openMatchDetail('${user.id}')">查看匹配</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
             } catch (e) {
-                console.error('发送异常:', e);
-                showAlert('发送失败: ' + e.message, 'error');
+                matchUserList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">搜索异常</p>';
+            }
+        }
+
+        // 打开匹配详情
+        async function openMatchDetail(userId) {
+            const supabase = getSupabase();
+            
+            // 获取用户信息
+            const { data: user, error: userError } = await supabase
+                .from('users')
+                .select('id, name, phone, photos, gender, birthday')
+                .eq('id', userId)
+                .single();
+            
+            if (userError || !user) {
+                showAlert('获取用户信息失败', 'error');
+                return;
+            }
+            
+            currentMatchUser = user;
+            
+            // 显示详情视图
+            document.getElementById('matchListView').classList.add('hidden');
+            document.getElementById('matchDetailView').classList.remove('hidden');
+            document.getElementById('matchUserAvatar').src = getAgencyUserPhoto(user);
+            document.getElementById('matchUserName').textContent = user.name || '匿名';
+            document.getElementById('matchUserMeta').textContent = `${user.phone || '无电话'} | ${user.gender || '-'}`;
+            
+            // 加载匹配结果
+            await loadMatchResults(userId);
+        }
+
+        // 返回匹配列表
+        function backToMatchList() {
+            document.getElementById('matchListView').classList.remove('hidden');
+            document.getElementById('matchDetailView').classList.add('hidden');
+            currentMatchUser = null;
+        }
+
+        // 加载匹配结果列表
+        async function loadMatchResults(userId) {
+            const supabase = getSupabase();
+            const resultsList = document.getElementById('matchResultsList');
+            resultsList.innerHTML = '<div class="loading"><div class="spinner"></div></div>';
+            
+            console.log('🔍 加载匹配结果, userId:', userId);
+            const startTime = Date.now();
+            
+            try {
+                // 先查询匹配记录（限制50条）
+                const { data: matches, error: matchError } = await supabase
+                    .from('match_results')
+                    .select('user_id, target_user_id, score, is_filtered')
+                    .eq('user_id', userId)
+                    .eq('is_filtered', false)
+                    .order('score', { ascending: false })
+                    .limit(50);
+                
+                if (matchError) {
+                    console.error('❌ 查询匹配结果失败:', matchError);
+                    resultsList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载失败: ' + matchError.message + '</p>';
+                    return;
+                }
+                
+                console.log('📊 查询到匹配记录:', matches?.length || 0);
+                
+                if (!matches || matches.length === 0) {
+                    resultsList.innerHTML = '<p style="text-align: center; color: #888; padding: 40px;">暂无匹配对象</p>';
+                    return;
+                }
+                
+                // 获取所有目标用户ID
+                const targetIds = matches.map(m => m.target_user_id);
+                console.log('📋 目标用户ID数量:', targetIds.length);
+                
+                // 查询目标用户信息（批量查询）
+                const { data: targets, error: targetError } = await supabase
+                    .from('users')
+                    .select('id, name, phone, photos, gender, birthday, height, education, family_hometown')
+                    .in('id', targetIds);
+                
+                if (targetError) {
+                    console.error('❌ 查询目标用户失败:', targetError);
+                    resultsList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载用户信息失败: ' + targetError.message + '</p>';
+                    return;
+                }
+                
+                const elapsed = Date.now() - startTime;
+                console.log(`✅ 加载完成，耗时: ${elapsed}ms，匹配数: ${matches.length}`);
+                
+                // 创建用户映射
+                const targetMap = {};
+                (targets || []).forEach(t => {
+                    targetMap[t.id] = t;
+                });
+                
+                // 渲染匹配列表
+                resultsList.innerHTML = matches.map(m => {
+                    const target = targetMap[m.target_user_id] || {};
+                    const score = Math.round(m.score || 0);
+                    const age = target.birthday ? Math.floor((new Date() - new Date(target.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
+                    
+                    return `
+                        <div class="match-card" style="display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px; margin-bottom: 10px;">
+                            <img src="${getAgencyUserPhoto(target)}" style="width: 60px; height: 60px; border-radius: 8px; object-fit: cover;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; font-size: 16px;">${target.name || '匿名'}</div>
+                                <div style="color: #888; font-size: 13px; margin-top: 4px;">
+                                    ${target.gender || '-'} | ${age}岁 | ${target.height || '-'}cm | ${target.education || '-'}
+                                </div>
+                                <div style="color: #888; font-size: 12px; margin-top: 4px;">
+                                    ${target.phone || '无电话'} | ${target.family_hometown || '未知地区'}
+                                </div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="font-size: 24px; font-weight: 600; color: ${score >= 80 ? '#27ae60' : score >= 60 ? '#667eea' : '#f39c12'};">${score}</div>
+                                <div style="font-size: 12px; color: #888;">匹配度</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+            } catch (e) {
+                console.error('❌ 加载匹配结果失败:', e);
+                resultsList.innerHTML = '<p style="text-align: center; color: #f00; padding: 40px;">加载异常: ' + e.message + '</p>';
             }
         }
 
@@ -2208,6 +2406,7 @@
             console.log('📥 开始加载数据...');
             await loadClients();
             await loadRequests();
+            await loadAgencyMatches(); // 预加载匹配信息
             console.log('========== 初始化完成 ==========');
         }
 

@@ -77,6 +77,7 @@
             <button class="tab-btn" data-tab="appearance">外貌生活</button>
             <button class="tab-btn" data-tab="personality">性格兴趣</button>
             <button class="tab-btn" data-tab="values">婚恋价值观</button>
+            <button class="tab-btn" data-tab="family">家庭情况</button>
             <button class="tab-btn" data-tab="requirements">择偶要求</button>
             <button class="tab-btn" data-tab="matchStatus">匹配情况</button>
         </div>
@@ -412,6 +413,141 @@
                 </div>
                 
                 <button class="btn btn-primary" onclick="saveValuesInfo()">保存婚恋价值观</button>
+            </div>
+        </div>
+        
+        <div id="familyTab" class="tab-content">
+            <div class="card">
+                <div class="card-header">家庭情况</div>
+                
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; margin-bottom: 15px; font-size: 14px; color: #666;">
+                    📋 <strong>隐私保护提示：</strong>我们不会收集父母身份证、详细住址、存款金额等隐私敏感信息，您的隐私安全有保障。
+                </div>
+                
+                <div class="card" style="background: #fffbeb; border: 1px solid #fef3c7;">
+                    <div style="font-weight: 600; margin-bottom: 15px; color: #92400e;">一、必填项（用于大数据匹配）</div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>父母现状 *</label>
+                                <select id="familyParentsStatus">
+                                    <option value="">请选择</option>
+                                    <option value="both_alive">双亲健在</option>
+                                    <option value="single_parent">单亲</option>
+                                    <option value="both_deceased">父母已故</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>父母工作 *</label>
+                                <select id="familyParentsJob">
+                                    <option value="">请选择</option>
+                                    <option value="farming">务农</option>
+                                    <option value="employed">在职上班</option>
+                                    <option value="retired">退休</option>
+                                    <option value="business">个体经商</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>兄弟姐妹 *</label>
+                                <select id="familySiblings">
+                                    <option value="">请选择</option>
+                                    <option value="only_child">独生</option>
+                                    <option value="has_brother_older">有兄</option>
+                                    <option value="has_brother_younger">有弟</option>
+                                    <option value="has_sister_older">有姐</option>
+                                    <option value="has_sister_younger">有妹</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>原生家庭定居地 *</label>
+                                <select id="familyHometown">
+                                    <option value="">请选择</option>
+                                    <option value="same_city">和本人同城</option>
+                                    <option value="different_city">异地老家</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card" style="background: #f0fdf4; border: 1px solid #bbf7d0;">
+                    <div style="font-weight: 600; margin-bottom: 15px; color: #166534;">二、选填项（提升匹配精准度）</div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>父母养老保障</label>
+                                <select id="familyPension">
+                                    <option value="">请选择</option>
+                                    <option value="has_pension">有退休金社保</option>
+                                    <option value="no_pension">无养老保障</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>家庭经济状况</label>
+                                <select id="familyEconomicStatus">
+                                    <option value="">请选择</option>
+                                    <option value="wealthy">富贵人家</option>
+                                    <option value="middle_class">中产家庭</option>
+                                    <option value="comfortable">小康之家</option>
+                                    <option value="slight_debt">略有负债</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>家庭氛围</label>
+                                <select id="familyAtmosphere">
+                                    <option value="">请选择</option>
+                                    <option value="traditional">传统保守</option>
+                                    <option value="open">开明随和</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>是否和父母同住</label>
+                                <select id="familyLivingWithParents">
+                                    <option value="">请选择</option>
+                                    <option value="living_alone">自住独居</option>
+                                    <option value="living_with_parents">和父母同住</option>
+                                    <option value="living_nearby">就近居住</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-col">
+                            <div class="form-group">
+                                <label>家里对婚恋态度</label>
+                                <select id="familyMarriageAttitude">
+                                    <option value="">请选择</option>
+                                    <option value="urgent">催婚</option>
+                                    <option value="natural">顺其自然</option>
+                                    <option value="no_interference">不干涉</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn btn-primary" onclick="saveFamilyInfo()">保存家庭情况</button>
             </div>
         </div>
         
@@ -957,6 +1093,9 @@
                 document.getElementById('liveWithParents').value = data.live_with_parents || '';
                 document.getElementById('expectedChildren').value = data.expected_children || '';
                 document.getElementById('selfDescription').value = data.self_description || '';
+                
+                // 加载家庭情况数据
+                loadFamilyInfo(data);
             } catch (e) {
                 console.error('加载数据失败:', e);
             }
@@ -1249,6 +1388,94 @@
             }
         }
         
+        async function saveFamilyInfo() {
+            console.log('saveFamilyInfo called');
+            console.log('currentUser:', currentUser);
+            
+            if (!currentUser || !currentUser.id) {
+                showAlert('用户未登录，请重新登录', 'error');
+                setTimeout(() => { window.location.href = 'index.html'; }, 1500);
+                return;
+            }
+            
+            // 必填项验证
+            const parentsStatus = document.getElementById('familyParentsStatus').value;
+            const parentsJob = document.getElementById('familyParentsJob').value;
+            const siblings = document.getElementById('familySiblings').value;
+            const hometown = document.getElementById('familyHometown').value;
+            
+            if (!parentsStatus) {
+                showAlert('请填写父母现状', 'error');
+                return;
+            }
+            if (!parentsJob) {
+                showAlert('请填写父母工作', 'error');
+                return;
+            }
+            if (!siblings) {
+                showAlert('请填写兄弟姐妹情况', 'error');
+                return;
+            }
+            if (!hometown) {
+                showAlert('请填写原生家庭定居地', 'error');
+                return;
+            }
+            
+            try {
+                const supabase = getSupabase();
+                const userId = typeof currentUser === 'object' ? currentUser.id : currentUser;
+                
+                let query = supabase
+                    .from('users')
+                    .update({
+                        // 必填项
+                        family_parents_status: parentsStatus,
+                        family_parents_job: parentsJob,
+                        family_siblings: siblings,
+                        family_hometown: hometown,
+                        // 选填项
+                        family_pension: document.getElementById('familyPension').value || null,
+                        family_economic_status: document.getElementById('familyEconomicStatus').value || null,
+                        family_atmosphere: document.getElementById('familyAtmosphere').value || null,
+                        family_living_with_parents: document.getElementById('familyLivingWithParents').value || null,
+                        family_marriage_attitude: document.getElementById('familyMarriageAttitude').value || null,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', userId);
+                
+                const { error } = await query;
+                
+                if (error) {
+                    console.error('Save error:', error);
+                    showAlert('保存失败: ' + error.message, 'error');
+                    return;
+                }
+                
+                showAlert('保存成功！', 'success');
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        function loadFamilyInfo(user) {
+            console.log('loadFamilyInfo called');
+            console.log('user:', user);
+            
+            if (!user) return;
+            
+            // 必填项
+            document.getElementById('familyParentsStatus').value = user.family_parents_status || '';
+            document.getElementById('familyParentsJob').value = user.family_parents_job || '';
+            document.getElementById('familySiblings').value = user.family_siblings || '';
+            document.getElementById('familyHometown').value = user.family_hometown || '';
+            // 选填项
+            document.getElementById('familyPension').value = user.family_pension || '';
+            document.getElementById('familyEconomicStatus').value = user.family_economic_status || '';
+            document.getElementById('familyAtmosphere').value = user.family_atmosphere || '';
+            document.getElementById('familyLivingWithParents').value = user.family_living_with_parents || '';
+            document.getElementById('familyMarriageAttitude').value = user.family_marriage_attitude || '';
+        }
+        
         async function saveRequirements() {
             console.log('saveRequirements called');
             console.log('currentUser:', currentUser);
@@ -1514,11 +1741,21 @@
             list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
 
             try {
+                console.log('🔄 loadMyLikes - currentUser:', currentUser);
+                console.log('🔄 loadMyLikes - supabase client:', supabase);
+                
+                if (!currentUser || !currentUser.id) {
+                    throw new Error('当前用户未登录或用户ID无效');
+                }
+                
                 const { data: likes, error } = await supabase
                     .from('likes')
                     .select('to_user_id, created_at')
                     .eq('from_user_id', currentUser.id)
                     .order('created_at', { ascending: false });
+
+                console.log('🔄 loadMyLikes - likes data:', likes);
+                console.log('🔄 loadMyLikes - error:', error);
 
                 if (error) {
                     console.error('loadMyLikes error:', error);
@@ -1572,11 +1809,21 @@
             list.innerHTML = '<p style="text-align: center; color: #888; padding: 20px;">加载中...</p>';
 
             try {
+                console.log('🔄 loadLikedMe - currentUser:', currentUser);
+                console.log('🔄 loadLikedMe - supabase client:', supabase);
+                
+                if (!currentUser || !currentUser.id) {
+                    throw new Error('当前用户未登录或用户ID无效');
+                }
+                
                 const { data: likes, error } = await supabase
                     .from('likes')
                     .select('from_user_id, created_at')
                     .eq('to_user_id', currentUser.id)
                     .order('created_at', { ascending: false });
+
+                console.log('🔄 loadLikedMe - likes data:', likes);
+                console.log('🔄 loadLikedMe - error:', error);
 
                 if (error) {
                     console.error('loadLikedMe error:', error);

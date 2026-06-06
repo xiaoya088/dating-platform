@@ -77,23 +77,28 @@ function calculateMultiSelectScore(myValues, reqValues) {
 }
 
 async function fetchUserData(userId) {
+    console.log('🔄 fetchUserData 开始, userId:', userId);
     const supabase = getSupabaseClient();
     if (!supabase) {
-        console.error('Supabase client not available');
+        console.error('❌ Supabase client not available');
         return null;
     }
 
+    console.log('🔄 查询 users 表...');
     const { data: user, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
 
+    console.log('📊 users 查询结果:', { user, error: userError });
+
     if (userError || !user) {
-        console.error('Error fetching user data:', userError);
+        console.error('❌ Error fetching user data:', userError);
         return null;
     }
 
+    console.log('🔄 查询 user_requirements 表...');
     const { data: requirements, error: reqError } = await supabase
         .from('user_requirements')
         .select('*')
@@ -101,21 +106,29 @@ async function fetchUserData(userId) {
         .eq('scheme_type', 'standard')
         .single();
 
+    console.log('📊 user_requirements 查询结果:', { requirements, error: reqError });
+
     if (reqError) {
-        console.warn('Error fetching requirements:', reqError);
+        console.warn('⚠️ Error fetching requirements:', reqError);
     }
 
+    console.log('🔄 查询 user_photos 表...');
     const { data: photos, error: photosError } = await supabase
         .from('user_photos')
         .select('photo_url')
         .eq('user_id', userId)
         .order('created_at', { ascending: true });
 
+    console.log('📊 user_photos 查询结果:', { photos, error: photosError });
+
     if (photosError) {
-        console.warn('Error fetching photos:', photosError);
+        console.warn('⚠️ Error fetching photos:', photosError);
     }
 
-    return enrichUserData(user, requirements || {}, photos ? photos.map(p => p.photo_url) : []);
+    const enrichedData = enrichUserData(user, requirements || {}, photos ? photos.map(p => p.photo_url) : []);
+    console.log('✅ fetchUserData 完成:', enrichedData);
+    
+    return enrichedData;
 }
 
 function enrichUserData(user, requirements, photos) {
@@ -149,7 +162,8 @@ async function fetchUsersDataBatch(userIds) {
     const [usersResult, requirementsResult, photosResult] = await Promise.all([
         supabase.from('users').select('*').in('id', userIds),
         supabase.from('user_requirements').select('*').in('user_id', userIds).eq('scheme_type', 'standard'),
-        supabase.from('user_photos').select('user_id, photo_url').in('user_id', userIds).order('created_at', { ascending: true })
+        // 限制每用户最多3张照片以提高加载速度
+        supabase.from('user_photos').select('user_id, photo_url').in('user_id', userIds).order('created_at', { ascending: true }).limit(3)
     ]);
 
     const users = usersResult.data || [];
@@ -735,10 +749,24 @@ function formatMatchCard(match, currentUserGender) {
     let actions = [];
     let badge = '';
 
+    // 创建一个简单的 SVG 占位图片
+    const createPlaceholderSvg = (text = '无头像') => {
+        const encodedText = encodeURIComponent(text);
+        return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Crect fill='%23ddd' width='100' height='100'/%3E%3Ctext x='50' y='55' font-size='12' text-anchor='middle' fill='%23666'%3E${encodedText}%3C/text%3E%3C/svg%3E`;
+    };
+
+    // 安全获取头像URL
+    let avatarUrl = createPlaceholderSvg('无头像');
+    if (user.photos && Array.isArray(user.photos) && user.photos.length > 0) {
+        avatarUrl = user.photos[0];
+    } else if (user.avatar_url) {
+        avatarUrl = user.avatar_url;
+    }
+
     if (userType === 'normal' || userType === 'agency_public') {
         displayInfo = {
             name: user.name || '匿名用户',
-            avatar: user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/100',
+            avatar: avatarUrl,
             age: age || '?',
             height: user.height || '?',
             city: user.current_address || '',
@@ -758,7 +786,7 @@ function formatMatchCard(match, currentUserGender) {
     } else if (userType === 'agency_private') {
         displayInfo = {
             name: '******',
-            avatar: user.photos?.[0] || user.avatar_url || 'https://via.placeholder.com/100',
+            avatar: avatarUrl,  // 使用上面已经安全处理的 avatarUrl
             age: age || '?',
             height: '***',
             city: '***',
@@ -894,7 +922,36 @@ async function saveMatchResult(userId, targetUserId, matchResult) {
     const supabase = getSupabaseClient();
     if (!supabase) return;
     
+    // 验证用户ID是否有效
+    if (!userId || !targetUserId) {
+        console.warn('无效的用户ID:', { userId, targetUserId });
+        return;
+    }
+    
     try {
+        // 先验证两个用户是否都存在
+        const { data: userExists, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', userId)
+            .single();
+        
+        if (userError || !userExists) {
+            console.warn(`用户 ${userId} 不存在，跳过保存匹配结果`);
+            return;
+        }
+        
+        const { data: targetExists, error: targetError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', targetUserId)
+            .single();
+        
+        if (targetError || !targetExists) {
+            console.warn(`目标用户 ${targetUserId} 不存在，跳过保存匹配结果`);
+            return;
+        }
+        
         const data = {
             user_id: userId,
             target_user_id: targetUserId,
@@ -931,6 +988,8 @@ async function getCachedMatches(userId) {
     if (!supabase) return [];
     
     try {
+        console.log('🔄 getCachedMatches 开始, userId:', userId);
+        
         const { data, error } = await supabase
             .from('match_results')
             .select('*')
@@ -938,6 +997,8 @@ async function getCachedMatches(userId) {
             .eq('is_filtered', false)
             .order('score', { ascending: false })
             .limit(100);
+        
+        console.log('📊 match_results 查询结果:', { data, error });
         
         if (error) {
             console.error('获取缓存匹配失败:', error);
@@ -951,28 +1012,39 @@ async function getCachedMatches(userId) {
         
         const targetIds = data.map(m => m.target_user_id);
         
-        const { data: users, error: usersError } = await supabase
-            .from('users')
-            .select('*')
-            .in('id', targetIds)
-            .eq('status', 'active');
+        // 批量获取完整用户数据（包括照片和择偶要求）
+        const usersData = await fetchUsersDataBatch(targetIds);
         
-        if (usersError) {
-            console.error('获取用户数据失败:', usersError);
-            return [];
-        }
+        console.log('✅ 获取到用户数据:', Object.keys(usersData).length, '个用户');
         
-        const userMap = {};
-        users?.forEach(u => userMap[u.id] = u);
-        
-        return data.map(row => ({
-            userId: row.target_user_id,
-            score: row.score,
-            aToB: { score: row.a_to_b_score },
-            bToA: { score: row.b_to_a_score },
-            user: userMap[row.target_user_id],
-            matchTime: row.calculated_at
-        }));
+        return data.map(row => {
+            const userData = usersData[row.target_user_id] || {};
+            const userType = getUserType(userData, userData);
+            
+            // 处理 reasons 字段（可能是数组或字符串）
+            let reasonsList = [];
+            if (row.reasons) {
+                if (Array.isArray(row.reasons)) {
+                    reasonsList = row.reasons;
+                } else if (typeof row.reasons === 'string') {
+                    reasonsList = row.reasons.split(',').filter(Boolean);
+                }
+            }
+            
+            return {
+                userId: row.target_user_id,
+                score: row.score,
+                aToB: { score: row.a_to_b_score || row.score, details: [] },
+                bToA: { score: row.b_to_a_score || row.score, details: [] },
+                reasons: reasonsList,
+                displayReasons: reasonsList.slice(0, 3),
+                interestBonus: 0,  // 从 common_interests 计算
+                activityBonus: 0,  // 从 common_activities 计算
+                user: userData,
+                userType: userType,
+                matchTime: row.calculated_at
+            };
+        });
     } catch (e) {
         console.error('getCachedMatches 错误:', e);
         return [];
@@ -986,6 +1058,18 @@ async function calculateAndCacheMatches(userId, options = {}) {
     console.log('开始计算并缓存匹配结果:', userId);
     
     try {
+        // 先验证用户是否存在
+        const { data: currentUser, error: userError } = await supabase
+            .from('users')
+            .select('id')
+            .eq('id', userId)
+            .single();
+        
+        if (userError || !currentUser) {
+            console.warn(`用户 ${userId} 不存在，跳过匹配计算`);
+            return [];
+        }
+        
         const myData = await fetchUserData(userId);
         if (!myData) throw new Error('无法获取当前用户数据');
         

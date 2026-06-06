@@ -405,6 +405,13 @@
             </div>
 
             <div class="card">
+                <div class="card-header">家庭情况数据维护</div>
+                <p style="color: #666; margin-bottom: 15px;">如果家庭情况选项未显示，请点击下方按钮初始化数据。</p>
+                <button class="btn btn-primary" onclick="confirmInitFamilyOptions()">🔄 初始化家庭情况选项数据</button>
+                <p id="familyInitStatus" style="margin-top: 15px; display: none;"></p>
+            </div>
+
+            <div class="card">
                 <div class="card-header">学历选项管理</div>
                 <div id="educationOptionsList">
                     <div class="loading">加载中...</div>
@@ -442,6 +449,78 @@
                     <div class="loading">加载中...</div>
                 </div>
                 <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddActivityTypeModal()">添加活动类型</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">父母现状管理</div>
+                <div id="familyParentsStatusList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyParentsStatusModal()">添加父母现状</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">父母工作管理</div>
+                <div id="familyParentsJobList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyParentsJobModal()">添加父母工作</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">兄弟姐妹管理</div>
+                <div id="familySiblingsList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilySiblingsModal()">添加兄弟姐妹情况</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">原生家庭定居地管理</div>
+                <div id="familyHometownList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyHometownModal()">添加定居地</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">父母养老保障管理</div>
+                <div id="familyPensionList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyPensionModal()">添加养老保障</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">家庭经济状况管理</div>
+                <div id="familyEconomicStatusList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyEconomicStatusModal()">添加经济状况</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">家庭氛围管理</div>
+                <div id="familyAtmosphereList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyAtmosphereModal()">添加家庭氛围</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">是否和父母同住管理</div>
+                <div id="familyLivingWithParentsList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyLivingWithParentsModal()">添加居住情况</button>
+            </div>
+
+            <div class="card">
+                <div class="card-header">家里对婚恋态度管理</div>
+                <div id="familyMarriageAttitudeList">
+                    <div class="loading">加载中...</div>
+                </div>
+                <button class="btn btn-primary" style="margin-top: 15px;" onclick="showAddFamilyMarriageAttitudeModal()">添加婚恋态度</button>
             </div>
         </div>
     </div>
@@ -569,7 +648,7 @@
             else if (tabName === 'activities') loadActivities();
             else if (tabName === 'matches') { loadMatchStats(); loadLikes(); loadMutualLikes(); }
             else if (tabName === 'system') loadSystemInfo();
-            else if (tabName === 'params') { loadParams(); loadEducationOptions(); loadIncomeOptions(); loadMaritalOptions(); loadInterests(); loadActivityTypes(); }
+            else if (tabName === 'params') { loadParams(); loadEducationOptions(); loadIncomeOptions(); loadMaritalOptions(); loadInterests(); loadActivityTypes(); loadAllFamilyOptions(); }
             else if (tabName === 'qrCode') { renderAdminQrCode(); }
         }
         
@@ -2527,7 +2606,7 @@
             
             try {
                 const { data: options } = await supabaseClient
-                    .from('marital_options')
+                    .from('marital_status_options')
                     .select('*')
                     .order('sort_order');
                 
@@ -2577,7 +2656,7 @@
             
             try {
                 const { error } = await supabaseClient
-                    .from('marital_options')
+                    .from('marital_status_options')
                     .insert([{ name: name, sort_order: parseInt(document.getElementById('maritalSort').value) || 0 }]);
                 
                 if (error) throw error;
@@ -2593,7 +2672,7 @@
         async function editMaritalOption(id) {
             try {
                 const { data: option } = await supabaseClient
-                    .from('marital_options')
+                    .from('marital_status_options')
                     .select('*')
                     .eq('id', id)
                     .single();
@@ -2619,7 +2698,7 @@
             
             try {
                 const { error } = await supabaseClient
-                    .from('marital_options')
+                    .from('marital_status_options')
                     .update({ name: name, sort_order: parseInt(document.getElementById('editMaritalSort').value) || 0 })
                     .eq('id', id);
                 
@@ -2638,7 +2717,7 @@
             
             try {
                 const { error } = await supabaseClient
-                    .from('marital_options')
+                    .from('marital_status_options')
                     .delete()
                     .eq('id', id);
                 
@@ -2908,6 +2987,1216 @@
                 loadActivityTypes();
             } catch (e) {
                 showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // ============ 家庭情况选项管理 ============
+        
+        // 父母现状
+        async function loadFamilyParentsStatus() {
+            const list = document.getElementById('familyParentsStatusList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_parents_status')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyParentsStatus('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyParentsStatus('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyParentsStatusModal() {
+            document.getElementById('modalTitle').textContent = '添加父母现状';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyParentsStatus()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyParentsStatus() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_parents_status', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyParentsStatus();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyParentsStatus(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑父母现状';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyParentsStatus('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyParentsStatus(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyParentsStatus();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyParentsStatus(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyParentsStatus();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 父母工作
+        async function loadFamilyParentsJob() {
+            const list = document.getElementById('familyParentsJobList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_parents_job')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyParentsJob('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyParentsJob('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyParentsJobModal() {
+            document.getElementById('modalTitle').textContent = '添加父母工作';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyParentsJob()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyParentsJob() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_parents_job', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyParentsJob();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyParentsJob(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑父母工作';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyParentsJob('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyParentsJob(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyParentsJob();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyParentsJob(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyParentsJob();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 兄弟姐妹
+        async function loadFamilySiblings() {
+            const list = document.getElementById('familySiblingsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_siblings')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilySiblings('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilySiblings('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilySiblingsModal() {
+            document.getElementById('modalTitle').textContent = '添加兄弟姐妹情况';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilySiblings()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilySiblings() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_siblings', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilySiblings();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilySiblings(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑兄弟姐妹情况';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilySiblings('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilySiblings(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilySiblings();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilySiblings(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilySiblings();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 原生家庭定居地
+        async function loadFamilyHometown() {
+            const list = document.getElementById('familyHometownList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_hometown')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyHometown('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyHometown('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyHometownModal() {
+            document.getElementById('modalTitle').textContent = '添加定居地';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyHometown()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyHometown() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_hometown', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyHometown();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyHometown(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑定居地';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyHometown('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyHometown(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyHometown();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyHometown(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyHometown();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 父母养老保障
+        async function loadFamilyPension() {
+            const list = document.getElementById('familyPensionList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_pension')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyPension('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyPension('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyPensionModal() {
+            document.getElementById('modalTitle').textContent = '添加养老保障';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyPension()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyPension() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_pension', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyPension();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyPension(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑养老保障';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyPension('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyPension(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyPension();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyPension(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyPension();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 家庭经济状况
+        async function loadFamilyEconomicStatus() {
+            const list = document.getElementById('familyEconomicStatusList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_economic_status')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyEconomicStatus('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyEconomicStatus('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyEconomicStatusModal() {
+            document.getElementById('modalTitle').textContent = '添加经济状况';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyEconomicStatus()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyEconomicStatus() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_economic_status', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyEconomicStatus();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyEconomicStatus(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑经济状况';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyEconomicStatus('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyEconomicStatus(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyEconomicStatus();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyEconomicStatus(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyEconomicStatus();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 家庭氛围
+        async function loadFamilyAtmosphere() {
+            const list = document.getElementById('familyAtmosphereList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_atmosphere')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyAtmosphere('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyAtmosphere('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyAtmosphereModal() {
+            document.getElementById('modalTitle').textContent = '添加家庭氛围';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyAtmosphere()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyAtmosphere() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_atmosphere', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyAtmosphere();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyAtmosphere(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑家庭氛围';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyAtmosphere('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyAtmosphere(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyAtmosphere();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyAtmosphere(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyAtmosphere();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 是否和父母同住
+        async function loadFamilyLivingWithParents() {
+            const list = document.getElementById('familyLivingWithParentsList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_living_with_parents')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyLivingWithParents('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyLivingWithParents('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyLivingWithParentsModal() {
+            document.getElementById('modalTitle').textContent = '添加居住情况';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyLivingWithParents()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyLivingWithParents() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_living_with_parents', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyLivingWithParents();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyLivingWithParents(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑居住情况';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyLivingWithParents('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyLivingWithParents(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyLivingWithParents();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyLivingWithParents(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyLivingWithParents();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 家里对婚恋态度
+        async function loadFamilyMarriageAttitude() {
+            const list = document.getElementById('familyMarriageAttitudeList');
+            list.innerHTML = '<div class="loading">加载中...</div>';
+            
+            try {
+                const { data: options } = await supabaseClient
+                    .from('family_options')
+                    .select('*')
+                    .eq('field_name', 'family_marriage_attitude')
+                    .order('sort_order');
+                
+                if (!options || options.length === 0) {
+                    list.innerHTML = '<p class="empty">暂无选项</p>';
+                    return;
+                }
+                
+                list.innerHTML = `
+                    <table>
+                        <thead><tr><th>选项值</th><th>显示标签</th><th>排序</th><th>操作</th></tr></thead>
+                        <tbody>
+                            ${options.map(o => `
+                                <tr>
+                                    <td>${o.option_value}</td>
+                                    <td>${o.option_label}</td>
+                                    <td>${o.sort_order || 0}</td>
+                                    <td>
+                                        <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editFamilyMarriageAttitude('${o.id}')">编辑</button>
+                                        <button class="btn btn-danger" style="padding: 4px 8px; font-size: 12px;" onclick="deleteFamilyMarriageAttitude('${o.id}')">删除</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (e) {
+                list.innerHTML = `<p class="empty">加载失败: ${e.message}</p>`;
+            }
+        }
+        
+        function showAddFamilyMarriageAttitudeModal() {
+            document.getElementById('modalTitle').textContent = '添加婚恋态度';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group"><label>选项值 *</label><input type="text" id="familyValue"></div>
+                <div class="form-group"><label>显示标签 *</label><input type="text" id="familyLabel"></div>
+                <div class="form-group"><label>排序</label><input type="number" id="familySort" value="0"></div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="addFamilyMarriageAttitude()">添加</button>
+            `;
+            document.getElementById('modal').classList.add('show');
+        }
+        
+        async function addFamilyMarriageAttitude() {
+            const value = document.getElementById('familyValue').value.trim();
+            const label = document.getElementById('familyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .insert([{ field_name: 'family_marriage_attitude', option_value: value, option_label: label, sort_order: parseInt(document.getElementById('familySort').value) || 0 }]);
+                if (error) throw error;
+                showAlert('添加成功', 'success');
+                closeModal();
+                loadFamilyMarriageAttitude();
+            } catch (e) {
+                showAlert('添加失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function editFamilyMarriageAttitude(id) {
+            try {
+                const { data: option } = await supabaseClient.from('family_options').select('*').eq('id', id).single();
+                document.getElementById('modalTitle').textContent = '编辑婚恋态度';
+                document.getElementById('modalBody').innerHTML = `
+                    <div class="form-group"><label>选项值 *</label><input type="text" id="editFamilyValue" value="${option.option_value}"></div>
+                    <div class="form-group"><label>显示标签 *</label><input type="text" id="editFamilyLabel" value="${option.option_label}"></div>
+                    <div class="form-group"><label>排序</label><input type="number" id="editFamilySort" value="${option.sort_order || 0}"></div>
+                    <button class="btn btn-primary" style="width: 100%;" onclick="saveFamilyMarriageAttitude('${id}')">保存</button>
+                `;
+                document.getElementById('modal').classList.add('show');
+            } catch (e) {
+                showAlert('加载失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function saveFamilyMarriageAttitude(id) {
+            const value = document.getElementById('editFamilyValue').value.trim();
+            const label = document.getElementById('editFamilyLabel').value.trim();
+            if (!value) { showAlert('请填写选项值', 'error'); return; }
+            if (!label) { showAlert('请填写显示标签', 'error'); return; }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('family_options')
+                    .update({ option_value: value, option_label: label, sort_order: parseInt(document.getElementById('editFamilySort').value) || 0 })
+                    .eq('id', id);
+                if (error) throw error;
+                showAlert('保存成功', 'success');
+                closeModal();
+                loadFamilyMarriageAttitude();
+            } catch (e) {
+                showAlert('保存失败: ' + e.message, 'error');
+            }
+        }
+        
+        async function deleteFamilyMarriageAttitude(id) {
+            if (!confirm('确定删除该选项？')) return;
+            try {
+                const { error } = await supabaseClient.from('family_options').delete().eq('id', id);
+                if (error) throw error;
+                showAlert('已删除', 'success');
+                loadFamilyMarriageAttitude();
+            } catch (e) {
+                showAlert('删除失败: ' + e.message, 'error');
+            }
+        }
+        
+        // 确认初始化家庭选项数据
+        async function confirmInitFamilyOptions() {
+            if (!confirm('确定要初始化家庭情况选项数据吗？\n\n注意：如果表中已有数据，此操作不会覆盖现有数据。\n如果表为空，将插入默认的家庭情况选项。')) {
+                return;
+            }
+            
+            const statusDiv = document.getElementById('familyInitStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '<p style="color: blue;">正在初始化...</p>';
+            
+            try {
+                const success = await initFamilyOptionsTable();
+                
+                if (success) {
+                    statusDiv.innerHTML = '<p style="color: green;">✅ 初始化成功！正在重新加载数据...</p>';
+                    setTimeout(() => {
+                        loadAllFamilyOptions();
+                        statusDiv.style.display = 'none';
+                    }, 1000);
+                } else {
+                    statusDiv.innerHTML = '<p style="color: #dc3545;">❌ 初始化失败：数据表未创建，请先执行 SQL 脚本创建表结构</p>';
+                }
+            } catch (e) {
+                statusDiv.innerHTML = `<p style="color: #dc3545;">❌ 初始化失败：${e.message}</p>`;
+            }
+        }
+
+        // 初始化家庭选项表
+        async function initFamilyOptionsTable() {
+            console.log('🔄 尝试初始化家庭选项表...');
+            try {
+                // 先检查是否有数据
+                const { data: existingData, error: checkError } = await supabaseClient
+                    .from('family_options')
+                    .select('id')
+                    .limit(1);
+                
+                if (checkError) {
+                    // 表不存在，尝试创建并初始化
+                    console.log('⚠️ family_options 表不存在，需要初始化');
+                    return false;
+                }
+                
+                if (!existingData || existingData.length === 0) {
+                    // 表存在但为空，插入初始数据
+                    console.log('🔄 family_options 表为空，插入初始数据...');
+                    
+                    const initialData = [
+                        // 父母现状
+                        { field_name: 'family_parents_status', option_value: 'both_alive', option_label: '双亲健在', sort_order: 1 },
+                        { field_name: 'family_parents_status', option_value: 'single_parent', option_label: '单亲', sort_order: 2 },
+                        { field_name: 'family_parents_status', option_value: 'both_deceased', option_label: '父母已故', sort_order: 3 },
+                        // 父母工作
+                        { field_name: 'family_parents_job', option_value: 'farming', option_label: '务农', sort_order: 1 },
+                        { field_name: 'family_parents_job', option_value: 'employed', option_label: '在职上班', sort_order: 2 },
+                        { field_name: 'family_parents_job', option_value: 'retired', option_label: '退休', sort_order: 3 },
+                        { field_name: 'family_parents_job', option_value: 'business', option_label: '个体经商', sort_order: 4 },
+                        // 兄弟姐妹
+                        { field_name: 'family_siblings', option_value: 'only_child', option_label: '独生', sort_order: 1 },
+                        { field_name: 'family_siblings', option_value: 'has_brother_older', option_label: '有兄', sort_order: 2 },
+                        { field_name: 'family_siblings', option_value: 'has_brother_younger', option_label: '有弟', sort_order: 3 },
+                        { field_name: 'family_siblings', option_value: 'has_sister_older', option_label: '有姐', sort_order: 4 },
+                        { field_name: 'family_siblings', option_value: 'has_sister_younger', option_label: '有妹', sort_order: 5 },
+                        // 原生家庭定居地
+                        { field_name: 'family_hometown', option_value: 'same_city', option_label: '和本人同城', sort_order: 1 },
+                        { field_name: 'family_hometown', option_value: 'different_city', option_label: '异地老家', sort_order: 2 },
+                        // 父母养老保障
+                        { field_name: 'family_pension', option_value: 'has_pension', option_label: '有退休金社保', sort_order: 1 },
+                        { field_name: 'family_pension', option_value: 'no_pension', option_label: '无养老保障', sort_order: 2 },
+                        // 家庭经济状况
+                        { field_name: 'family_economic_status', option_value: 'wealthy', option_label: '富贵人家', sort_order: 1 },
+                        { field_name: 'family_economic_status', option_value: 'middle_class', option_label: '中产家庭', sort_order: 2 },
+                        { field_name: 'family_economic_status', option_value: 'comfortable', option_label: '小康之家', sort_order: 3 },
+                        { field_name: 'family_economic_status', option_value: 'slight_debt', option_label: '略有负债', sort_order: 4 },
+                        // 家庭氛围
+                        { field_name: 'family_atmosphere', option_value: 'traditional', option_label: '传统保守', sort_order: 1 },
+                        { field_name: 'family_atmosphere', option_value: 'open', option_label: '开明随和', sort_order: 2 },
+                        // 是否和父母同住
+                        { field_name: 'family_living_with_parents', option_value: 'living_alone', option_label: '自住独居', sort_order: 1 },
+                        { field_name: 'family_living_with_parents', option_value: 'living_with_parents', option_label: '和父母同住', sort_order: 2 },
+                        { field_name: 'family_living_with_parents', option_value: 'living_nearby', option_label: '就近居住', sort_order: 3 },
+                        // 家里对婚恋态度
+                        { field_name: 'family_marriage_attitude', option_value: 'urgent', option_label: '催婚', sort_order: 1 },
+                        { field_name: 'family_marriage_attitude', option_value: 'natural', option_label: '顺其自然', sort_order: 2 },
+                        { field_name: 'family_marriage_attitude', option_value: 'no_interference', option_label: '不干涉', sort_order: 3 },
+                    ];
+                    
+                    const { error: insertError } = await supabaseClient
+                        .from('family_options')
+                        .insert(initialData);
+                    
+                    if (insertError) {
+                        console.error('❌ 插入初始数据失败:', insertError.message);
+                        return false;
+                    }
+                    
+                    console.log('✅ 成功初始化家庭选项数据');
+                    return true;
+                }
+                
+                return true;
+            } catch (e) {
+                console.error('❌ 初始化家庭选项表失败:', e.message);
+                return false;
+            }
+        }
+
+        // 加载所有家庭情况选项
+        async function loadAllFamilyOptions() {
+            console.log('🔄 加载所有家庭情况选项...');
+            try {
+                // 先尝试初始化表
+                const initSuccess = await initFamilyOptionsTable();
+                
+                if (!initSuccess) {
+                    // 如果初始化失败，显示提示信息
+                    const familyCards = document.querySelectorAll('.card');
+                    familyCards.forEach(card => {
+                        if (card.querySelector('.card-header') && 
+                            card.querySelector('.card-header').textContent.includes('家庭')) {
+                            const listDiv = card.querySelector('div[id$="List"]');
+                            if (listDiv) {
+                                listDiv.innerHTML = '<p class="empty" style="color: #dc3545;">⚠️ 数据表未创建，请联系管理员执行 SQL 脚本</p>';
+                            }
+                        }
+                    });
+                    return;
+                }
+                
+                // 初始化成功，加载所有选项
+                loadFamilyParentsStatus();
+                loadFamilyParentsJob();
+                loadFamilySiblings();
+                loadFamilyHometown();
+                loadFamilyPension();
+                loadFamilyEconomicStatus();
+                loadFamilyAtmosphere();
+                loadFamilyLivingWithParents();
+                loadFamilyMarriageAttitude();
+                
+                console.log('✅ 所有家庭情况选项加载完成');
+            } catch (e) {
+                console.error('❌ 加载家庭情况选项失败:', e.message);
             }
         }
     </script>

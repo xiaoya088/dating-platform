@@ -121,7 +121,13 @@
         }
 
         function getUserPhotoUrl(user) {
-            if (!user) return 'https://via.placeholder.com/40?text=无头像';
+            // 创建一个简单的 SVG 占位图片
+            const createPlaceholderSvg = (text = '无头像') => {
+                const encodedText = encodeURIComponent(text);
+                return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Crect fill='%23ddd' width='40' height='40'/%3E%3Ctext x='20' y='22' font-size='10' text-anchor='middle' fill='%23666'%3E${encodedText}%3C/text%3E%3C/svg%3E`;
+            };
+
+            if (!user) return createPlaceholderSvg('无头像');
             let photos = user.photos;
             if (typeof photos === 'string') {
                 try {
@@ -133,7 +139,7 @@
             if (Array.isArray(photos) && photos.length > 0) {
                 return photos[0];
             }
-            return 'https://via.placeholder.com/40?text=无头像';
+            return createPlaceholderSvg('无头像');
         }
 
         async function loadMatches(useCache = true) {
@@ -260,7 +266,7 @@
                     <div class="match-card" onclick="showUserDetail('${user.id}')">
                         <div class="match-left">
                             <div class="match-avatar-wrap">
-                                <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" onerror="this.src='https://via.placeholder.com/100?text=无头像'" onclick="event.stopPropagation(); openPhotoPreview('${card.displayInfo.avatar}')" style="cursor: pointer;">
+                                <img class="match-avatar" src="${card.displayInfo.avatar}" alt="头像" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22100%22 height=%22100%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23ddd%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%22 y=%2255%22 font-size=%2212%22 text-anchor=%22middle%22 fill=%22%23666%22%3E无头像%3C/text%3E%3C/svg%3E'" onclick="event.stopPropagation(); openPhotoPreview('${card.displayInfo.avatar}')" style="cursor: pointer;">
                                 ${photoCount > 1 ? `<span class="photo-count">${photoCount}</span>` : ''}
                             </div>
                         </div>
@@ -349,8 +355,24 @@
         }
 
         async function showUserDetail(userId) {
+            console.log('🔄 showUserDetail 开始执行, userId:', userId);
+            console.log('🔄 currentUser:', currentUser);
+            
             try {
+                if (!currentUser || !currentUser.id) {
+                    throw new Error('当前用户未登录');
+                }
+                
+                console.log('🔄 调用 getMatchDetails...');
                 const details = await getMatchDetails(currentUser.id, userId);
+                console.log('✅ getMatchDetails 返回:', details);
+                
+                // 检查是否被过滤
+                if (details.filtered) {
+                    showAlert('该用户不符合匹配条件', 'error');
+                    return;
+                }
+                
                 const { user, score, reasons, userType } = details;
 
                 const modalTitle = document.getElementById('modalTitle');
@@ -381,13 +403,19 @@
 
                 const userPhotos = Array.isArray(user.photos) ? user.photos : (user.photos ? JSON.parse(user.photos) : []);
                 
+                // 安全获取 aToB 和 bToA 的分数
+                const aToBScore = details.aToB?.score ?? score ?? 0;
+                const bToAScore = details.bToA?.score ?? 0;
+                const interestBonus = details.interestBonus ?? 0;
+                const activityBonus = details.activityBonus ?? 0;
+                
                 modalBody.innerHTML = `
                     <div class="modal-user-section">
                         <div class="modal-photos">
-                            <img src="${card.displayInfo.avatar}" style="width: 100%; max-width: 150px; border-radius: 8px; cursor: pointer;" onerror="this.src='https://via.placeholder.com/150?text=无头像'" onclick="openPhotoPreview('${card.displayInfo.avatar}')">
+                            <img src="${card.displayInfo.avatar}" style="width: 100%; max-width: 150px; border-radius: 8px; cursor: pointer;" loading="lazy" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22150%22 height=%22150%22 viewBox=%220 0 150 150%22%3E%3Crect fill=%22%23ddd%22 width=%22150%22 height=%22150%22/%3E%3Ctext x=%2275%22 y=%2280%22 font-size=%2214%22 text-anchor=%22middle%22 fill=%22%23666%22%3E无头像%3C/text%3E%3C/svg%3E'" onclick="openPhotoPreview('${card.displayInfo.avatar}')">
                             ${userPhotos.length > 1 ? `
                                 <div style="display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap;">
-                                    ${userPhotos.slice(1, 4).map(p => `<img src="${p}" style="width: 45px; height: 45px; border-radius: 4px; object-fit: cover; cursor: pointer;" onclick="openPhotoPreview('${p}')">`).join('')}
+                                    ${userPhotos.slice(1, 4).map(p => `<img src="${p}" style="width: 45px; height: 45px; border-radius: 4px; object-fit: cover; cursor: pointer;" loading="lazy" onclick="openPhotoPreview('${p}')">`).join('')}
                                 </div>
                             ` : ''}
                         </div>
@@ -417,17 +445,17 @@
                                 <div class="score-label">综合匹配度</div>
                             </div>
                             <div class="score-item">
-                                <div class="score-value" style="color: #27ae60;">${details.aToB.score}%</div>
+                                <div class="score-value" style="color: #27ae60;">${aToBScore}%</div>
                                 <div class="score-label">我→对方</div>
                             </div>
                             <div class="score-item">
-                                <div class="score-value" style="color: #3498db;">${details.bToA.score}%</div>
+                                <div class="score-value" style="color: #3498db;">${bToAScore}%</div>
                                 <div class="score-label">对方→我</div>
                             </div>
                         </div>
-                        ${details.interestBonus > 0 ? `<p class="bonus-text">✓ 兴趣加成：+${details.interestBonus}分</p>` : ''}
-                        ${details.activityBonus > 0 ? `<p class="bonus-text">✓ 活动契合：+${details.activityBonus}分</p>` : ''}
-                        ${reasons.length > 0 ? `
+                        ${interestBonus > 0 ? `<p class="bonus-text">✓ 兴趣加成：+${interestBonus}分</p>` : ''}
+                        ${activityBonus > 0 ? `<p class="bonus-text">✓ 活动契合：+${activityBonus}分</p>` : ''}
+                        ${reasons && reasons.length > 0 ? `
                             <div class="match-reasons">
                                 <p><strong>匹配亮点：</strong></p>
                                 <div class="reason-tags">
@@ -465,8 +493,9 @@
 
                 document.getElementById('userDetailModal').classList.remove('hidden');
             } catch (error) {
-                console.error('获取用户详情失败:', error);
-                showAlert('获取用户详情失败', 'error');
+                console.error('❌ 获取用户详情失败:', error);
+                console.error('❌ 错误堆栈:', error.stack);
+                showAlert('获取用户详情失败: ' + error.message, 'error');
             }
         }
 
@@ -508,7 +537,7 @@
         async function sendMessage(targetId) {
             console.log('sendMessage called with:', targetId);
             
-            const currentUser = getCurrentUser();
+            // 使用页面上的 currentUser 变量
             if (!currentUser) {
                 showAlert('请先登录', 'error');
                 return;
@@ -563,7 +592,7 @@
                 return;
             }
             
-            const currentUser = getCurrentUser();
+            // 使用页面上的 currentUser 变量
             if (!currentUser) {
                 showAlert('请先登录', 'error');
                 return;
@@ -577,10 +606,12 @@
                     from_user_id: currentUser.id,
                     to_user_id: messageTargetUserId,
                     content: content,
-                    is_read: false
+                    is_read: false,
+                    created_at: new Date().toISOString()
                 }]);
             
             if (error) {
+                console.error('发送私信失败:', error);
                 showAlert('发送失败: ' + error.message, 'error');
             } else {
                 showAlert('私信已发送', 'success');

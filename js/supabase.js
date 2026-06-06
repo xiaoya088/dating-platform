@@ -31,6 +31,10 @@ function getSupabase() {
     return supabaseClient;
 }
 
+function getSupabaseClient() {
+    return getSupabase();
+}
+
 async function testConnection() {
     const client = getSupabase();
     if (!client) {
