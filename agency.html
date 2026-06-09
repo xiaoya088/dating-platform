@@ -174,7 +174,14 @@
         }
 
         function generatePassword() {
-            return Math.random().toString(36).substring(2, 8);
+            const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            const array = new Uint32Array(16);
+            crypto.getRandomValues(array);
+            let password = '';
+            for (let i = 0; i < 12; i++) {
+                password += charset[array[i] % charset.length];
+            }
+            return password;
         }
     </script>
     
@@ -1009,7 +1016,7 @@
                 // 查询数据（只选择需要的字段，减少数据传输）
                 let query = supabase
                     .from('users')
-                    .select('id, name, phone, gender, birthday, province, city, status, password, created_at')
+                    .select('id, name, phone, gender, birthday, province, city, status, created_at')
                     .eq('agency_id', currentUser.id)
                     .order('created_at', { ascending: false })
                     .range(from, to);
@@ -1061,7 +1068,7 @@
                                         <td>${age}</td>
                                         <td>${client.province || ''} ${client.city || ''}</td>
                                         <td><span class="badge ${client.status === 'active' ? 'badge-success' : 'badge-danger'}">${client.status === 'active' ? '正常' : '禁用'}</span></td>
-                                        <td>${client.password || '未设置'}</td>
+                                        <td>******</td>
                                         <td>
                                             <button class="btn btn-secondary btn-small" onclick="showClientDetail('${client.id}')">详情</button>
                                             <button class="btn btn-danger btn-small" onclick="toggleClientStatus('${client.id}', '${client.status}')">${client.status === 'active' ? '禁用' : '启用'}</button>
@@ -1324,16 +1331,15 @@
             if (error) {
                 showAlert('重置失败', 'error');
             } else {
-                showAlert(`密码已重置为: ${newPassword}`, 'success');
+                showAlert('密码已重置，请通知用户新密码', 'success');
 
                 showTab('add');
                 
                 setTimeout(() => {
                     const passwordInput = document.getElementById('clientPassword');
                     if (passwordInput) {
-                        passwordInput.value = newPassword;
+                        passwordInput.value = '';
                         passwordInput.focus();
-                        passwordInput.select();
                     }
                 }, 100);
             }
@@ -1367,7 +1373,7 @@
             // 填充表单数据
             document.getElementById('clientPhone').value = client.phone || '';
             document.getElementById('clientPhone').readOnly = true;
-            document.getElementById('clientPassword').value = client.password || '';
+            document.getElementById('clientPassword').value = ''; // 不显示密码
             document.getElementById('clientName').value = client.name || '';
             document.getElementById('clientGender').value = client.gender || '';
             document.getElementById('clientBirthday').value = client.birthday || '';
