@@ -182,12 +182,27 @@
                 const userMap = {};
                 users?.forEach(u => userMap[u.id] = u);
                 
+                // 同时查询中介信息
+                const { data: agencies, error: agenciesError } = await supabase
+                    .from('agencies')
+                    .select('id, name, phone');
+                
+                if (agenciesError) console.error('查询中介信息失败:', agenciesError);
+                
+                const agencyMap = {};
+                agencies?.forEach(a => agencyMap[a.id] = a);
+                
                 const conversations = {};
                 messages.forEach(m => {
                     const otherId = m.from_user_id === currentUser.id ? m.to_user_id : m.from_user_id;
                     if (!conversations[otherId]) {
+                        // 判断对方是普通用户还是中介
+                        const otherUser = userMap[otherId];
+                        const otherAgency = agencyMap[otherId];
+                        
                         conversations[otherId] = {
-                            user: userMap[otherId],
+                            user: otherUser || null,
+                            agency: otherAgency || null,
                             lastMessage: m,
                             unreadCount: 0
                         };
@@ -206,13 +221,20 @@
                 messageList.innerHTML = convList.map(conv => {
                     const content = conv.lastMessage.content;
                     const displayContent = content ? content.substring(0, 50) : '[图片]';
-                    const otherUser = conv.user || { id: conv.lastMessage.from_user_id, name: '匿名用户' };
+                    
+                    // 判断对方是普通用户还是中介
+                    const isAgency = !!conv.agency;
+                    const otherEntity = isAgency ? conv.agency : conv.user;
+                    const otherId = otherEntity?.id || conv.lastMessage.from_user_id;
+                    const otherName = otherEntity?.name || '匿名用户';
+                    const isFromMe = conv.lastMessage.from_user_id === currentUser.id;
+                    
                     return `
-                        <div class="message-item" onclick="openChat('${otherUser.id}', '${otherUser.name || '匿名用户'}')">
-                            <img class="message-avatar" src="${getUserPhotoUrl(conv.user)}">
+                        <div class="message-item" onclick="openChat('${otherId}', '${otherName}', ${isAgency})">
+                            <img class="message-avatar" src="${isAgency ? 'https://via.placeholder.com/40?text=中介' : getUserPhotoUrl(conv.user)}">
                             <div class="message-content">
-                                <div style="font-weight: 600;">${otherUser.name || '匿名用户'}</div>
-                                <div style="color: #888; font-size: 14px; margin-top: 5px;">${displayContent}${content && content.length > 50 ? '...' : ''}</div>
+                                <div style="font-weight: 600;">${otherName}${isAgency ? ' 🏢' : ''}</div>
+                                <div style="color: #888; font-size: 14px; margin-top: 5px;">${isAgency ? '[中介] ' : ''}${displayContent}${content && content.length > 50 ? '...' : ''}</div>
                             </div>
                             <div style="text-align: right;">
                                 <div class="message-time">${formatTime(conv.lastMessage.created_at || conv.lastMessage.createdAt)}</div>
@@ -227,7 +249,9 @@
             }
         }
         
-        async function openChat(userId, userName) {
+        let currentChatIsAgency = false;
+        
+        async function openChat(userId, userName, isAgency = false) {
             if (!userId) {
                 showAlert('用户ID无效', 'error');
                 return;
@@ -235,25 +259,50 @@
             
             const supabase = getSupabase();
             currentChatUserId = userId;
+            currentChatIsAgency = isAgency;
             
-            const { data: user, error: userError } = await supabase
-                .from('users')
-                .select('*')
-                .eq('id', userId)
-                .single();
-            
-            if (userError) {
-                console.error('获取用户信息失败:', userError);
-                showAlert('获取用户信息失败', 'error');
-                return;
-            }
-            
-            currentChatUser = user;
-            
-            if (user) {
-                document.getElementById('chatAvatar').src = getUserPhotoUrl(user);
-                document.getElementById('chatName').textContent = user.name || '匿名用户';
-                document.getElementById('chatMeta').textContent = `${user.province || ''} ${user.city || ''}`;
+            if (isAgency) {
+                // 如果是中介，查询中介信息
+                const { data: agency, error: agencyError } = await supabase
+                    .from('agencies')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (agencyError) {
+                    console.error('获取中介信息失败:', agencyError);
+                    showAlert('获取中介信息失败', 'error');
+                    return;
+                }
+                
+                currentChatUser = agency;
+                
+                if (agency) {
+                    document.getElementById('chatAvatar').src = 'https://via.placeholder.com/45?text=中介';
+                    document.getElementById('chatName').textContent = agency.name || '匿名中介';
+                    document.getElementById('chatMeta').textContent = `🏢 中介机构 | ${agency.phone || ''}`;
+                }
+            } else {
+                // 如果是普通用户，查询用户信息
+                const { data: user, error: userError } = await supabase
+                    .from('users')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+                
+                if (userError) {
+                    console.error('获取用户信息失败:', userError);
+                    showAlert('获取用户信息失败', 'error');
+                    return;
+                }
+                
+                currentChatUser = user;
+                
+                if (user) {
+                    document.getElementById('chatAvatar').src = getUserPhotoUrl(user);
+                    document.getElementById('chatName').textContent = user.name || '匿名用户';
+                    document.getElementById('chatMeta').textContent = `${user.province || ''} ${user.city || ''}`;
+                }
             }
             
             document.getElementById('messageListView').classList.add('hidden');
