@@ -2065,7 +2065,7 @@
         // ============================================
         let currentMatchUser = null;
 
-        // 加载中介录入用户的匹配信息
+        // 加载中介录入用户的匹配信息（优化版）
         async function loadAgencyMatches() {
             const supabase = getSupabase();
             const matchUserList = document.getElementById('matchUserList');
@@ -2086,7 +2086,8 @@
                     .from('users')
                     .select('id, name, phone, gender, birthday')
                     .eq('agency_id', currentUser.id)
-                    .limit(30); // 减少数量
+                    .order('created_at', { ascending: false })
+                    .limit(30);
                 
                 clearTimeout(timeoutId);
                 
@@ -2101,7 +2102,7 @@
                     return;
                 }
                 
-                console.log(`✅ 查询到 ${myUsers.length} 个用户`);
+                console.log(`✅ 查询到 ${myUsers.length} 个用户，耗时: ${Date.now() - startTime}ms`);
                 
                 // 去重：根据用户ID去重
                 const uniqueUsersMap = {};
@@ -2111,34 +2112,54 @@
                     }
                 });
                 const uniqueUsers = Object.values(uniqueUsersMap);
-                console.log(`✅ 去重后 ${uniqueUsers.length} 个用户`);
                 
-                // 统计每个用户的匹配数量
-                const countMap = {};
-                uniqueUsers.forEach(user => {
-                    countMap[user.id] = 0;
-                });
+                // 优化：使用单次聚合查询替代分批查询
+                const userIds = uniqueUsers.map(u => u.id);
                 
-                // 查询匹配数量（分批查询，每批10个用户）
-                for (let i = 0; i < uniqueUsers.length; i += 10) {
-                    const batch = uniqueUsers.slice(i, i + 10);
-                    const userIds = batch.map(u => u.id);
+                // 尝试使用 RPC 函数（如果已创建）
+                let countMap = {};
+                const rpcStartTime = Date.now();
+                
+                try {
+                    // 使用 RPC 函数一次性获取所有用户的匹配数量
+                    const { data: matchCounts, error: rpcError } = await supabase
+                        .rpc('get_match_counts_for_users', { user_ids: userIds });
                     
-                    const { data: matchCounts } = await supabase
+                    if (!rpcError && matchCounts) {
+                        matchCounts.forEach(m => {
+                            countMap[m.user_id] = m.match_count || 0;
+                        });
+                        console.log(`✅ RPC查询匹配数量完成，耗时: ${Date.now() - rpcStartTime}ms`);
+                    } else {
+                        // RPC 失败，使用备用方案：单次查询所有匹配记录
+                        console.log('⚠️ RPC不可用，使用备用查询方案');
+                        const { data: allMatches } = await supabase
+                            .from('match_results')
+                            .select('user_id')
+                            .in('user_id', userIds)
+                            .eq('is_filtered', false);
+                        
+                        (allMatches || []).forEach(m => {
+                            countMap[m.user_id] = (countMap[m.user_id] || 0) + 1;
+                        });
+                        console.log(`✅ 备用查询完成，耗时: ${Date.now() - rpcStartTime}ms`);
+                    }
+                } catch (e) {
+                    // 异常时使用备用方案
+                    console.log('⚠️ 查询异常，使用备用方案:', e.message);
+                    const { data: allMatches } = await supabase
                         .from('match_results')
                         .select('user_id')
                         .in('user_id', userIds)
-                        .eq('is_filtered', false)
-                        .limit(100);
+                        .eq('is_filtered', false);
                     
-                    (matchCounts || []).forEach(m => {
-                        if (countMap[m.user_id] !== undefined) {
-                            countMap[m.user_id]++;
-                        }
+                    (allMatches || []).forEach(m => {
+                        countMap[m.user_id] = (countMap[m.user_id] || 0) + 1;
                     });
                 }
                 
-                console.log('✅ 匹配数量统计完成');
+                const elapsed = Date.now() - startTime;
+                console.log(`✅ 加载完成，总耗时: ${elapsed}ms`);
                 
                 matchUserList.innerHTML = uniqueUsers.map(user => {
                     const matchCount = countMap[user.id] || 0;
