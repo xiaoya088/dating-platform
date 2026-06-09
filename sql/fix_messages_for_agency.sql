@@ -22,56 +22,53 @@ CREATE INDEX IF NOT EXISTS idx_messages_from_user_id ON messages(from_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_to_user_id ON messages(to_user_id);
 CREATE INDEX IF NOT EXISTS idx_messages_sender_type ON messages(sender_type);
 
--- 6. 更新RLS策略以支持中介用户
-DO $$
-BEGIN
-    -- 删除旧策略
-    DROP POLICY IF EXISTS "Users can view own messages" ON messages;
-    DROP POLICY IF EXISTS "Users can send messages" ON messages;
-    DROP POLICY IF EXISTS "Users can update received messages" ON messages;
-    
-    -- 用户可以查看自己发送或接收的消息
-    CREATE POLICY "Users can view own messages" ON messages
-        FOR SELECT USING (
-            from_user_id = auth.uid() OR to_user_id = auth.uid()
-        );
-    
-    -- 用户可以发送消息
-    CREATE POLICY "Users can send messages" ON messages
-        FOR INSERT WITH CHECK (
-            from_user_id = auth.uid() AND sender_type = 'user'
-        );
-    
-    -- 用户可以更新自己接收的消息（标记已读）
-    CREATE POLICY "Users can update received messages" ON messages
-        FOR UPDATE USING (to_user_id = auth.uid());
-    
-    -- 中介可以查看与自己相关的消息（发送给其客户的消息）
-    CREATE POLICY "Agencies can view messages to their clients" ON messages
-        FOR SELECT USING (
-            sender_type = 'agency' AND from_user_id = auth.uid()
-            OR EXISTS (
-                SELECT 1 FROM users 
-                WHERE users.id = messages.to_user_id 
-                AND users.agency_id = auth.uid()
-            )
-        );
-    
-    -- 中介可以发送消息给其客户
-    CREATE POLICY "Agencies can send messages to their clients" ON messages
-        FOR INSERT WITH CHECK (
-            sender_type = 'agency' AND from_user_id = auth.uid()
-            AND EXISTS (
-                SELECT 1 FROM users 
-                WHERE users.id = messages.to_user_id 
-                AND users.agency_id = auth.uid()
-            )
-        );
-        
-    RAISE NOTICE 'messages RLS policies updated for agency support';
-END $$;
+-- 6. 删除所有现有的 RLS 策略（避免重复创建错误）
+DROP POLICY IF EXISTS "Users can view own messages" ON messages;
+DROP POLICY IF EXISTS "Users can send messages" ON messages;
+DROP POLICY IF EXISTS "Users can update received messages" ON messages;
+DROP POLICY IF EXISTS "Agencies can view messages to their clients" ON messages;
+DROP POLICY IF EXISTS "Agencies can send messages to their clients" ON messages;
 
--- 7. 验证修改
+-- 7. 重新创建RLS策略以支持中介用户
+-- 用户可以查看自己发送或接收的消息
+CREATE POLICY "Users can view own messages" ON messages
+    FOR SELECT USING (
+        from_user_id = auth.uid() OR to_user_id = auth.uid()
+    );
+
+-- 用户可以发送消息
+CREATE POLICY "Users can send messages" ON messages
+    FOR INSERT WITH CHECK (
+        from_user_id = auth.uid() AND sender_type = 'user'
+    );
+
+-- 用户可以更新自己接收的消息（标记已读）
+CREATE POLICY "Users can update received messages" ON messages
+    FOR UPDATE USING (to_user_id = auth.uid());
+
+-- 中介可以查看与自己相关的消息（发送给其客户的消息）
+CREATE POLICY "Agencies can view messages to their clients" ON messages
+    FOR SELECT USING (
+        sender_type = 'agency' AND from_user_id = auth.uid()
+        OR EXISTS (
+            SELECT 1 FROM users 
+            WHERE users.id = messages.to_user_id 
+            AND users.agency_id = auth.uid()
+        )
+    );
+
+-- 中介可以发送消息给其客户
+CREATE POLICY "Agencies can send messages to their clients" ON messages
+    FOR INSERT WITH CHECK (
+        sender_type = 'agency' AND from_user_id = auth.uid()
+        AND EXISTS (
+            SELECT 1 FROM users 
+            WHERE users.id = messages.to_user_id 
+            AND users.agency_id = auth.uid()
+        )
+    );
+
+-- 8. 验证修改
 SELECT conname, conrelid::regclass, confrelid::regclass 
 FROM pg_constraint 
 WHERE conrelid = 'messages'::regclass AND contype = 'f';
