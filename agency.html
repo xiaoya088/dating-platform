@@ -2282,7 +2282,7 @@
             currentMatchUser = null;
         }
 
-        // 加载匹配结果列表
+        // 加载匹配结果列表（增强去重）
         async function loadMatchResults(userId) {
             const supabase = getSupabase();
             const resultsList = document.getElementById('matchResultsList');
@@ -2292,14 +2292,14 @@
             const startTime = Date.now();
             
             try {
-                // 先查询匹配记录（限制50条）
+                // 先查询匹配记录（限制100条，更多数据用于去重）
                 const { data: matches, error: matchError } = await supabase
                     .from('match_results')
-                    .select('user_id, target_user_id, score, is_filtered')
+                    .select('user_id, target_user_id, score, is_filtered, created_at')
                     .eq('user_id', userId)
                     .eq('is_filtered', false)
                     .order('score', { ascending: false })
-                    .limit(50);
+                    .limit(100);
                 
                 if (matchError) {
                     console.error('❌ 查询匹配结果失败:', matchError);
@@ -2314,18 +2314,51 @@
                     return;
                 }
                 
-                // 去重：同一个目标用户只保留匹配度最高的记录
+                // 统计去重前的重复情况
+                const beforeDedupCount = matches.length;
+                const duplicateStats = {};
+                matches.forEach(m => {
+                    const key = m.target_user_id;
+                    duplicateStats[key] = (duplicateStats[key] || 0) + 1;
+                });
+                const hasDuplicates = Object.values(duplicateStats).some(count => count > 1);
+                if (hasDuplicates) {
+                    console.warn('⚠️ 检测到重复匹配记录:', JSON.stringify(duplicateStats));
+                }
+                
+                // 增强去重：同一个目标用户只保留匹配度最高的记录
+                // 如果分数相同，保留最新创建的记录
                 const uniqueMatches = {};
                 matches.forEach(m => {
-                    if (!uniqueMatches[m.target_user_id] || (m.score || 0) > (uniqueMatches[m.target_user_id].score || 0)) {
+                    const existing = uniqueMatches[m.target_user_id];
+                    if (!existing) {
                         uniqueMatches[m.target_user_id] = m;
+                    } else {
+                        // 比较分数，保留更高的
+                        const currentScore = m.score || 0;
+                        const existingScore = existing.score || 0;
+                        if (currentScore > existingScore) {
+                            uniqueMatches[m.target_user_id] = m;
+                        } else if (currentScore === existingScore) {
+                            // 分数相同时保留最新的
+                            const currentTime = new Date(m.created_at || 0).getTime();
+                            const existingTime = new Date(existing.created_at || 0).getTime();
+                            if (currentTime > existingTime) {
+                                uniqueMatches[m.target_user_id] = m;
+                            }
+                        }
                     }
                 });
+                
                 const deduplicatedMatches = Object.values(uniqueMatches);
-                console.log('✅ 去重后匹配记录:', deduplicatedMatches.length);
+                console.log(`✅ 去重完成: ${beforeDedupCount} -> ${deduplicatedMatches.length} 条记录`);
+                
+                // 如果去重后超过50条，取前50条
+                const finalMatches = deduplicatedMatches.slice(0, 50);
+                console.log('📋 最终显示:', finalMatches.length, '条匹配');
                 
                 // 获取所有目标用户ID
-                const targetIds = deduplicatedMatches.map(m => m.target_user_id);
+                const targetIds = finalMatches.map(m => m.target_user_id);
                 console.log('📋 目标用户ID数量:', targetIds.length);
                 
                 // 查询目标用户信息（批量查询）
@@ -2340,17 +2373,25 @@
                     return;
                 }
                 
+                // 用户去重（防止用户表本身可能存在的重复）
+                const uniqueTargets = {};
+                (targets || []).forEach(t => {
+                    if (!uniqueTargets[t.id]) {
+                        uniqueTargets[t.id] = t;
+                    }
+                });
+                
                 const elapsed = Date.now() - startTime;
-                console.log(`✅ 加载完成，耗时: ${elapsed}ms，匹配数: ${matches.length}`);
+                console.log(`✅ 加载完成，耗时: ${elapsed}ms`);
                 
                 // 创建用户映射
                 const targetMap = {};
-                (targets || []).forEach(t => {
+                Object.values(uniqueTargets).forEach(t => {
                     targetMap[t.id] = t;
                 });
                 
                 // 渲染匹配列表（使用去重后的数据）
-                resultsList.innerHTML = deduplicatedMatches.map(m => {
+                resultsList.innerHTML = finalMatches.map(m => {
                     const target = targetMap[m.target_user_id] || {};
                     const score = Math.round(m.score || 0);
                     const age = target.birthday ? Math.floor((new Date() - new Date(target.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
