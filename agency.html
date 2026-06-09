@@ -1743,7 +1743,31 @@
                     return;
                 }
 
-                requestList.innerHTML = requests.map(req => {
+                // 去重：同一个 from_user 只保留最新的一条请求
+                const uniqueRequestsMap = {};
+                const beforeDedupCount = requests.length;
+                
+                requests.forEach(req => {
+                    const fromUserId = req.from_user_id;
+                    if (!fromUserId) return;
+                    
+                    const existing = uniqueRequestsMap[fromUserId];
+                    if (!existing) {
+                        uniqueRequestsMap[fromUserId] = req;
+                    } else {
+                        // 保留最新的请求
+                        const currentTime = new Date(req.created_at || 0).getTime();
+                        const existingTime = new Date(existing.created_at || 0).getTime();
+                        if (currentTime > existingTime) {
+                            uniqueRequestsMap[fromUserId] = req;
+                        }
+                    }
+                });
+                
+                const uniqueRequests = Object.values(uniqueRequestsMap);
+                console.log(`✅ 去重完成: ${beforeDedupCount} -> ${uniqueRequests.length} 条记录`);
+
+                requestList.innerHTML = uniqueRequests.map(req => {
                     const statusBadge = req.status === 'accepted' ? '<span style="background: #27ae60; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">已接受</span>' :
                                         req.status === 'rejected' ? '<span style="background: #e74c3c; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">已拒绝</span>' :
                                         '<span style="background: #f39c12; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">待处理</span>';
