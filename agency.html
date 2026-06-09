@@ -85,6 +85,59 @@
             localStorage.removeItem('currentUser');
             window.location.href = 'index.html';
         }
+
+        // 时间格式化辅助函数 - 正确处理UTC时间转换为北京时间
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                // 确保时间字符串是UTC格式（添加Z后缀如果没有）
+                let utcStr = dateStr;
+                if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                    utcStr = dateStr + 'Z';
+                } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
+                    utcStr = dateStr + 'Z';
+                }
+
+                const date = new Date(utcStr);
+                // 使用北京时间（UTC+8）
+                return date.toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                console.error('时间格式化错误:', e, dateStr);
+                return dateStr;
+            }
+        }
+
+        // 简短时间格式（只显示时分）
+        function formatShortTime(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                let utcStr = dateStr;
+                if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                    utcStr = dateStr + 'Z';
+                } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
+                    utcStr = dateStr + 'Z';
+                }
+
+                const date = new Date(utcStr);
+                return date.toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                return dateStr;
+            }
+        }
         
         function showAlert(message, type) {
             const alertBox = document.getElementById('alertBox');
@@ -1198,7 +1251,7 @@
                     
                     <tr><th>婚恋宣言</th><td colspan="3">${client.declaration || '暂无'}</td></tr>
                     
-                    <tr><th>注册时间</th><td colspan="3">${client.created_at ? new Date(client.created_at).toLocaleString() : '-'}</td></tr>
+                    <tr><th>注册时间</th><td colspan="3">${formatDateTime(client.created_at)}</td></tr>
                 </table>
 
                 <div class="print-section-title">择偶要求</div>
@@ -1675,7 +1728,6 @@
                     .from('agency_requests')
                     .select('*, from_user:users!agency_requests_from_user_id_fkey(id, name, phone, photos)')
                     .eq('agency_id', currentUser.id)
-                    .eq('status', 'pending')
                     .order('created_at', { ascending: false });
 
                 console.log('📊 查询结果:', { 成功: !!requests, 数量: requests?.length, 错误: error });
@@ -1707,14 +1759,10 @@
                                 ${statusBadge}
                             </div>
                             <div style="color: #888; margin-top: 5px;">${req.message || '希望与您联系'}</div>
-                            <div class="message-time">${new Date(req.created_at).toLocaleString()}</div>
+                            <div class="message-time">${formatDateTime(req.created_at)}</div>
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;" onclick="event.stopPropagation();">
-                            ${req.status === 'pending' ? `
-                            <button class="btn btn-success btn-small" onclick="handleRequest('${req.id}', 'accepted')">✓ 接受</button>
-                            <button class="btn btn-danger btn-small" onclick="handleRequest('${req.id}', 'rejected')">✗ 拒绝</button>
-                            ` : ''}
-                            <button class="btn btn-secondary btn-small" onclick="openRequestDetail('${req.id}')">💬 回复</button>
+                            <button class="btn btn-primary btn-small" onclick="openRequestDetail('${req.id}')">💬 回复私信</button>
                         </div>
                     </div>
                 `}).join('');
@@ -1832,7 +1880,7 @@
             document.getElementById('requestUserName').textContent = request.from_user?.name || '匿名用户';
             document.getElementById('requestUserMeta').textContent = request.from_user?.phone || '无电话';
             document.getElementById('requestMessage').textContent = request.message || '希望与您联系';
-            document.getElementById('requestTime').textContent = '请求时间: ' + new Date(request.created_at).toLocaleString();
+            document.getElementById('requestTime').textContent = '请求时间: ' + formatDateTime(request.created_at);
             
             // 加载往来私信
             console.log('🔄 开始加载往来私信, userId:', request.from_user_id);
@@ -1905,7 +1953,7 @@
                 chatMessages.innerHTML = messages.map(m => {
                     const isMine = m.from_user_id === currentUser.id;
                     const messageContent = m.content ? m.content : (m.image_url ? `<img src="${m.image_url}" style="max-width: 100%; cursor: pointer;">` : '[空消息]');
-                    const displayTime = new Date(m.created_at).toLocaleTimeString();
+                    const displayTime = formatShortTime(m.created_at);
                     
                     return `
                         <div style="display: flex; flex-direction: ${isMine ? 'row-reverse' : 'row'}; margin-bottom: 12px; align-items: flex-start;">
@@ -1983,6 +2031,7 @@
                 to_user_id: currentRequestDetail.from_user_id,
                 content: content,
                 is_read: false,
+                sender_type: 'agency',
                 created_at: new Date().toISOString()
             };
             
@@ -2057,15 +2106,25 @@
                 
                 console.log(`✅ 查询到 ${myUsers.length} 个用户`);
                 
+                // 去重：根据用户ID去重
+                const uniqueUsersMap = {};
+                myUsers.forEach(user => {
+                    if (!uniqueUsersMap[user.id]) {
+                        uniqueUsersMap[user.id] = user;
+                    }
+                });
+                const uniqueUsers = Object.values(uniqueUsersMap);
+                console.log(`✅ 去重后 ${uniqueUsers.length} 个用户`);
+                
                 // 统计每个用户的匹配数量
                 const countMap = {};
-                myUsers.forEach(user => {
+                uniqueUsers.forEach(user => {
                     countMap[user.id] = 0;
                 });
                 
                 // 查询匹配数量（分批查询，每批10个用户）
-                for (let i = 0; i < myUsers.length; i += 10) {
-                    const batch = myUsers.slice(i, i + 10);
+                for (let i = 0; i < uniqueUsers.length; i += 10) {
+                    const batch = uniqueUsers.slice(i, i + 10);
                     const userIds = batch.map(u => u.id);
                     
                     const { data: matchCounts } = await supabase
@@ -2084,7 +2143,7 @@
                 
                 console.log('✅ 匹配数量统计完成');
                 
-                matchUserList.innerHTML = myUsers.map(user => {
+                matchUserList.innerHTML = uniqueUsers.map(user => {
                     const matchCount = countMap[user.id] || 0;
                     const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
                     
@@ -2142,8 +2201,17 @@
                     return;
                 }
                 
+                // 去重：根据用户ID去重
+                const uniqueUsersMap = {};
+                myUsers.forEach(user => {
+                    if (!uniqueUsersMap[user.id]) {
+                        uniqueUsersMap[user.id] = user;
+                    }
+                });
+                const uniqueUsers = Object.values(uniqueUsersMap);
+                
                 // 查询匹配数量
-                const userIds = myUsers.map(u => u.id);
+                const userIds = uniqueUsers.map(u => u.id);
                 const { data: matchCounts } = await supabase
                     .from('match_results')
                     .select('user_id')
@@ -2155,7 +2223,7 @@
                     countMap[m.user_id] = (countMap[m.user_id] || 0) + 1;
                 });
                 
-                matchUserList.innerHTML = myUsers.map(user => {
+                matchUserList.innerHTML = uniqueUsers.map(user => {
                     const matchCount = countMap[user.id] || 0;
                     const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
                     
@@ -2249,8 +2317,18 @@
                     return;
                 }
                 
+                // 去重：同一个目标用户只保留匹配度最高的记录
+                const uniqueMatches = {};
+                matches.forEach(m => {
+                    if (!uniqueMatches[m.target_user_id] || (m.score || 0) > (uniqueMatches[m.target_user_id].score || 0)) {
+                        uniqueMatches[m.target_user_id] = m;
+                    }
+                });
+                const deduplicatedMatches = Object.values(uniqueMatches);
+                console.log('✅ 去重后匹配记录:', deduplicatedMatches.length);
+                
                 // 获取所有目标用户ID
-                const targetIds = matches.map(m => m.target_user_id);
+                const targetIds = deduplicatedMatches.map(m => m.target_user_id);
                 console.log('📋 目标用户ID数量:', targetIds.length);
                 
                 // 查询目标用户信息（批量查询）
@@ -2274,8 +2352,8 @@
                     targetMap[t.id] = t;
                 });
                 
-                // 渲染匹配列表
-                resultsList.innerHTML = matches.map(m => {
+                // 渲染匹配列表（使用去重后的数据）
+                resultsList.innerHTML = deduplicatedMatches.map(m => {
                     const target = targetMap[m.target_user_id] || {};
                     const score = Math.round(m.score || 0);
                     const age = target.birthday ? Math.floor((new Date() - new Date(target.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';

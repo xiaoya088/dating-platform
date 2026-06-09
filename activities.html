@@ -59,6 +59,36 @@
         let currentUser = null;
         let cancelActivityId = null;
         let userRegistrations = [];
+
+        // 时间格式化辅助函数 - 正确处理UTC时间转换为北京时间
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                // 确保时间字符串是UTC格式（添加Z后缀如果没有）
+                let utcStr = dateStr;
+                if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                    utcStr = dateStr + 'Z';
+                } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
+                    utcStr = dateStr + 'Z';
+                }
+
+                const date = new Date(utcStr);
+                // 使用北京时间（UTC+8）
+                return date.toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                console.error('时间格式化错误:', e, dateStr);
+                return dateStr;
+            }
+        }
         
         async function initPage() {
             console.log('activities.html initializing...');
@@ -325,12 +355,12 @@
                         <div class="activity-card" style="${isCancelled ? 'opacity: 0.7;' : ''}${isPast ? 'opacity: 0.6;' : ''}">
                             <div class="activity-title">${activity.title}</div>
                             <div class="activity-meta">
-                                📅 ${new Date(activity.activity_time).toLocaleString()} | 📍 ${activity.location} | 👥 剩余名额: ${remaining}
+                                📅 ${formatDateTime(activity.activity_time)} | 📍 ${activity.location} | 👥 剩余名额: ${remaining}
                             </div>
                             <div class="activity-description">${activity.description || '暂无详细描述'}</div>
                             <div class="activity-footer">
                                 <div>
-                                    ${isRegistered ? `报名时间: ${new Date(reg.registered_at).toLocaleString()}` : ''}
+                                    ${isRegistered ? `报名时间: ${formatDateTime(reg.registered_at)}` : ''}
                                     ${isCancelled ? `<span style="color: #e74c3c;">取消原因: ${reg.cancel_reason || ''}</span>` : ''}
                                 </div>
                                 <div style="display: flex; align-items: center; gap: 8px;">

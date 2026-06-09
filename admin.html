@@ -593,6 +593,36 @@
         let allUsers = [];
         let currentPage = 1;
         const pageSize = 20;
+
+        // 时间格式化辅助函数 - 正确处理UTC时间转换为北京时间
+        function formatDateTime(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                // 确保时间字符串是UTC格式（添加Z后缀如果没有）
+                let utcStr = dateStr;
+                if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.includes('T')) {
+                    utcStr = dateStr + 'Z';
+                } else if (!dateStr.endsWith('Z') && dateStr.includes('T') && !dateStr.includes('+')) {
+                    utcStr = dateStr + 'Z';
+                }
+
+                const date = new Date(utcStr);
+                // 使用北京时间（UTC+8）
+                return date.toLocaleString('zh-CN', {
+                    timeZone: 'Asia/Shanghai',
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+            } catch (e) {
+                console.error('时间格式化错误:', e, dateStr);
+                return dateStr;
+            }
+        }
         
         document.getElementById('tabBtnUsers').addEventListener('click', () => showTab('users'));
         document.getElementById('tabBtnAgencies').addEventListener('click', () => showTab('agencies'));
@@ -1304,7 +1334,7 @@
                         
                         <tr><th>婚恋宣言</th><td colspan="3">${user.declaration || '暂无'}</td></tr>
                         
-                        <tr><th>注册时间</th><td colspan="3">${user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</td></tr>
+                        <tr><th>注册时间</th><td colspan="3">${formatDateTime(user.created_at)}</td></tr>
                     </table>
 
                     <div class="print-section-title">择偶要求</div>
@@ -1563,7 +1593,7 @@
                                 return `
                                     <tr>
                                         <td>${a.title}</td>
-                                        <td>${new Date(a.created_at).toLocaleString()}</td>
+                                        <td>${formatDateTime(a.created_at)}</td>
                                         <td><span class="badge ${isPinned ? 'badge-success' : 'badge-secondary'}">${isPinned ? '置顶' : '普通'}</span></td>
                                         <td>
                                             <button class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px;" onclick="editAnnouncement('${a.id}')">编辑</button>
@@ -1751,7 +1781,7 @@
                             ${activities.map(a => `
                                 <tr>
                                     <td>${a.title}</td>
-                                    <td>${a.activity_time ? new Date(a.activity_time).toLocaleString() : '-'}</td>
+                                    <td>${formatDateTime(a.activity_time)}</td>
                                     <td>${a.location || '-'}</td>
                                     <td>${a.current_participants || 0}/${a.max_participants || '-'}</td>
                                     <td><span class="badge ${a.status === 'active' ? 'badge-success' : 'badge-danger'}">${a.status === 'active' ? '进行中' : '已结束'}</span></td>
@@ -2284,7 +2314,7 @@
                                     <tr>
                                         <td>${fromUser?.name || '匿名'} (${fromUser?.phone || '-'})</td>
                                         <td>${toUser?.name || '匿名'} (${toUser?.phone || '-'})</td>
-                                        <td>${new Date(l.created_at).toLocaleString()}</td>
+                                        <td>${formatDateTime(l.created_at)}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -2348,7 +2378,7 @@
                                     <tr>
                                         <td>${fromUser?.name || '匿名'} (${fromUser?.phone || '-'})</td>
                                         <td>${toUser?.name || '匿名'} (${toUser?.phone || '-'})</td>
-                                        <td>${new Date(l.created_at).toLocaleString()}</td>
+                                        <td>${formatDateTime(l.created_at)}</td>
                                     </tr>
                                 `;
                             }).join('')}
@@ -2379,8 +2409,8 @@
                 <table>
                     <thead><tr><th>时间</th><th>类型</th><th>操作</th><th>详情</th></tr></thead>
                     <tbody>
-                        <tr><td>${new Date().toLocaleString()}</td><td>系统</td><td>系统运行正常</td><td>所有服务正常</td></tr>
-                        <tr><td>${new Date().toLocaleString()}</td><td>管理员</td><td>admin登录</td><td>管理员后台登录</td></tr>
+                        <tr><td>${formatDateTime(new Date().toISOString())}</td><td>系统</td><td>系统运行正常</td><td>所有服务正常</td></tr>
+                        <tr><td>${formatDateTime(new Date().toISOString())}</td><td>管理员</td><td>admin登录</td><td>管理员后台登录</td></tr>
                     </tbody>
                 </table>
                 <p style="color: #888; font-size: 12px; margin-top: 10px;">* 日志功能需要后端支持，当前显示示例数据</p>
