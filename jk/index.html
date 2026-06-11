@@ -1,0 +1,3362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JK健康管理系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 420px;
+            padding: 45px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+        
+        .header h1 {
+            color: #2d3748;
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 22px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 10px;
+            color: #4a5568;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #fafafa;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+            margin-top: 15px;
+        }
+        
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-outline {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+        }
+        
+        .btn-outline:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-danger {
+            background: #e53e3e;
+        }
+        
+        .btn-success {
+            background: #48bb78;
+        }
+        
+        .btn-warning {
+            background: #ed8936;
+        }
+        
+        .alert {
+            padding: 14px 16px;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            font-size: 14px;
+            display: none;
+        }
+        
+        .alert.error {
+            background: #fff5f5;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+        
+        .alert.success {
+            background: #f0fff4;
+            color: #38a169;
+            border: 1px solid #9ae6b4;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 45px;
+            height: 45px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .link {
+            text-align: center;
+            margin-top: 25px;
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .link a:hover {
+            text-decoration: underline;
+        }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 500;
+            color: #a0aec0;
+            transition: all 0.3s;
+            border-bottom: 2px solid transparent;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .gender-selector {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .gender-option {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .gender-option.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .checkbox-group input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        
+        .checkbox-group label {
+            cursor: pointer;
+            margin-bottom: 0 !important;
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+        
+        .step {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #a0aec0;
+            transition: all 0.3s;
+        }
+        
+        .step.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .step.completed {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        /* 主界面样式 */
+        #mainView {
+            width: 95%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+        
+        .main-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 35px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .nav-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            background: #f7fafc;
+            color: #4a5568;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+            margin-right: 10px;
+        }
+        
+        .nav-btn:hover {
+            background: #e2e8f0;
+        }
+        
+        .nav-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .nav-btn.admin {
+            background: #fef5e7;
+            color: #d69e2e;
+        }
+        
+        .nav-btn.admin:hover, .nav-btn.admin.active {
+            background: #ed8936;
+            color: white;
+        }
+        
+        #contentArea {
+            min-height: 500px;
+        }
+        
+        .card {
+            background: #f7fafc;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .card-white {
+            background: white;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            padding: 25px;
+            border-radius: 15px;
+            color: white;
+        }
+        
+        .stat-card.purple { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .stat-card.green { background: linear-gradient(135deg, #48bb78 0%, #38a169 100%); }
+        .stat-card.orange { background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%); }
+        .stat-card.pink { background: linear-gradient(135deg, #9f7aea 0%, #805ad5 100%); }
+        
+        .stat-label { font-size: 14px; opacity: 0.9; margin-bottom: 10px; }
+        .stat-value { font-size: 36px; font-weight: 700; }
+        .stat-unit { font-size: 14px; opacity: 0.9; margin-top: 5px; }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+        
+        .product-card {
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .product-title {
+            margin-bottom: 10px;
+            color: #2d3748;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .product-desc {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .product-price {
+            color: #e53e3e;
+            font-size: 24px;
+            font-weight: 700;
+        }
+        
+        .product-original-price {
+            color: #a0aec0;
+            text-decoration: line-through;
+            margin-left: 10px;
+        }
+        
+        .qty-control {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .qty-btn {
+            width: 35px;
+            height: 35px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            background: white;
+        }
+        
+        .qty-btn:hover {
+            border-color: #667eea;
+            color: #667eea;
+        }
+        
+        .qty-display {
+            width: 40px;
+            text-align: center;
+            line-height: 35px;
+        }
+        
+        /* 表格样式 */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .data-table th {
+            padding: 15px;
+            text-align: left;
+            color: #4a5568;
+            font-weight: 600;
+            border-bottom: 2px solid #e2e8f0;
+            background: #f7fafc;
+        }
+        
+        .data-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        
+        .badge-success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge-warning {
+            background: #fef5e7;
+            color: #d69e2e;
+        }
+        
+        .badge-danger {
+            background: #fed7d7;
+            color: #c53030;
+        }
+        
+        .badge-info {
+            background: #ebf8ff;
+            color: #2c7a7b;
+        }
+        
+        .badge-default {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+        
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .modal-close {
+            width: 35px;
+            height: 35px;
+            border: none;
+            border-radius: 50%;
+            background: #e2e8f0;
+            cursor: pointer;
+            font-size: 20px;
+            color: #718096;
+        }
+        
+        .modal-close:hover {
+            background: #cbd5e0;
+        }
+        
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            resize: vertical;
+            min-height: 100px;
+            font-family: inherit;
+        }
+        
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: white;
+        }
+        
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .comment-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .comment-item {
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .comment-content {
+            color: #4a5568;
+            line-height: 1.6;
+        }
+        
+        .comment-time {
+            font-size: 12px;
+            color: #a0aec0;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: #a0aec0;
+        }
+        
+        .float-right {
+            float: right;
+        }
+        
+        .clearfix::after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+        
+        /* 导航菜单 */
+        .nav-menu {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .admin-nav {
+            display: none;
+            margin-left: auto;
+            flex-wrap: wrap;
+        }
+        
+        /* 移动端响应式样式 */
+        @media screen and (max-width: 768px) {
+            body {
+                padding: 10px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+            
+            .container {
+                width: 100%;
+                padding: 20px;
+                border-radius: 15px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .nav-menu {
+                gap: 8px;
+                margin-bottom: 20px;
+            }
+            
+            .nav-btn {
+                padding: 8px 12px !important;
+                font-size: 12px !important;
+                flex: 1 1 auto;
+                min-width: calc(33% - 10px);
+                text-align: center;
+            }
+            
+            .admin-nav {
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+            }
+            
+            .admin-nav .nav-btn {
+                min-width: calc(50% - 10px);
+            }
+            
+            .card {
+                padding: 15px;
+                margin-bottom: 15px;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr !important;
+            }
+            
+            .data-table {
+                font-size: 12px;
+                overflow-x: auto;
+            }
+            
+            .data-table th, .data-table td {
+                padding: 8px 5px;
+                white-space: nowrap;
+            }
+            
+            h2 {
+                font-size: 18px !important;
+            }
+            
+            h3 {
+                font-size: 16px !important;
+            }
+            
+            input, select, textarea {
+                font-size: 16px !important; /* 防止iOS缩放 */
+            }
+            
+            .modal-content {
+                width: 95%;
+                padding: 15px;
+                margin: 10% auto;
+            }
+            
+            .btn {
+                padding: 10px 20px;
+                font-size: 14px;
+                width: 100%;
+            }
+            
+            /* 隐藏桌面端元素 */
+            .desktop-only {
+                display: none;
+            }
+        }
+        
+        @media screen and (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .header .user-info {
+                margin-top: 10px;
+                width: 100%;
+            }
+            
+            .nav-btn {
+                padding: 8px 6px !important;
+                font-size: 11px !important;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-value {
+                font-size: 24px;
+            }
+            
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 登录视图 -->
+    <div id="loginView" class="container">
+        <div class="header">
+            <h1>🏥 JK健康管理系统</h1>
+            <p>关爱健康，从每一天开始</p>
+        </div>
+        
+        <div id="loginAlert" class="alert"></div>
+        
+        <div class="form-group">
+            <label for="loginPhone">账号</label>
+            <input type="text" id="loginPhone" placeholder="管理员输入用户名，用户输入手机号">
+        </div>
+        
+        <div class="form-group">
+            <label for="loginPassword">密码</label>
+            <input type="password" id="loginPassword" placeholder="请输入密码">
+        </div>
+        
+        <button class="btn" id="loginBtn">登录</button>
+        
+        <div class="link" style="display: flex; justify-content: space-between;">
+            <a href="#" onclick="showRegister()">立即注册</a>
+            <a href="#" onclick="showForgotPassword()" style="color: #718096;">找回密码</a>
+        </div>
+    </div>
+    
+    <!-- 找回密码视图 -->
+    <div id="forgotPasswordView" class="container hidden">
+        <div class="header">
+            <h1>🔑 找回密码</h1>
+            <p>密码将以短信方式发送到您的手机</p>
+        </div>
+        
+        <div id="forgotAlert" class="alert"></div>
+        
+        <div class="form-group">
+            <label for="forgotPhone">手机号</label>
+            <input type="tel" id="forgotPhone" placeholder="请输入注册时的手机号">
+        </div>
+        
+        <button class="btn" onclick="submitForgotPassword()">发送密码</button>
+        
+        <div class="link">
+            <a href="#" onclick="showLogin()">返回登录</a>
+        </div>
+    </div>
+    
+    <!-- 注册视图 -->
+    <div id="registerView" class="container hidden">
+        <div class="header">
+            <h1>🏥 注册账号</h1>
+            <p>开始您的健康管理之旅</p>
+        </div>
+        
+        <div id="registerAlert" class="alert"></div>
+        
+        <div class="form-group">
+            <label for="regPhone">手机号</label>
+            <input type="tel" id="regPhone" placeholder="请输入手机号">
+        </div>
+        
+        <div class="form-group">
+            <label for="regPassword">设置密码</label>
+            <input type="password" id="regPassword" placeholder="请输入密码（至少6位）">
+        </div>
+        
+        <div class="form-group">
+            <label for="regConfirmPassword">确认密码</label>
+            <input type="password" id="regConfirmPassword" placeholder="请再次输入密码">
+        </div>
+        
+        <div class="form-group">
+            <label for="regReferralCode">推荐码（选填）</label>
+            <input type="text" id="regReferralCode" placeholder="如果您有推荐人的二维码，请输入推荐码">
+        </div>
+        
+        <button class="btn" id="regBtn">注册</button>
+        <button class="btn btn-secondary" onclick="showLogin()">返回登录</button>
+    </div>
+    
+    <!-- 加载视图 -->
+    <div id="loadingView" class="container hidden">
+        <div class="loading">
+            <div class="spinner"></div>
+            <p>加载中...</p>
+        </div>
+    </div>
+    
+    <!-- 主界面 -->
+    <div id="mainView" class="hidden">
+        <div class="main-header">
+            <div>
+                <h1>🏥 JK健康管理系统</h1>
+                <p id="userGreeting" style="color: #718096; margin-top: 5px;"></p>
+            </div>
+            <div>
+                <span id="userRole" style="margin-right: 20px; padding: 8px 16px; border-radius: 20px; font-size: 14px;"></span>
+                <button onclick="logout()" style="padding: 10px 25px; background: #e53e3e; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">退出登录</button>
+            </div>
+        </div>
+        
+        <!-- 导航菜单 -->
+        <div class="nav-menu">
+            <button class="nav-btn active" onclick="showSection('dashboard')">📊 健康概览</button>
+            <button class="nav-btn" onclick="showSection('daily-record')">📝 每日记录</button>
+            <button class="nav-btn" onclick="showSection('consultation')">💬 健康咨询</button>
+            <button class="nav-btn" onclick="showSection('products')">🛒 产品中心</button>
+            <button class="nav-btn" onclick="showSection('community')">👥 健康社区</button>
+            <button class="nav-btn" onclick="showSection('profile')">👤 个人中心</button>
+            <div id="adminNav" class="admin-nav">
+                <button class="nav-btn admin" onclick="showSection('admin-users')">👨‍⚕️ 用户管理</button>
+                <button class="nav-btn admin" onclick="showSection('admin-products')">📦 产品管理</button>
+                <button class="nav-btn admin" onclick="showSection('admin-consultations')">📋 咨询管理</button>
+                <button class="nav-btn admin" onclick="showSection('admin-referral')">🎁 推荐配置</button>
+            </div>
+        </div>
+        
+        <!-- 内容区域 -->
+        <div id="contentArea"></div>
+    </div>
+    
+    <!-- 模态框 -->
+    <div id="modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="modalTitle">标题</div>
+                <button class="modal-close" onclick="closeModal()">×</button>
+            </div>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+    
+    <script>
+        let currentUser = null;
+        let selectedGender = '';
+        let shoppingCart = [];
+        let systemConfig = {}; // 系统配置缓存
+        
+        // 获取Supabase客户端
+        function getJkSupabase() {
+            return getSupabase();
+        }
+        
+        // 加载系统配置
+        async function loadSystemConfig() {
+            try {
+                const supabase = getJkSupabase();
+                const { data } = await supabase
+                    .from('jk_system_config')
+                    .select('config_key, config_value');
+                
+                if (data) {
+                    systemConfig = {};
+                    data.forEach(item => {
+                        systemConfig[item.config_key] = item.config_value;
+                    });
+                }
+            } catch (e) {
+                console.log('加载系统配置失败');
+            }
+        }
+        
+        // 检查健康社区是否启用
+        function isCommunityEnabled() {
+            return systemConfig.community_enabled !== 'false';
+        }
+        
+        // 页面加载时处理推荐码（扫码后打开页面）
+        function handleReferralCodeFromURL() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const referralCode = urlParams.get('referral');
+            
+            if (referralCode) {
+                // 保存推荐码到本地存储，记录扫码时间
+                localStorage.setItem('pendingReferralCode', referralCode);
+                localStorage.setItem('pendingReferralCodeTime', Date.now().toString());
+                
+                // 自动填充到注册表单
+                const regReferralCode = document.getElementById('regReferralCode');
+                if (regReferralCode) {
+                    regReferralCode.value = referralCode;
+                }
+                
+                // 清除URL参数
+                const cleanUrl = window.location.pathname + window.location.hash;
+                window.history.replaceState({}, document.title, cleanUrl);
+            }
+        }
+        
+        // 显示提示
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert ${type}`;
+            alert.style.display = 'block';
+            setTimeout(() => {
+                alert.style.display = 'none';
+            }, 3000);
+        }
+        
+        // 显示登录
+        function showLogin() {
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('forgotPasswordView').classList.add('hidden');
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('loadingView').classList.add('hidden');
+            // 处理URL中的推荐码
+            handleReferralCodeFromURL();
+        }
+        
+        // 显示注册
+        function showRegister() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('registerView').classList.remove('hidden');
+            document.getElementById('forgotPasswordView').classList.add('hidden');
+            document.getElementById('registerStep1').classList.remove('hidden');
+            document.getElementById('registerStep2').classList.add('hidden');
+            document.getElementById('step1').className = 'step active';
+            document.getElementById('step2').className = 'step';
+            selectedGender = '';
+        }
+        
+        // 显示找回密码
+        function showForgotPassword() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('forgotPasswordView').classList.remove('hidden');
+            document.getElementById('mainView').classList.add('hidden');
+            document.getElementById('loadingView').classList.add('hidden');
+        }
+        
+        // 提交找回密码
+        async function submitForgotPassword() {
+            const phone = document.getElementById('forgotPhone').value;
+            
+            if (!phone) {
+                showAlert('forgotAlert', '请输入手机号', 'error');
+                return;
+            }
+            
+            // 验证手机号格式
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                showAlert('forgotAlert', '请输入正确的手机号', 'error');
+                return;
+            }
+            
+            try {
+                const supabase = getJkSupabase();
+                
+                // 检查手机号是否已注册
+                const { data: userData } = await supabase
+                    .from('jk_users')
+                    .select('id, password')
+                    .eq('phone', phone)
+                    .single();
+                
+                if (!userData) {
+                    showAlert('forgotAlert', '该手机号未注册', 'error');
+                    return;
+                }
+                
+                // 提示密码已发送（实际短信发送需要对接短信服务商）
+                showAlert('forgotAlert', `密码已发送至您的手机 ${phone}，请注意查收`, 'success');
+                
+                // 3秒后自动返回登录页面
+                setTimeout(() => {
+                    showLogin();
+                    document.getElementById('loginPhone').value = phone;
+                }, 3000);
+                
+            } catch (err) {
+                console.error('找回密码错误:', err);
+                showAlert('forgotAlert', '操作失败，请检查网络连接', 'error');
+            }
+        }
+        
+        // 选择性别
+        function selectGender(gender) {
+            selectedGender = gender;
+            document.querySelectorAll('.gender-option').forEach(el => el.classList.remove('selected'));
+            if (document.getElementById(`gender${gender === '男' ? 'Male' : gender === '女' ? 'Female' : 'Other'}`)) {
+                document.getElementById(`gender${gender === '男' ? 'Male' : gender === '女' ? 'Female' : 'Other'}`).classList.add('selected');
+            }
+        }
+        
+        // 登录
+        async function login() {
+            const account = document.getElementById('loginPhone').value;
+            const password = document.getElementById('loginPassword').value;
+            
+            if (!account || !password) {
+                showAlert('loginAlert', '请填写账号和密码', 'error');
+                return;
+            }
+            
+            document.getElementById('loginBtn').disabled = true;
+            
+            try {
+                const supabase = getJkSupabase();
+                const isPhone = /^1[3-9]\d{9}$/.test(account);
+                
+                if (isPhone) {
+                    // 手机号 → 普通用户登录（jk_users表）
+                    const { data: userData } = await supabase
+                        .from('jk_users')
+                        .select('*')
+                        .eq('phone', account)
+                        .eq('password', password)
+                        .single();
+                    
+                    if (userData) {
+                        currentUser = userData;
+                        showMainView();
+                    } else {
+                        showAlert('loginAlert', '手机号或密码错误', 'error');
+                    }
+                } else {
+                    // 非手机号 → 管理员登录（jk_admins表）
+                    const { data: adminData } = await supabase
+                        .from('jk_admins')
+                        .select('*')
+                        .eq('username', account)
+                        .eq('password', password)
+                        .single();
+                    
+                    if (adminData) {
+                        currentUser = {
+                            id: adminData.id,
+                            username: adminData.name || adminData.username,
+                            phone: null,
+                            role: adminData.role || 'admin',
+                            points: 0,
+                            referral_code: null,
+                            show_qr_code: false,
+                            status: 'active'
+                        };
+                        showMainView();
+                    } else {
+                        showAlert('loginAlert', '用户名或密码错误', 'error');
+                    }
+                }
+            } catch (err) {
+                console.error('登录错误:', err);
+                showAlert('loginAlert', '登录失败，请检查网络连接', 'error');
+            }
+            
+            document.getElementById('loginBtn').disabled = false;
+        }
+        
+        // 获取用户信息
+        async function fetchUserInfo(userId) {
+            const supabase = getJkSupabase();
+            
+            const { data, error } = await supabase
+                .from('jk_users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+            
+            if (error) {
+                console.error('获取用户信息失败:', error);
+                return;
+            }
+            
+            currentUser = data;
+            showMainView();
+        }
+        
+        // 生成推荐码
+        function generateReferralCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 8; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+        
+        // 注册（简化版：仅需手机号和密码）
+        async function register() {
+            const phone = document.getElementById('regPhone').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const referralCode = document.getElementById('regReferralCode').value;
+            
+            if (!phone || !password) {
+                showAlert('registerAlert', '请填写手机号和密码', 'error');
+                return;
+            }
+            
+            // 验证手机号格式
+            if (!/^1[3-9]\d{9}$/.test(phone)) {
+                showAlert('registerAlert', '请输入正确的手机号', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showAlert('registerAlert', '密码至少需要6位', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showAlert('registerAlert', '两次输入的密码不一致', 'error');
+                return;
+            }
+            
+            document.getElementById('regBtn').disabled = true;
+            
+            try {
+                const supabase = getJkSupabase();
+                
+                // 检查手机号是否已注册
+                const { data: existingUser } = await supabase
+                    .from('jk_users')
+                    .select('id')
+                    .eq('phone', phone)
+                    .single();
+                
+                if (existingUser) {
+                    showAlert('registerAlert', '该手机号已注册', 'error');
+                    document.getElementById('regBtn').disabled = false;
+                    return;
+                }
+                
+                // 生成用户的推荐码
+                const userReferralCode = generateReferralCode();
+                
+                // 获取推荐码优先级：URL参数 > 本地存储（30天有效）
+                let finalReferralCode = referralCode; // URL参数优先
+                let referrerId = null;
+                
+                // 如果URL没有推荐码，检查本地存储
+                if (!finalReferralCode) {
+                    finalReferralCode = localStorage.getItem('pendingReferralCode');
+                }
+                
+                // 如果本地有推荐码，检查是否在30天有效期内
+                if (finalReferralCode) {
+                    const storedTime = localStorage.getItem('pendingReferralCodeTime');
+                    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                    
+                    if (storedTime && (Date.now() - parseInt(storedTime)) < thirtyDaysMs) {
+                        // 在有效期内，使用该推荐码
+                        const { data: referrer } = await supabase
+                            .from('jk_users')
+                            .select('id')
+                            .eq('referral_code', finalReferralCode)
+                            .single();
+                        
+                        if (referrer) {
+                            referrerId = referrer.id;
+                        }
+                    }
+                    // 不管是否有效，都清除本地存储的推荐码（已使用或已过期）
+                    localStorage.removeItem('pendingReferralCode');
+                    localStorage.removeItem('pendingReferralCodeTime');
+                }
+                
+                // 创建新用户（不手动设置ID，让数据库自动生成UUID）
+                const { data: insertedUser, error: userError } = await supabase
+                    .from('jk_users')
+                    .insert({
+                        username: phone,
+                        phone: phone,
+                        password: password,
+                        role: 'user',
+                        status: 'active',
+                        points: 0,
+                        referral_code: userReferralCode,
+                        show_qr_code: true
+                    })
+                    .select();
+                
+                if (userError) {
+                    showAlert('registerAlert', userError.message, 'error');
+                    document.getElementById('regBtn').disabled = false;
+                    return;
+                }
+                
+                const newUserId = insertedUser[0].id;
+                
+                // 创建基础健康信息记录
+                // 推荐关系永久有效（referral_valid_until为null表示无期限）
+                const { error: healthError } = await supabase
+                    .from('jk_user_health_info')
+                    .insert({
+                        user_id: newUserId,
+                        referrer_id: referrerId,
+                        referral_code_used: finalReferralCode,
+                        referral_valid_until: null, // 永久有效
+                        created_at: new Date().toISOString()
+                    });
+                
+                if (healthError) {
+                    console.error('健康信息创建失败:', healthError);
+                }
+                
+                showAlert('registerAlert', '注册成功！正在登录...', 'success');
+                
+                // 自动登录
+                setTimeout(() => {
+                    document.getElementById('loginPhone').value = phone;
+                    document.getElementById('loginPassword').value = password;
+                    login();
+                }, 1000);
+            } catch (err) {
+                console.error('注册错误:', err);
+                showAlert('registerAlert', '注册失败，请检查网络连接', 'error');
+                document.getElementById('regBtn').disabled = false;
+            }
+        }
+        
+        // 显示主界面
+        function showMainView() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('registerView').classList.add('hidden');
+            document.getElementById('loadingView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+            
+            document.getElementById('userGreeting').textContent = `欢迎回来，${currentUser.username || currentUser.email}`;
+            
+            const roleSpan = document.getElementById('userRole');
+            if (currentUser.role === 'admin' || currentUser.role === 'doctor') {
+                roleSpan.textContent = currentUser.role === 'admin' ? '👑 管理员' : '👨‍⚕️ 医生';
+                roleSpan.style.background = '#48bb78';
+                roleSpan.style.color = 'white';
+                document.getElementById('adminNav').style.display = 'flex';
+            } else {
+                roleSpan.textContent = '👤 用户';
+                roleSpan.style.background = '#e2e8f0';
+                roleSpan.style.color = '#4a5568';
+            }
+            
+            // 加载系统配置
+            loadSystemConfig().then(() => {
+                // 根据配置更新导航栏
+                updateNavByConfig();
+            });
+            
+            showSection('dashboard');
+        }
+        
+        // 根据系统配置更新导航栏
+        function updateNavByConfig() {
+            const communityBtn = document.querySelector('button[onclick*="community"]');
+            if (communityBtn) {
+                if (isCommunityEnabled()) {
+                    communityBtn.style.display = '';
+                } else {
+                    communityBtn.style.display = 'none';
+                }
+            }
+        }
+        
+        // 显示指定板块
+        function showSection(section) {
+            document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            switch(section) {
+                case 'dashboard':
+                    loadDashboard();
+                    break;
+                case 'daily-record':
+                    loadDailyRecord();
+                    break;
+                case 'consultation':
+                    loadConsultation();
+                    break;
+                case 'products':
+                    loadProducts();
+                    break;
+                case 'community':
+                    if (!isCommunityEnabled()) {
+                        alert('健康社区功能已关闭');
+                        return;
+                    }
+                    loadCommunity();
+                    break;
+                case 'profile':
+                    loadProfile();
+                    break;
+                case 'admin-users':
+                    loadAdminUsers();
+                    break;
+                case 'admin-products':
+                    loadAdminProducts();
+                    break;
+                case 'admin-consultations':
+                    loadAdminConsultations();
+                    break;
+                case 'admin-referral':
+                    loadAdminReferral();
+                    break;
+            }
+        }
+        
+        // 加载健康概览
+        async function loadDashboard() {
+            let todayRecord = null;
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const today = new Date().toISOString().split('T')[0];
+                const { data } = await supabase
+                    .from('jk_daily_records')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .eq('record_date', today)
+                    .single();
+                todayRecord = data;
+            } catch (e) {
+                console.log('今日暂无记录');
+            }
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">📊 健康概览</h2>
+                <div class="stats-grid">
+                    <div class="stat-card purple">
+                        <div class="stat-label">今日睡眠</div>
+                        <div class="stat-value">${todayRecord?.sleep_hours || '--'}</div>
+                        <div class="stat-unit">小时</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-label">今日饮水量</div>
+                        <div class="stat-value">${todayRecord?.water_intake || '--'}</div>
+                        <div class="stat-unit">升</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-label">今日运动</div>
+                        <div class="stat-value">${todayRecord?.exercise_minutes || '--'}</div>
+                        <div class="stat-unit">分钟</div>
+                    </div>
+                    <div class="stat-card pink">
+                        <div class="stat-label">心情指数</div>
+                        <div class="stat-value">${todayRecord?.mood || '--'}</div>
+                        <div class="stat-unit">/5</div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #2d3748;">📝 今日待办</h3>
+                    <div style="color: #718096;">
+                        <div style="margin-bottom: 10px;">• ${!todayRecord ? '✗' : '✓'} 记录今日健康数据</div>
+                        <div style="margin-bottom: 10px;">• 按时喝水（建议每天2升）</div>
+                        <div style="margin-bottom: 10px;">• 保持适量运动</div>
+                        <div>• 查看医生建议</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 加载每日记录
+        async function loadDailyRecord() {
+            let records = [];
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { data } = await supabase
+                    .from('jk_daily_records')
+                    .select('*, jk_doctor_comments(*)')
+                    .eq('user_id', user.id)
+                    .order('record_date', { ascending: false })
+                    .limit(30);
+                records = data || [];
+            } catch (e) {
+                console.log('获取记录失败');
+            }
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">📝 每日健康记录</h2>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">今日记录</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px;">
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">睡眠时长（小时）</label>
+                            <input type="number" step="0.5" id="sleepHours" placeholder="如：7.5" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">饮水量（升）</label>
+                            <input type="number" step="0.1" id="waterIntake" placeholder="如：1.8" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">运动时长（分钟）</label>
+                            <input type="number" id="exerciseMinutes" placeholder="如：30" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">用餐次数</label>
+                            <select id="mealCount" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                                <option value="1">1次</option>
+                                <option value="2">2次</option>
+                                <option value="3" selected>3次</option>
+                                <option value="4">4次</option>
+                                <option value="5">5次以上</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">心情指数</label>
+                        <div style="display: flex; gap: 10px;">
+                            ${[1,2,3,4,5].map(n => `
+                                <button onclick="selectMood(${n})" id="mood${n}" style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${n === 3 ? '#667eea' : '#e2e8f0'}; background: ${n === 3 ? 'rgba(102, 126, 234, 0.1)' : 'white'}; cursor: pointer; font-size: 20px;">
+                                    ${n === 1 ? '😞' : n === 2 ? '😐' : n === 3 ? '😊' : n === 4 ? '😄' : '😍'}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px;">
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">使用产品效果</label>
+                        <textarea id="productEffect" rows="3" placeholder="请描述使用产品后的效果..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; resize: none;"></textarea>
+                    </div>
+                    <div style="margin-top: 15px; display: flex; align-items: center; gap: 10px;">
+                        <input type="checkbox" id="isPublic">
+                        <label for="isPublic" style="cursor: pointer;">公开此记录（其他用户可以查看和评论）</label>
+                    </div>
+                    <button onclick="saveDailyRecord()" style="margin-top: 25px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">保存记录</button>
+                </div>
+                <h3 style="margin-bottom: 20px; color: #4a5568;">📋 历史记录</h3>
+                ${records.length > 0 ? `
+                    <div id="historyRecords">
+                        ${records.map(record => `
+                            <div class="card card-white" style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <div style="font-weight: 600; color: #2d3748;">📅 ${record.record_date}</div>
+                                    <div>${record.is_public ? '🔓 公开' : '🔒 私密'}</div>
+                                </div>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 15px;">
+                                    <div><span style="color: #718096;">睡眠:</span> ${record.sleep_hours || '-'}小时</div>
+                                    <div><span style="color: #718096;">饮水:</span> ${record.water_intake || '-'}升</div>
+                                    <div><span style="color: #718096;">运动:</span> ${record.exercise_minutes || '-'}分钟</div>
+                                    <div><span style="color: #718096;">心情:</span> ${['😞','😐','😊','😄','😍'][record.mood-1] || '-'}</div>
+                                </div>
+                                ${record.product_effect ? `
+                                    <div style="padding: 12px; background: #f7fafc; border-radius: 8px; margin-bottom: 15px;">
+                                        <div style="color: #718096; font-size: 14px; margin-bottom: 5px;">产品效果</div>
+                                        <div style="color: #4a5568;">${record.product_effect}</div>
+                                    </div>
+                                ` : ''}
+                                ${record.jk_doctor_comments && record.jk_doctor_comments.length > 0 ? `
+                                    <div style="padding: 12px; background: #c6f6d5; border-radius: 8px; border-left: 4px solid #48bb78;">
+                                        <div style="color: #38a169; font-weight: 600; margin-bottom: 5px;">👨‍⚕️ 医生建议</div>
+                                        <div style="color: #22543d;">${record.jk_doctor_comments[0]?.advice}</div>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <div class="empty-state">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
+                        <div>暂无历史记录</div>
+                    </div>
+                `}
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 选择心情
+        function selectMood(mood) {
+            document.querySelectorAll('[id^="mood"]').forEach(el => {
+                el.style.borderColor = '#e2e8f0';
+                el.style.background = 'white';
+            });
+            document.getElementById(`mood${mood}`).style.borderColor = '#667eea';
+            document.getElementById(`mood${mood}`).style.background = 'rgba(102, 126, 234, 0.1)';
+        }
+        
+        // 保存每日记录
+        async function saveDailyRecord() {
+            const sleepHours = parseFloat(document.getElementById('sleepHours').value);
+            const waterIntake = parseFloat(document.getElementById('waterIntake').value);
+            const exerciseMinutes = parseInt(document.getElementById('exerciseMinutes').value);
+            const mealCount = parseInt(document.getElementById('mealCount').value);
+            const mood = document.querySelector('[id^="mood"]:not([style*="border-color: rgb(226, 232, 240)"])')?.id?.replace('mood', '') || 3;
+            const productEffect = document.getElementById('productEffect').value;
+            const isPublic = document.getElementById('isPublic').checked;
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_daily_records')
+                    .upsert({
+                        user_id: user.id,
+                        record_date: new Date().toISOString().split('T')[0],
+                        sleep_hours: sleepHours || null,
+                        water_intake: waterIntake || null,
+                        exercise_minutes: exerciseMinutes || null,
+                        meal_count: mealCount,
+                        mood: parseInt(mood),
+                        product_effect: productEffect || null,
+                        is_public: isPublic
+                    });
+                
+                if (error) {
+                    alert('保存失败：' + error.message);
+                    return;
+                }
+                
+                alert('记录保存成功！');
+                document.getElementById('sleepHours').value = '';
+                document.getElementById('waterIntake').value = '';
+                document.getElementById('exerciseMinutes').value = '';
+                document.getElementById('productEffect').value = '';
+                loadDailyRecord();
+            } catch (err) {
+                alert('保存失败，请重试');
+            }
+        }
+        
+        // 加载咨询页面
+        async function loadConsultation() {
+            let consultations = [];
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                const { data } = await supabase
+                    .from('jk_consultations')
+                    .select('*, jk_consultation_replies(*, jk_users(username))')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+                consultations = data || [];
+            } catch (e) {
+                console.log('获取咨询失败');
+            }
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">💬 健康咨询</h2>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">发起咨询</h3>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">标题</label>
+                        <input type="text" id="consultTitle" placeholder="请输入咨询标题" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 15px;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-size: 14px; color: #718096;">详细内容</label>
+                        <textarea id="consultContent" rows="5" placeholder="请详细描述您的健康问题或咨询内容..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; resize: none;"></textarea>
+                    </div>
+                    <button onclick="submitConsultation()" style="margin-top: 20px; padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">提交咨询</button>
+                </div>
+                <h3 style="margin-bottom: 20px; color: #4a5568;">📋 我的咨询</h3>
+                ${consultations.length > 0 ? `
+                    <div id="myConsultations">
+                        ${consultations.map(consult => `
+                            <div class="card card-white" style="margin-bottom: 20px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <h4 style="color: #2d3748;">${consult.title}</h4>
+                                    <span class="badge ${consult.status === 'resolved' ? 'badge-success' : consult.status === 'replied' ? 'badge-info' : 'badge-warning'}">
+                                        ${consult.status === 'resolved' ? '已解决' : consult.status === 'replied' ? '已回复' : '待回复'}
+                                    </span>
+                                </div>
+                                <div style="color: #4a5568; margin-bottom: 15px;">${consult.content}</div>
+                                <div style="font-size: 12px; color: #a0aec0; margin-bottom: 15px;">提交时间：${consult.created_at}</div>
+                                ${consult.jk_consultation_replies && consult.jk_consultation_replies.length > 0 ? `
+                                    <div class="comment-section">
+                                        ${consult.jk_consultation_replies.map(reply => `
+                                            <div class="comment-item">
+                                                <div class="comment-header">
+                                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                                        <div class="user-avatar" style="background: ${reply.is_doctor ? 'linear-gradient(135deg, #48bb78, #38a169)' : 'linear-gradient(135deg, #667eea, #764ba2)'};">
+                                                            ${reply.jk_users?.username?.charAt(0) || '?'}
+                                                        </div>
+                                                        <div>
+                                                            <div style="font-weight: 600; color: #2d3748;">${reply.jk_users?.username || '未知'}</div>
+                                                            <div style="font-size: 12px; color: #a0aec0;">${reply.is_doctor ? '👨‍⚕️ 医生' : '👤 用户'}</div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="comment-time">${reply.created_at}</div>
+                                                </div>
+                                                <div class="comment-content">${reply.content}</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                ` : ''}
+                                ${consult.status !== 'resolved' ? `
+                                    <div style="margin-top: 15px;">
+                                        <textarea id="replyContent_${consult.id}" rows="3" placeholder="输入回复内容..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; resize: none; margin-bottom: 10px;"></textarea>
+                                        <button onclick="replyToConsultation('${consult.id}')" style="padding: 10px 25px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">回复</button>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : `
+                    <div class="empty-state">
+                        <div style="font-size: 48px; margin-bottom: 15px;">💬</div>
+                        <div>暂无咨询记录</div>
+                    </div>
+                `}
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 提交咨询
+        async function submitConsultation() {
+            const title = document.getElementById('consultTitle').value;
+            const content = document.getElementById('consultContent').value;
+            
+            if (!title || !content) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_consultations')
+                    .insert({
+                        user_id: user.id,
+                        title,
+                        content,
+                        status: 'pending'
+                    });
+                
+                if (error) {
+                    alert('提交失败：' + error.message);
+                    return;
+                }
+                
+                alert('咨询提交成功，医生会尽快回复您！');
+                document.getElementById('consultTitle').value = '';
+                document.getElementById('consultContent').value = '';
+                loadConsultation();
+            } catch (err) {
+                alert('提交失败，请重试');
+            }
+        }
+        
+        // 回复咨询
+        async function replyToConsultation(consultationId) {
+            const content = document.getElementById(`replyContent_${consultationId}`).value;
+            
+            if (!content) {
+                alert('请输入回复内容');
+                return;
+            }
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_consultation_replies')
+                    .insert({
+                        consultation_id: consultationId,
+                        user_id: user.id,
+                        content,
+                        is_doctor: currentUser.role === 'doctor' || currentUser.role === 'admin'
+                    });
+                
+                if (error) {
+                    alert('回复失败：' + error.message);
+                    return;
+                }
+                
+                await supabase
+                    .from('jk_consultations')
+                    .update({ status: 'replied' })
+                    .eq('id', consultationId);
+                
+                alert('回复成功！');
+                document.getElementById(`replyContent_${consultationId}`).value = '';
+                loadConsultation();
+            } catch (err) {
+                alert('回复失败，请重试');
+            }
+        }
+        
+        // 加载产品页面
+        async function loadProducts() {
+            let products = [];
+            try {
+                const { data } = await supabase
+                    .from('jk_products')
+                    .select('*')
+                    .eq('is_active', true)
+                    .order('sort_order');
+                products = data || [];
+            } catch (e) {
+                console.log('获取产品失败');
+            }
+            
+            const defaultProducts = [
+                { id: '1', name: '维生素C胶囊', description: '增强免疫力，每日补充维生素C', price: 68, original_price: 88, stock: 100, image_url: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=vitamin%20C%20supplement%20bottle%20on%20white%20background&image_size=square' },
+                { id: '2', name: '蛋白粉', description: '优质蛋白质，助力肌肉恢复', price: 198, original_price: 258, stock: 80, image_url: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=protein%20powder%20container%20fitness%20supplement&image_size=square' },
+                { id: '3', name: '深海鱼油', description: '富含Omega-3，呵护心脑血管', price: 128, original_price: 168, stock: 120, image_url: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=omega%203%20fish%20oil%20supplement%20capsules&image_size=square' },
+                { id: '4', name: '钙片', description: '补充钙质，强健骨骼', price: 58, original_price: 78, stock: 150, image_url: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=calcium%20supplement%20tablets%20bottle&image_size=square' },
+                { id: '5', name: '益生菌', description: '调节肠道菌群，改善消化', price: 88, original_price: 118, stock: 90, image_url: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=probiotic%20supplement%20bottle%20health%20product&image_size=square' },
+                { id: '6', name: '蜂蜜', description: '天然蜂蜜，滋补养生', price: 158, original_price: 198, stock: 60, image_url: 'https://neeko-copilot.bytedance.net/api/text_to_image?prompt=natural%20honey%20jar%20organic%20product&image_size=square' }
+            ];
+            
+            const displayProducts = products.length > 0 ? products : defaultProducts;
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">🛒 产品中心</h2>
+                <div class="products-grid">
+                    ${displayProducts.map((product, index) => `
+                        <div class="product-card">
+                            <img src="${product.image_url}" alt="${product.name}" class="product-image">
+                            <div class="product-title">${product.name}</div>
+                            <div class="product-desc">${product.description}</div>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                <div>
+                                    <span class="product-price">¥${product.price}</span>
+                                    ${product.original_price ? `<span class="product-original-price">¥${product.original_price}</span>` : ''}
+                                </div>
+                                <div class="qty-control">
+                                    <button class="qty-btn" onclick="decreaseQty(${index})">-</button>
+                                    <span class="qty-display" id="qty_${index}">1</span>
+                                    <button class="qty-btn" onclick="increaseQty(${index})">+</button>
+                                </div>
+                            </div>
+                            <button onclick="addToCart('${product.id}', ${index})" style="width: 100%; padding: 12px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">加入购物车</button>
+                        </div>
+                    `).join('')}
+                </div>
+                ${shoppingCart.length > 0 ? `
+                    <div class="card" style="margin-top: 30px;">
+                        <h3 style="margin-bottom: 20px; color: #4a5568;">🛒 购物车</h3>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>产品</th>
+                                    <th>单价</th>
+                                    <th>数量</th>
+                                    <th>小计</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${shoppingCart.map((item, index) => {
+                                    const product = displayProducts.find(p => p.id === item.productId);
+                                    return `
+                                        <tr>
+                                            <td>${product?.name || '未知产品'}</td>
+                                            <td>¥${product?.price || 0}</td>
+                                            <td>${item.quantity}</td>
+                                            <td>¥${(product?.price || 0) * item.quantity}</td>
+                                            <td><button onclick="removeFromCart(${index})" style="padding: 5px 12px; background: #e53e3e; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 12px;">删除</button></td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                        <div style="margin-top: 20px; display: flex; justify-content: flex-end; align-items: center; gap: 20px;">
+                            <div>
+                                <span style="color: #718096;">合计：</span>
+                                <span style="color: #e53e3e; font-size: 24px; font-weight: 700;">¥${shoppingCart.reduce((sum, item) => {
+                                    const product = displayProducts.find(p => p.id === item.productId);
+                                    return sum + (product?.price || 0) * item.quantity;
+                                }, 0)}</span>
+                            </div>
+                            <button onclick="checkout()" style="padding: 12px 30px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">立即结算</button>
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 数量增减
+        function increaseQty(index) {
+            const span = document.getElementById(`qty_${index}`);
+            span.textContent = parseInt(span.textContent) + 1;
+        }
+        
+        function decreaseQty(index) {
+            const span = document.getElementById(`qty_${index}`);
+            const val = parseInt(span.textContent);
+            if (val > 1) span.textContent = val - 1;
+        }
+        
+        // 添加到购物车
+        function addToCart(productId, index) {
+            const quantity = parseInt(document.getElementById(`qty_${index}`).textContent);
+            const existingItem = shoppingCart.find(item => item.productId === productId);
+            
+            if (existingItem) {
+                existingItem.quantity += quantity;
+            } else {
+                shoppingCart.push({ productId, quantity });
+            }
+            
+            document.getElementById(`qty_${index}`).textContent = '1';
+            alert('已添加到购物车');
+            loadProducts();
+        }
+        
+        // 从购物车删除
+        function removeFromCart(index) {
+            shoppingCart.splice(index, 1);
+            loadProducts();
+        }
+        
+        // 结算
+        async function checkout() {
+            if (shoppingCart.length === 0) return;
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const orderNo = 'ORD' + Date.now();
+                const totalAmount = shoppingCart.reduce((sum, item) => {
+                    const product = defaultProducts.find(p => p.id === item.productId);
+                    return sum + (product?.price || 0) * item.quantity;
+                }, 0);
+                
+                const { data: order, error: orderError } = await supabase
+                    .from('jk_orders')
+                    .insert({
+                        user_id: user.id,
+                        order_no: orderNo,
+                        total_amount: totalAmount,
+                        status: 'pending'
+                    })
+                    .select()
+                    .single();
+                
+                if (orderError) {
+                    alert('创建订单失败：' + orderError.message);
+                    return;
+                }
+                
+                for (const item of shoppingCart) {
+                    const product = defaultProducts.find(p => p.id === item.productId);
+                    await supabase
+                        .from('jk_order_items')
+                        .insert({
+                            order_id: order.id,
+                            product_id: item.productId,
+                            quantity: item.quantity,
+                            unit_price: product?.price || 0,
+                            total_price: (product?.price || 0) * item.quantity
+                        });
+                }
+                
+                shoppingCart = [];
+                alert('订单创建成功！');
+                loadProducts();
+            } catch (err) {
+                alert('结算失败，请重试');
+            }
+        }
+        
+        // 加载社区页面
+        async function loadCommunity() {
+            let publicRecords = [];
+            try {
+                const { data } = await supabase
+                    .from('jk_daily_records')
+                    .select('*, jk_users(username)')
+                    .eq('is_public', true)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+                publicRecords = data || [];
+            } catch (e) {
+                console.log('获取公开记录失败');
+            }
+            
+            const defaultRecords = [
+                { id: '1', user_id: 'u1', record_date: '2024-01-15', sleep_hours: 7.5, water_intake: 2.0, exercise_minutes: 30, mood: 4, product_effect: '使用产品后感觉精力充沛！', is_public: true, jk_users: { username: '张三' } },
+                { id: '2', user_id: 'u2', record_date: '2024-01-14', sleep_hours: 8.0, water_intake: 1.8, exercise_minutes: 45, mood: 5, product_effect: '坚持运动一周，体重下降了2斤！继续加油！', is_public: true, jk_users: { username: '李四' } },
+                { id: '3', user_id: 'u3', record_date: '2024-01-13', sleep_hours: 6.5, water_intake: 2.2, exercise_minutes: 20, mood: 3, product_effect: '今天睡眠不太好，需要调整作息', is_public: true, jk_users: { username: '王五' } }
+            ];
+            
+            const displayRecords = publicRecords.length > 0 ? publicRecords : defaultRecords;
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">👥 健康社区</h2>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">热门健康记录</h3>
+                    <div id="publicRecords">
+                        ${displayRecords.map(record => `
+                            <div class="card card-white" style="margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                    <div style="display: flex; align-items: center; gap: 12px;">
+                                        <div class="user-avatar" style="background: linear-gradient(135deg, #667eea, #764ba2);">${record.jk_users?.username?.charAt(0) || '?'}</div>
+                                        <div>
+                                            <div style="font-weight: 600; color: #2d3748;">${record.jk_users?.username || '未知用户'}</div>
+                                            <div style="font-size: 12px; color: #a0aec0;">${record.record_date}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="color: #4a5568; margin-bottom: 15px;">
+                                    ${record.product_effect || `今日睡眠 ${record.sleep_hours}小时，饮水 ${record.water_intake}升，运动 ${record.exercise_minutes}分钟`}
+                                </div>
+                                <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                                    <span>😴 ${record.sleep_hours}h</span>
+                                    <span>💧 ${record.water_intake}L</span>
+                                    <span>🏃 ${record.exercise_minutes}min</span>
+                                    <span>${['😞','😐','😊','😄','😍'][record.mood-1]}</span>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button onclick="likeRecord('${record.id}')" style="padding: 8px 16px; border: 2px solid #e2e8f0; border-radius: 20px; background: white; cursor: pointer; color: #718096; font-size: 14px;">❤️ 点赞</button>
+                                    <button onclick="showRecordComments('${record.id}')" style="padding: 8px 16px; border: 2px solid #667eea; border-radius: 20px; background: white; cursor: pointer; color: #667eea; font-size: 14px;">💬 评论</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 点赞记录
+        async function likeRecord(recordId) {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_record_likes')
+                    .insert({
+                        record_id: recordId,
+                        user_id: user.id
+                    });
+                
+                if (error && error.code !== '23505') {
+                    alert('点赞失败：' + error.message);
+                    return;
+                }
+                
+                alert('点赞成功！');
+            } catch (err) {
+                alert('点赞失败，请重试');
+            }
+        }
+        
+        // 显示记录评论
+        function showRecordComments(recordId) {
+            document.getElementById('modalTitle').textContent = '评论';
+            document.getElementById('modalBody').innerHTML = `
+                <textarea id="commentContent" rows="3" placeholder="发表评论..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; resize: none; margin-bottom: 15px;"></textarea>
+                <button onclick="submitComment('${recordId}')" style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">发表评论</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 提交评论
+        async function submitComment(recordId) {
+            const content = document.getElementById('commentContent').value;
+            
+            if (!content) {
+                alert('请输入评论内容');
+                return;
+            }
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_record_comments')
+                    .insert({
+                        record_id: recordId,
+                        user_id: user.id,
+                        content
+                    });
+                
+                if (error) {
+                    alert('评论失败：' + error.message);
+                    return;
+                }
+                
+                alert('评论成功！');
+                document.getElementById('commentContent').value = '';
+                closeModal();
+            } catch (err) {
+                alert('评论失败，请重试');
+            }
+        }
+        
+        // 关闭模态框
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+        
+        // 加载个人中心
+        async function loadProfile() {
+            let healthInfo = null;
+            let referredUsers = []; // 我推荐的用户
+            
+            try {
+                const supabase = getJkSupabase();
+                
+                // 获取健康信息
+                const { data } = await supabase
+                    .from('jk_user_health_info')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                healthInfo = data;
+                
+                // 获取我推荐的用户列表（通过jk_user_health_info表的referrer_id关联）
+                if (currentUser.role !== 'admin' && currentUser.role !== 'doctor') {
+                    const { data: referredData } = await supabase
+                        .from('jk_user_health_info')
+                        .select('*, jk_users(username, phone, created_at)')
+                        .eq('referrer_id', currentUser.id)
+                        .order('created_at', { ascending: false });
+                    referredUsers = referredData || [];
+                }
+            } catch (e) {
+                console.log('获取信息失败');
+            }
+            
+            // 生成二维码链接
+            const qrCodeUrl = currentUser?.referral_code 
+                ? `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(`https://your-domain.com/register?referral=${currentUser.referral_code}`)}`
+                : '';
+            
+            let referredUsersHtml = '';
+            if (referredUsers.length > 0) {
+                referredUsersHtml = `
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">👥 我推荐的用户（${referredUsers.length}人）</h3>
+                    <div style="display: grid; gap: 15px;">
+                        ${referredUsers.map(u => `
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f7fafc; border-radius: 8px; border-left: 4px solid #667eea;">
+                                <div>
+                                    <div style="font-weight: 600; color: #2d3748;">${u.jk_users?.username || '未知用户'}</div>
+                                    <div style="font-size: 13px; color: #718096; margin-top: 4px;">手机号: ${u.jk_users?.phone || '-'}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 12px; color: #718096;">注册时间</div>
+                                    <div style="font-size: 13px; color: #4a5568; margin-top: 4px;">${u.jk_users?.created_at ? new Date(u.jk_users.created_at).toLocaleDateString() : '-'}</div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+                `;
+            } else if (currentUser.role !== 'admin' && currentUser.role !== 'doctor') {
+                referredUsersHtml = `
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">👥 我推荐的用户</h3>
+                    <div style="text-align: center; color: #a0aec0; padding: 30px 0;">
+                        <div style="font-size: 40px; margin-bottom: 10px;">🤝</div>
+                        <div>暂无推荐用户</div>
+                        <div style="font-size: 13px; margin-top: 8px;">分享您的推荐码，好友注册后即可获得积分奖励</div>
+                    </div>
+                </div>
+                `;
+            }
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">👤 个人中心</h2>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">基本信息</h3>
+                    <div class="form-row">
+                        <div style="grid-column: 1 / -1;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">用户名</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" id="editUsername" value="${currentUser?.username || ''}" 
+                                       style="flex: 1; padding: 10px; border: 1px solid #e2e8f0; border-radius: 8px;">
+                                <button onclick="saveUsername()" style="padding: 10px 20px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">保存</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">手机号</label>
+                            <div style="color: #2d3748; font-weight: 500;">${currentUser?.phone || '-'}</div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">角色</label>
+                            <div style="color: #2d3748; font-weight: 500;">${currentUser?.role === 'admin' ? '管理员' : currentUser?.role === 'doctor' ? '医生' : '普通用户'}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">健康信息</h3>
+                    <div class="form-row">
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">性别</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.gender || '未填写'}</div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">出生日期</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.birthday ? new Date(healthInfo.birthday).toLocaleDateString() : '未填写'}</div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">身高</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.height || '未填写'} ${healthInfo?.height ? 'cm' : ''}</div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">体重</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.weight || '未填写'} ${healthInfo?.weight ? 'kg' : ''}</div>
+                        </div>
+                        <div>
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">血型</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.blood_type || '未填写'}</div>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">过敏史</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.allergies || '未填写'}</div>
+                        </div>
+                        <div style="grid-column: 1 / -1;">
+                            <label style="display: block; margin-bottom: 5px; font-size: 14px; color: #a0aec0;">病史</label>
+                            <div style="color: #2d3748; font-weight: 500;">${healthInfo?.medical_history || '未填写'}</div>
+                        </div>
+                    </div>
+                    <button class="btn" style="margin-top: 20px;" onclick="showEditHealthInfo()">完善健康信息</button>
+                </div>
+                ${currentUser?.show_qr_code !== false ? `
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">💰 我的积分</h3>
+                    <div style="font-size: 48px; font-weight: 700; color: #667eea;">${currentUser?.points || 0}</div>
+                    <div style="color: #718096; margin-top: 10px;">积分可用于兑换礼品或抵扣消费</div>
+                </div>
+                ${currentUser?.referral_code ? `
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">📱 我的推荐二维码</h3>
+                    <div style="display: flex; gap: 30px; align-items: center;">
+                        <img src="${qrCodeUrl}" alt="推荐二维码" style="width: 200px; height: 200px; border-radius: 10px;">
+                        <div>
+                            <div style="font-weight: 600; color: #2d3748; margin-bottom: 10px;">我的推荐码</div>
+                            <div style="font-size: 24px; font-weight: 700; color: #667eea; letter-spacing: 3px;">${currentUser.referral_code}</div>
+                            <div style="color: #718096; margin-top: 15px; font-size: 14px;">
+                                <div>• 好友扫描二维码注册</div>
+                                <div>• 好友消费后您将获得积分奖励</div>
+                                <div>• 推荐关系保留30天</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                ` : ''}
+                ${referredUsersHtml}
+                ` : ''}
+                ${healthInfo?.referrer_id ? `
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">👥 我的推荐人</h3>
+                    <div style="color: #4a5568;">推荐码: ${healthInfo?.referral_code_used || '-'}</div>
+                    <div style="color: #718096; font-size: 14px; margin-top: 10px;">推荐关系有效期至: ${healthInfo?.referral_valid_until ? new Date(healthInfo.referral_valid_until).toLocaleDateString() : '-'}</div>
+                </div>
+                ` : ''}
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 显示编辑健康信息弹窗
+        async function showEditHealthInfo() {
+            let healthInfo = null;
+            try {
+                const supabase = getJkSupabase();
+                const { data } = await supabase
+                    .from('jk_user_health_info')
+                    .select('*')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                healthInfo = data;
+            } catch (e) {
+                console.log('获取健康信息失败');
+            }
+            
+            const modalHtml = `
+                <div class="modal-content" style="max-width: 600px;">
+                    <div class="modal-header">
+                        <h3>完善健康信息</h3>
+                        <button onclick="closeModal()" style="background: none; border: none; font-size: 24px; cursor: pointer;">×</button>
+                    </div>
+                    <div id="healthInfoAlert" class="alert"></div>
+                    <div class="form-group">
+                        <label>性别</label>
+                        <div class="gender-selector">
+                            <div class="gender-option ${healthInfo?.gender === '男' ? 'selected' : ''}" onclick="selectModalGender('男')" id="modalGenderMale">男</div>
+                            <div class="gender-option ${healthInfo?.gender === '女' ? 'selected' : ''}" onclick="selectModalGender('女')" id="modalGenderFemale">女</div>
+                            <div class="gender-option ${healthInfo?.gender === '其他' ? 'selected' : ''}" onclick="selectModalGender('其他')" id="modalGenderOther">其他</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalBirthday">出生日期</label>
+                        <input type="date" id="modalBirthday" value="${healthInfo?.birthday || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="modalHeight">身高 (cm)</label>
+                        <input type="number" id="modalHeight" placeholder="请输入身高" value="${healthInfo?.height || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="modalWeight">体重 (kg)</label>
+                        <input type="number" id="modalWeight" placeholder="请输入体重" value="${healthInfo?.weight || ''}">
+                    </div>
+                    <div class="form-group">
+                        <label for="modalBloodType">血型</label>
+                        <select id="modalBloodType" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; background: #fafafa;">
+                            <option value="">请选择血型</option>
+                            <option value="A" ${healthInfo?.blood_type === 'A' ? 'selected' : ''}>A型</option>
+                            <option value="B" ${healthInfo?.blood_type === 'B' ? 'selected' : ''}>B型</option>
+                            <option value="AB" ${healthInfo?.blood_type === 'AB' ? 'selected' : ''}>AB型</option>
+                            <option value="O" ${healthInfo?.blood_type === 'O' ? 'selected' : ''}>O型</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalAllergies">过敏史</label>
+                        <textarea id="modalAllergies" rows="3" placeholder="请输入过敏史（如无请填无）" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; background: #fafafa; resize: none;">${healthInfo?.allergies || ''}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="modalMedicalHistory">病史</label>
+                        <textarea id="modalMedicalHistory" rows="3" placeholder="请输入病史（如无请填无）" style="width: 100%; padding: 14px 16px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 15px; background: #fafafa; resize: none;">${healthInfo?.medical_history || ''}</textarea>
+                    </div>
+                    <div style="display: flex; gap: 15px; margin-top: 20px;">
+                        <button class="btn" onclick="saveHealthInfo()">保存</button>
+                        <button class="btn btn-secondary" onclick="closeModal()">取消</button>
+                    </div>
+                </div>
+            `;
+            document.getElementById('modal').innerHTML = modalHtml;
+            document.getElementById('modal').classList.remove('hidden');
+            
+            // 设置当前选中的性别
+            modalSelectedGender = healthInfo?.gender || '';
+        }
+        
+        let modalSelectedGender = '';
+        
+        function selectModalGender(gender) {
+            modalSelectedGender = gender;
+            document.querySelectorAll('.gender-option').forEach(el => el.classList.remove('selected'));
+            document.getElementById(`modalGender${gender === '男' ? 'Male' : gender === '女' ? 'Female' : 'Other'}`).classList.add('selected');
+        }
+        
+        // 保存健康信息
+        async function saveHealthInfo() {
+            const gender = modalSelectedGender;
+            const birthday = document.getElementById('modalBirthday').value;
+            const height = document.getElementById('modalHeight').value;
+            const weight = document.getElementById('modalWeight').value;
+            const bloodType = document.getElementById('modalBloodType').value;
+            const allergies = document.getElementById('modalAllergies').value;
+            const medicalHistory = document.getElementById('modalMedicalHistory').value;
+            
+            try {
+                const supabase = getJkSupabase();
+                
+                // 检查是否已有健康信息记录
+                const { data: existingInfo } = await supabase
+                    .from('jk_user_health_info')
+                    .select('id')
+                    .eq('user_id', currentUser.id)
+                    .single();
+                
+                if (existingInfo) {
+                    // 更新现有记录
+                    const { error } = await supabase
+                        .from('jk_user_health_info')
+                        .update({
+                            gender,
+                            birthday: birthday || null,
+                            height: height ? parseFloat(height) : null,
+                            weight: weight ? parseFloat(weight) : null,
+                            blood_type: bloodType || null,
+                            allergies: allergies || null,
+                            medical_history: medicalHistory || null,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', currentUser.id);
+                    
+                    if (error) {
+                        showAlert('healthInfoAlert', error.message, 'error');
+                        return;
+                    }
+                } else {
+                    // 创建新记录
+                    const { error } = await supabase
+                        .from('jk_user_health_info')
+                        .insert({
+                            user_id: currentUser.id,
+                            gender,
+                            birthday: birthday || null,
+                            height: height ? parseFloat(height) : null,
+                            weight: weight ? parseFloat(weight) : null,
+                            blood_type: bloodType || null,
+                            allergies: allergies || null,
+                            medical_history: medicalHistory || null,
+                            created_at: new Date().toISOString()
+                        });
+                    
+                    if (error) {
+                        showAlert('healthInfoAlert', error.message, 'error');
+                        return;
+                    }
+                }
+                
+                showAlert('healthInfoAlert', '健康信息已保存', 'success');
+                setTimeout(() => {
+                    closeModal();
+                    loadProfile();
+                }, 1000);
+            } catch (err) {
+                console.error('保存健康信息错误:', err);
+                showAlert('healthInfoAlert', '保存失败，请检查网络连接', 'error');
+            }
+        }
+        
+        // 保存用户名
+        async function saveUsername() {
+            const newUsername = document.getElementById('editUsername').value.trim();
+            
+            if (!newUsername) {
+                alert('请输入用户名');
+                return;
+            }
+            
+            try {
+                const supabase = getJkSupabase();
+                const { error } = await supabase
+                    .from('jk_users')
+                    .update({ username: newUsername })
+                    .eq('id', currentUser.id);
+                
+                if (error) {
+                    alert('保存失败：' + error.message);
+                    return;
+                }
+                
+                // 更新当前用户信息
+                currentUser.username = newUsername;
+                
+                alert('用户名修改成功！');
+                loadProfile();
+            } catch (err) {
+                console.error('保存用户名错误:', err);
+                alert('保存失败，请重试');
+            }
+        }
+        
+        // 加载管理员用户管理
+        async function loadAdminUsers() {
+            let users = [];
+            
+            try {
+                const supabase = getJkSupabase();
+                const { data } = await supabase
+                    .from('jk_users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                users = data || [];
+            } catch (e) {
+                console.error('获取用户失败:', e);
+                document.getElementById('contentArea').innerHTML = '<div class="alert error">加载用户列表失败，请检查数据库连接</div>';
+                return;
+            }
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">👨‍⚕️ 用户管理</h2>
+                <div class="card">
+                    <input type="text" id="searchUserInput" placeholder="搜索用户名或手机号..." style="width: 300px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-right: 15px;">
+                    <button onclick="searchUsers()" style="padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">搜索</button>
+                </div>
+                ${users.length === 0 ? '<div class="card"><p style="text-align: center; color: #718096;">暂无注册用户</p></div>' : ''}
+                ${users.length > 0 ? `
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>手机号</th>
+                            <th>积分</th>
+                            <th>允许推荐</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td style="color: #2d3748;">${user.username}</td>
+                                <td style="color: #4a5568;">${user.phone}</td>
+                                <td style="color: #667eea; font-weight: 600;">${user.points || 0}</td>
+                                <td>
+                                    <label style="position: relative; display: inline-block; width: 50px; height: 26px; cursor: pointer;">
+                                        <input type="checkbox" id="allowReferral_${user.id}" ${user.show_qr_code ? 'checked' : ''} onchange="toggleAllowReferral('${user.id}', this.checked)" style="opacity: 0; width: 0; height: 0;">
+                                        <span style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-color: ${user.show_qr_code ? '#48bb78' : '#cbd5e0'}; transition: 0.3s; border-radius: 26px;"></span>
+                                        <span style="position: absolute; content: ''; height: 20px; width: 20px; left: ${user.show_qr_code ? '26px' : '3px'}; bottom: 3px; background-color: white; transition: 0.3s; border-radius: 50%;"></span>
+                                    </label>
+                                </td>
+                                <td>
+                                    <span class="badge ${user.status === 'active' ? 'badge-success' : 'badge-warning'}">
+                                        ${user.status === 'active' ? '活跃' : '禁用'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button onclick="viewUserDetails('${user.id}')" style="padding: 6px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin-right: 5px;">查看</button>
+                                    <button onclick="addConsumption('${user.id}', '${user.username}')" style="padding: 6px 15px; background: #48bb78; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin-right: 5px;">消费</button>
+                                    <button onclick="addPoints('${user.id}', '${user.username}')" style="padding: 6px 15px; background: #ed8936; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin-right: 5px;">积分</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                ` : ''}
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 搜索用户
+        function searchUsers() {
+            const keyword = document.getElementById('searchUserInput').value;
+            alert('搜索功能：' + keyword);
+        }
+        
+        // 显示添加用户模态框
+        function showAddUserModal() {
+            document.getElementById('modalTitle').textContent = '添加用户';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>用户名</label>
+                    <input type="text" id="newUsername" placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label>邮箱</label>
+                    <input type="email" id="newEmail" placeholder="请输入邮箱">
+                </div>
+                <div class="form-group">
+                    <label>密码</label>
+                    <input type="password" id="newPassword" placeholder="请输入密码">
+                </div>
+                <div class="form-group">
+                    <label>角色</label>
+                    <select id="newRole">
+                        <option value="user">普通用户</option>
+                        <option value="doctor">医生</option>
+                        <option value="admin">管理员</option>
+                    </select>
+                </div>
+                <button onclick="addUser()" style="padding: 12px 30px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">添加</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 添加用户
+        async function addUser() {
+            const username = document.getElementById('newUsername').value;
+            const email = document.getElementById('newEmail').value;
+            const password = document.getElementById('newPassword').value;
+            const role = document.getElementById('newRole').value;
+            
+            if (!username || !email || !password) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabase.auth.signUp({ email, password });
+                
+                if (error) {
+                    alert('创建失败：' + error.message);
+                    return;
+                }
+                
+                await supabase
+                    .from('jk_users')
+                    .insert({
+                        id: data.user.id,
+                        username,
+                        email,
+                        role,
+                        status: 'active'
+                    });
+                
+                alert('添加成功！');
+                closeModal();
+                loadAdminUsers();
+            } catch (err) {
+                alert('添加失败，请重试');
+            }
+        }
+        
+        // 查看用户详情
+        function viewUserDetails(userId) {
+            alert('查看用户详情: ' + userId);
+        }
+        
+        // 发送管理员消息
+        function sendAdminMessage(userId, username) {
+            document.getElementById('modalTitle').textContent = `发送消息给 ${username}`;
+            document.getElementById('modalBody').innerHTML = `
+                <textarea id="adminMessageContent" rows="4" placeholder="输入消息内容..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; resize: none; margin-bottom: 15px;"></textarea>
+                <button onclick="submitAdminMessage('${userId}')" style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">发送</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 提交管理员消息
+        async function submitAdminMessage(userId) {
+            const content = document.getElementById('adminMessageContent').value;
+            
+            if (!content) {
+                alert('请输入消息内容');
+                return;
+            }
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_admin_messages')
+                    .insert({
+                        admin_id: user.id,
+                        user_id: userId,
+                        content
+                    });
+                
+                if (error) {
+                    alert('发送失败：' + error.message);
+                    return;
+                }
+                
+                alert('消息发送成功！');
+                closeModal();
+            } catch (err) {
+                alert('发送失败，请重试');
+            }
+        }
+        
+        // 切换用户状态
+        async function toggleUserStatus(userId, currentStatus) {
+            const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+            
+            try {
+                const { error } = await supabase
+                    .from('jk_users')
+                    .update({ status: newStatus })
+                    .eq('id', userId);
+                
+                if (error) {
+                    alert('操作失败：' + error.message);
+                    return;
+                }
+                
+                loadAdminUsers();
+            } catch (err) {
+                alert('操作失败，请重试');
+            }
+        }
+        
+        // 添加消费记录
+        function addConsumption(userId, username) {
+            document.getElementById('modalTitle').textContent = `录入消费 - ${username}`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>消费金额</label>
+                    <input type="number" step="0.01" id="consumptionAmount" placeholder="请输入消费金额">
+                </div>
+                <div class="form-group">
+                    <label>消费描述</label>
+                    <input type="text" id="consumptionDesc" placeholder="请输入消费描述">
+                </div>
+                <button onclick="submitConsumption('${userId}')" style="padding: 12px 30px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">确认录入</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 提交消费记录
+        async function submitConsumption(userId) {
+            const amount = parseFloat(document.getElementById('consumptionAmount').value);
+            const description = document.getElementById('consumptionDesc').value;
+            
+            if (isNaN(amount) || amount <= 0) {
+                alert('请输入有效的消费金额');
+                return;
+            }
+            
+            try {
+                const supabase = getJkSupabase();
+                
+                // 插入消费记录
+                const { data: consumptionData, error: consumptionError } = await supabase
+                    .from('jk_consumption_records')
+                    .insert({
+                        user_id: userId,
+                        amount,
+                        description: description || '手动录入消费',
+                        record_type: 'manual',
+                        created_by: currentUser?.id
+                    })
+                    .select();
+                
+                if (consumptionError) {
+                    console.error('消费记录插入失败:', consumptionError);
+                    alert('消费记录保存失败');
+                    return;
+                }
+                
+                const consumptionId = consumptionData[0]?.id;
+                
+                // 检查用户是否有推荐人（推荐关系永久有效，不再检查有效期）
+                const { data: healthInfo } = await supabase
+                    .from('jk_user_health_info')
+                    .select('referrer_id')
+                    .eq('user_id', userId)
+                    .single();
+                
+                if (healthInfo?.referrer_id) {
+                    // 获取推荐积分比例配置
+                    let referralRate = 0.05; // 默认5%
+                    try {
+                        const { data: config } = await supabase
+                            .from('jk_referral_config')
+                            .select('value')
+                            .eq('name', 'referral_rate')
+                            .single();
+                        if (config?.value) {
+                            referralRate = parseFloat(config.value);
+                        }
+                    } catch (e) {
+                        console.log('获取推荐比例配置失败，使用默认值');
+                    }
+                    
+                    // 计算推荐积分
+                    const pointsEarned = amount * referralRate;
+                    
+                    // 获取推荐人当前积分
+                    const { data: referrer } = await supabase
+                        .from('jk_users')
+                        .select('points')
+                        .eq('id', healthInfo.referrer_id)
+                        .single();
+                    
+                    // 更新推荐人积分
+                    const newPoints = (referrer?.points || 0) + pointsEarned;
+                    await supabase
+                        .from('jk_users')
+                        .update({ points: newPoints })
+                        .eq('id', healthInfo.referrer_id);
+                    
+                    // 保存推荐积分记录
+                    await supabase
+                        .from('jk_referral_points')
+                        .insert({
+                            referrer_id: healthInfo.referrer_id,
+                            referred_user_id: userId,
+                            consumption_id: consumptionId,
+                            points_earned: pointsEarned,
+                            percentage: referralRate
+                        });
+                    
+                    alert(`消费录入成功！推荐人获得 ${pointsEarned.toFixed(2)} 积分（${(referralRate * 100).toFixed(0)}%消费奖励）`);
+                } else {
+                    alert('消费录入成功！');
+                }
+                
+                closeModal();
+                loadAdminUsers();
+            } catch (err) {
+                console.error('消费录入错误:', err);
+                alert('操作失败，请重试');
+            }
+        }
+        
+        // 添加积分
+        function addPoints(userId, username) {
+            document.getElementById('modalTitle').textContent = `添加积分 - ${username}`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>积分数量</label>
+                    <input type="number" id="pointsAmount" placeholder="请输入积分数量" min="0" step="1">
+                </div>
+                <button onclick="submitAddPoints('${userId}')" style="padding: 12px 30px; background: #ed8936; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">确认添加</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 提交添加积分
+        async function submitAddPoints(userId) {
+            const points = parseFloat(document.getElementById('pointsAmount').value);
+            
+            if (isNaN(points) || points <= 0) {
+                alert('请输入有效的积分数量（必须大于0）');
+                return;
+            }
+            
+            try {
+                const supabase = getJkSupabase();
+                
+                // 获取当前用户积分
+                const { data: user } = await supabase
+                    .from('jk_users')
+                    .select('points')
+                    .eq('id', userId)
+                    .single();
+                
+                // 更新用户积分
+                await supabase
+                    .from('jk_users')
+                    .update({ points: (user?.points || 0) + points })
+                    .eq('id', userId);
+                
+                alert(`成功添加 ${points} 积分！`);
+                closeModal();
+                loadAdminUsers();
+            } catch (err) {
+                console.error('添加积分错误:', err);
+                alert('操作失败，请重试');
+            }
+        }
+        
+        // 切换用户推荐权限状态
+        async function toggleAllowReferral(userId, newStatus) {
+            try {
+                const supabase = getJkSupabase();
+                
+                await supabase
+                    .from('jk_users')
+                    .update({ show_qr_code: newStatus })
+                    .eq('id', userId);
+                
+                // 不重新加载整个列表，只更新当前用户的show_qr_code状态
+                if (currentUser && currentUser.id === userId) {
+                    currentUser.show_qr_code = newStatus;
+                }
+            } catch (err) {
+                console.error('切换推荐权限错误:', err);
+                // 回滚开关状态
+                document.getElementById(`allowReferral_${userId}`).checked = !newStatus;
+                alert('操作失败，请重试');
+            }
+        }
+        
+        // 加载管理员产品管理
+        async function loadAdminProducts() {
+            let products = [];
+            try {
+                const { data } = await supabase
+                    .from('jk_products')
+                    .select('*')
+                    .order('sort_order');
+                products = data || [];
+            } catch (e) {
+                console.log('获取产品失败');
+            }
+            
+            const defaultProducts = [
+                { id: '1', name: '维生素C胶囊', description: '增强免疫力，每日补充维生素C', price: 68, original_price: 88, stock: 100, category: '维生素', is_active: true, sort_order: 1 },
+                { id: '2', name: '蛋白粉', description: '优质蛋白质，助力肌肉恢复', price: 198, original_price: 258, stock: 80, category: '蛋白质', is_active: true, sort_order: 2 },
+                { id: '3', name: '深海鱼油', description: '富含Omega-3，呵护心脑血管', price: 128, original_price: 168, stock: 120, category: '鱼油', is_active: true, sort_order: 3 },
+                { id: '4', name: '钙片', description: '补充钙质，强健骨骼', price: 58, original_price: 78, stock: 150, category: '矿物质', is_active: false, sort_order: 4 }
+            ];
+            
+            const displayProducts = products.length > 0 ? products : defaultProducts;
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">📦 产品管理</h2>
+                <button onclick="showAddProductModal()" style="padding: 12px 25px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500; margin-bottom: 25px;">+ 添加产品</button>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>产品名称</th>
+                            <th>分类</th>
+                            <th>价格</th>
+                            <th>库存</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${displayProducts.map(product => `
+                            <tr>
+                                <td style="color: #2d3748;">${product.name}</td>
+                                <td style="color: #4a5568;">${product.category || '-'}</td>
+                                <td style="color: #e53e3e; font-weight: 600;">¥${product.price}</td>
+                                <td style="color: #4a5568;">${product.stock}</td>
+                                <td>
+                                    <span class="badge ${product.is_active ? 'badge-success' : 'badge-warning'}">
+                                        ${product.is_active ? '上架' : '下架'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button onclick="editProduct('${product.id}')" style="padding: 6px 15px; background: #48bb78; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin-right: 10px;">编辑</button>
+                                    <button onclick="toggleProductStatus('${product.id}', ${product.is_active})" style="padding: 6px 15px; background: ${product.is_active ? '#ed8936' : '#48bb78'}; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin-right: 10px;">${product.is_active ? '下架' : '上架'}</button>
+                                    <button onclick="deleteProduct('${product.id}')" style="padding: 6px 15px; background: #e53e3e; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">删除</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 显示添加产品模态框
+        function showAddProductModal() {
+            document.getElementById('modalTitle').textContent = '添加产品';
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>产品名称</label>
+                    <input type="text" id="productName" placeholder="请输入产品名称">
+                </div>
+                <div class="form-group">
+                    <label>产品描述</label>
+                    <textarea id="productDesc" rows="3" placeholder="请输入产品描述"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>产品图片</label>
+                    <div style="display: flex; gap: 15px; align-items: center;">
+                        <input type="text" id="productImageUrl" placeholder="输入图片URL或上传图片">
+                        <input type="file" id="productImageFile" accept="image/*" onchange="handleProductImageUpload()" style="display: none;">
+                        <button onclick="document.getElementById('productImageFile').click()" style="padding: 8px 15px; background: #667eea; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">上传图片</button>
+                    </div>
+                    <div style="color: #718096; font-size: 13px; margin-top: 10px;">提示：可直接输入图片URL，或点击上传按钮选择本地图片</div>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label>价格</label>
+                        <input type="number" step="0.01" id="productPrice" placeholder="请输入价格">
+                    </div>
+                    <div>
+                        <label>原价</label>
+                        <input type="number" step="0.01" id="productOriginalPrice" placeholder="请输入原价">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div>
+                        <label>库存</label>
+                        <input type="number" id="productStock" placeholder="请输入库存">
+                    </div>
+                    <div>
+                        <label>分类</label>
+                        <input type="text" id="productCategory" placeholder="请输入分类">
+                    </div>
+                </div>
+                <button onclick="addProduct()" style="padding: 12px 30px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">添加</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 处理产品图片上传
+        function handleProductImageUpload() {
+            const fileInput = document.getElementById('productImageFile');
+            const file = fileInput.files[0];
+            
+            if (file) {
+                // 创建图片预览URL
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('productImageUrl').value = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        // 添加产品
+        async function addProduct() {
+            const name = document.getElementById('productName').value;
+            const description = document.getElementById('productDesc').value;
+            const price = parseFloat(document.getElementById('productPrice').value);
+            const originalPrice = parseFloat(document.getElementById('productOriginalPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            const category = document.getElementById('productCategory').value;
+            const imageUrl = document.getElementById('productImageUrl').value;
+            
+            if (!name || isNaN(price)) {
+                alert('请填写完整信息');
+                return;
+            }
+            
+            try {
+                const { error } = await supabase
+                    .from('jk_products')
+                    .insert({
+                        name,
+                        description,
+                        price,
+                        original_price: originalPrice || null,
+                        stock: stock || 0,
+                        category,
+                        image_url: imageUrl || null,
+                        is_active: true
+                    });
+                
+                if (error) {
+                    alert('添加失败：' + error.message);
+                    return;
+                }
+                
+                alert('添加成功！');
+                closeModal();
+                loadAdminProducts();
+            } catch (err) {
+                alert('添加失败，请重试');
+            }
+        }
+        
+        // 编辑产品
+        function editProduct(productId) {
+            alert('编辑产品: ' + productId);
+        }
+        
+        // 切换产品状态
+        async function toggleProductStatus(productId, currentStatus) {
+            const newStatus = !currentStatus;
+            
+            try {
+                const { error } = await supabase
+                    .from('jk_products')
+                    .update({ is_active: newStatus })
+                    .eq('id', productId);
+                
+                if (error) {
+                    alert('操作失败：' + error.message);
+                    return;
+                }
+                
+                loadAdminProducts();
+            } catch (err) {
+                alert('操作失败，请重试');
+            }
+        }
+        
+        // 删除产品
+        async function deleteProduct(productId) {
+            if (!confirm('确定要删除该产品吗？')) return;
+            
+            try {
+                const { error } = await supabase
+                    .from('jk_products')
+                    .delete()
+                    .eq('id', productId);
+                
+                if (error) {
+                    alert('删除失败：' + error.message);
+                    return;
+                }
+                
+                loadAdminProducts();
+            } catch (err) {
+                alert('删除失败，请重试');
+            }
+        }
+        
+        // 加载管理员咨询管理
+        async function loadAdminConsultations() {
+            let consultations = [];
+            try {
+                const { data } = await supabase
+                    .from('jk_consultations')
+                    .select('*, jk_users(username)')
+                    .order('created_at', { ascending: false });
+                consultations = data || [];
+            } catch (e) {
+                console.log('获取咨询失败');
+            }
+            
+            const defaultConsultations = [
+                { id: 'c1', user_id: 'u1', title: '关于维生素C的服用方法', content: '请问维生素C每天应该服用多少？什么时候服用效果最好？', status: 'pending', created_at: '2024-01-15 10:30', jk_users: { username: '张三' } },
+                { id: 'c2', user_id: 'u2', title: '蛋白粉的选择', content: '健身新手应该选择哪种蛋白粉？乳清蛋白和植物蛋白有什么区别？', status: 'replied', created_at: '2024-01-14 15:20', jk_users: { username: '李四' } },
+                { id: 'c3', user_id: 'u3', title: '睡眠问题咨询', content: '最近经常失眠，有没有什么好的建议？', status: 'resolved', created_at: '2024-01-13 09:10', jk_users: { username: '王五' } }
+            ];
+            
+            const displayConsultations = consultations.length > 0 ? consultations : defaultConsultations;
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">📋 咨询管理</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>标题</th>
+                            <th>用户</th>
+                            <th>状态</th>
+                            <th>提交时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${displayConsultations.map(consult => `
+                            <tr>
+                                <td style="color: #2d3748;">${consult.title}</td>
+                                <td style="color: #4a5568;">${consult.jk_users?.username || '未知用户'}</td>
+                                <td>
+                                    <span class="badge ${consult.status === 'resolved' ? 'badge-success' : consult.status === 'replied' ? 'badge-info' : 'badge-warning'}">
+                                        ${consult.status === 'resolved' ? '已解决' : consult.status === 'replied' ? '已回复' : '待回复'}
+                                    </span>
+                                </td>
+                                <td style="color: #4a5568;">${consult.created_at}</td>
+                                <td>
+                                    <button onclick="viewConsultation('${consult.id}')" style="padding: 6px 15px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px; margin-right: 10px;">查看详情</button>
+                                    <button onclick="replyAsDoctor('${consult.id}')" style="padding: 6px 15px; background: #48bb78; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">回复</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 查看咨询详情
+        function viewConsultation(consultationId) {
+            alert('查看咨询详情: ' + consultationId);
+        }
+        
+        // 医生回复咨询
+        function replyAsDoctor(consultationId) {
+            document.getElementById('modalTitle').textContent = '医生回复';
+            document.getElementById('modalBody').innerHTML = `
+                <textarea id="doctorReplyContent" rows="4" placeholder="输入医生回复内容..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; resize: none; margin-bottom: 15px;"></textarea>
+                <button onclick="submitDoctorReply('${consultationId}')" style="padding: 12px 30px; background: #48bb78; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">提交回复</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 提交医生回复
+        async function submitDoctorReply(consultationId) {
+            const content = document.getElementById('doctorReplyContent').value;
+            
+            if (!content) {
+                alert('请输入回复内容');
+                return;
+            }
+            
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                
+                const { error } = await supabase
+                    .from('jk_consultation_replies')
+                    .insert({
+                        consultation_id: consultationId,
+                        user_id: user.id,
+                        content,
+                        is_doctor: true
+                    });
+                
+                if (error) {
+                    alert('回复失败：' + error.message);
+                    return;
+                }
+                
+                await supabase
+                    .from('jk_consultations')
+                    .update({ status: 'replied' })
+                    .eq('id', consultationId);
+                
+                alert('回复成功！');
+                closeModal();
+                loadAdminConsultations();
+            } catch (err) {
+                alert('回复失败，请重试');
+            }
+        }
+        
+        // 加载推荐配置管理
+        async function loadAdminReferral() {
+            let configs = [];
+            let referralStats = {
+                totalReferrals: 0,
+                totalPointsEarned: 0,
+                avgPointsPerReferral: 0
+            };
+            
+            // 加载系统配置
+            await loadSystemConfig();
+            const communityEnabled = systemConfig.community_enabled !== 'false';
+            
+            try {
+                const { data: configData } = await supabase
+                    .from('jk_referral_config')
+                    .select('*');
+                configs = configData || [];
+                
+                const { data: pointsData } = await supabase
+                    .from('jk_referral_points')
+                    .select('points_earned');
+                if (pointsData) {
+                    referralStats.totalReferrals = pointsData.length;
+                    referralStats.totalPointsEarned = pointsData.reduce((sum, item) => sum + (item.points_earned || 0), 0);
+                    referralStats.avgPointsPerReferral = referralStats.totalReferrals > 0 
+                        ? referralStats.totalPointsEarned / referralStats.totalReferrals 
+                        : 0;
+                }
+            } catch (e) {
+                console.log('获取配置失败');
+            }
+            
+            // 默认配置
+            const defaultConfigs = [
+                { id: 1, name: 'referral_rate', value: '0.05', description: '推荐积分比例（消费金额的百分比）', created_at: '2024-01-01' },
+                { id: 2, name: 'referral_valid_days', value: '30', description: '推荐关系有效期（天）', created_at: '2024-01-01' }
+            ];
+            
+            const displayConfigs = configs.length > 0 ? configs : defaultConfigs;
+            const currentRate = displayConfigs.find(c => c.name === 'referral_rate')?.value || '0.05';
+            
+            let html = `
+                <h2 style="margin-bottom: 25px; color: #2d3748;">🎁 推荐配置管理</h2>
+                
+                <div class="stats-grid">
+                    <div class="stat-card purple">
+                        <div class="stat-label">推荐次数</div>
+                        <div class="stat-value">${referralStats.totalReferrals}</div>
+                        <div class="stat-unit">次</div>
+                    </div>
+                    <div class="stat-card green">
+                        <div class="stat-label">累计发放积分</div>
+                        <div class="stat-value">${referralStats.totalPointsEarned.toFixed(2)}</div>
+                        <div class="stat-unit">积分</div>
+                    </div>
+                    <div class="stat-card orange">
+                        <div class="stat-label">平均每次奖励</div>
+                        <div class="stat-value">${referralStats.avgPointsPerReferral.toFixed(2)}</div>
+                        <div class="stat-unit">积分</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">系统功能开关</h3>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: #f7fafc; border-radius: 10px;">
+                        <div>
+                            <div style="font-weight: 600; color: #2d3748; margin-bottom: 5px;">健康社区功能</div>
+                            <div style="color: #718096; font-size: 14px;">关闭后用户将无法访问健康社区板块</div>
+                        </div>
+                        <label class="switch">
+                            <input type="checkbox" id="communityToggle" ${communityEnabled ? 'checked' : ''} onchange="toggleCommunity(this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">推荐积分比例设置</h3>
+                    <div style="display: flex; align-items: center; gap: 20px;">
+                        <input type="number" step="0.01" min="0" max="1" id="referralRateInput" 
+                               value="${currentRate}" 
+                               style="width: 150px; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px;">
+                        <span style="font-size: 18px; font-weight: 600;">× 消费金额 = 推荐积分</span>
+                        <button onclick="saveReferralRate()" style="padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">保存设置</button>
+                    </div>
+                    <div style="color: #718096; margin-top: 15px; font-size: 14px;">
+                        当前比例: ${(parseFloat(currentRate) * 100).toFixed(0)}%，即用户每消费100元，推荐人获得 ${(parseFloat(currentRate) * 100).toFixed(0)} 积分
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 style="margin-bottom: 20px; color: #4a5568;">配置列表</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>配置名称</th>
+                                <th>当前值</th>
+                                <th>描述</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${displayConfigs.map(config => `
+                                <tr>
+                                    <td style="color: #2d3748;">${config.name === 'referral_rate' ? '推荐积分比例' : config.name === 'referral_valid_days' ? '推荐有效期（天）' : config.name}</td>
+                                    <td style="color: #667eea; font-weight: 600;">${config.value}${config.name === 'referral_rate' ? '%' : ''}</td>
+                                    <td style="color: #4a5568;">${config.description}</td>
+                                    <td>
+                                        <button onclick="editConfig('${config.name}', '${config.value}', '${config.description}')" style="padding: 6px 15px; background: #48bb78; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 13px;">编辑</button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            document.getElementById('contentArea').innerHTML = html;
+        }
+        
+        // 保存推荐比例
+        async function saveReferralRate() {
+            const rate = parseFloat(document.getElementById('referralRateInput').value);
+            
+            if (isNaN(rate) || rate < 0 || rate > 1) {
+                alert('请输入有效的比例（0-1之间）');
+                return;
+            }
+            
+            try {
+                const { data: existing } = await supabase
+                    .from('jk_referral_config')
+                    .select('id')
+                    .eq('name', 'referral_rate')
+                    .single();
+                
+                if (existing) {
+                    await supabase
+                        .from('jk_referral_config')
+                        .update({ value: rate.toString() })
+                        .eq('id', existing.id);
+                } else {
+                    await supabase
+                        .from('jk_referral_config')
+                        .insert({
+                            name: 'referral_rate',
+                            value: rate.toString(),
+                            description: '推荐积分比例（消费金额的百分比）'
+                        });
+                }
+                
+                alert('设置保存成功！');
+                loadAdminReferral();
+            } catch (err) {
+                alert('保存失败，请重试');
+            }
+        }
+        
+        // 切换健康社区开关
+        async function toggleCommunity(enabled) {
+            try {
+                const supabase = getJkSupabase();
+                const { data: existing } = await supabase
+                    .from('jk_system_config')
+                    .select('id')
+                    .eq('config_key', 'community_enabled')
+                    .single();
+                
+                if (existing) {
+                    await supabase
+                        .from('jk_system_config')
+                        .update({ config_value: enabled.toString() })
+                        .eq('id', existing.id);
+                } else {
+                    await supabase
+                        .from('jk_system_config')
+                        .insert({
+                            config_key: 'community_enabled',
+                            config_value: enabled.toString(),
+                            description: '是否启用健康社区功能'
+                        });
+                }
+                
+                // 更新本地缓存
+                systemConfig.community_enabled = enabled.toString();
+                
+                // 更新导航栏显示
+                updateNavByConfig();
+                
+                alert(`健康社区功能已${enabled ? '开启' : '关闭'}！`);
+            } catch (err) {
+                console.error('切换社区开关失败:', err);
+                alert('操作失败，请重试');
+            }
+        }
+        
+        // 编辑配置
+        function editConfig(name, value, description) {
+            document.getElementById('modalTitle').textContent = `编辑配置 - ${name}`;
+            document.getElementById('modalBody').innerHTML = `
+                <div class="form-group">
+                    <label>配置值</label>
+                    <input type="text" id="configValue" value="${value}">
+                </div>
+                <div class="form-group">
+                    <label>描述</label>
+                    <input type="text" id="configDesc" value="${description}">
+                </div>
+                <button onclick="submitConfigEdit('${name}')" style="padding: 12px 30px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">保存</button>
+            `;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+        
+        // 提交配置编辑
+        async function submitConfigEdit(name) {
+            const value = document.getElementById('configValue').value;
+            const description = document.getElementById('configDesc').value;
+            
+            if (!value) {
+                alert('请输入配置值');
+                return;
+            }
+            
+            try {
+                await supabase
+                    .from('jk_referral_config')
+                    .update({ value, description })
+                    .eq('name', name);
+                
+                alert('配置更新成功！');
+                closeModal();
+                loadAdminReferral();
+            } catch (err) {
+                alert('更新失败，请重试');
+            }
+        }
+        
+        // 退出登录
+        async function logout() {
+            try {
+                await supabase.auth.signOut();
+                currentUser = null;
+                showLogin();
+            } catch (err) {
+                alert('退出失败，请重试');
+            }
+        }
+        
+        // 绑定事件
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('loginBtn').addEventListener('click', login);
+            document.getElementById('regBtn').addEventListener('click', register);
+        });
+    </script>
+</body>
+</html>
