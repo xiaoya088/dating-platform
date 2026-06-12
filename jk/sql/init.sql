@@ -355,6 +355,7 @@ ALTER TABLE jk_admin_messages DISABLE ROW LEVEL SECURITY;
 ALTER TABLE jk_consumption_records DISABLE ROW LEVEL SECURITY;
 ALTER TABLE jk_referral_points DISABLE ROW LEVEL SECURITY;
 ALTER TABLE jk_referral_config DISABLE ROW LEVEL SECURITY;
+ALTER TABLE jk_system_config DISABLE ROW LEVEL SECURITY;
 
 -- =============================================
 -- 权限设置
