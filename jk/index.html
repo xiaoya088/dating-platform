@@ -913,6 +913,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             initSupabase();
             console.log('页面加载完成，Supabase已初始化');
+            // 页面加载时就处理URL中的推荐码（扫描二维码后直接处理）
+            handleReferralCodeFromURL();
         });
         
         // 获取Supabase客户端
@@ -948,8 +950,13 @@
         function handleReferralCodeFromURL() {
             const urlParams = new URLSearchParams(window.location.search);
             const referralCode = urlParams.get('referral');
+            const regReferralCode = document.getElementById('regReferralCode');
             
-            console.log('检测到URL推荐码:', referralCode);
+            console.log('=== 处理推荐码 ===');
+            console.log('URL推荐码:', referralCode);
+            console.log('推荐码输入框元素:', regReferralCode ? '存在' : '不存在');
+            console.log('localStorage现有推荐码:', localStorage.getItem('pendingReferralCode'));
+            console.log('localStorage推荐码时间:', localStorage.getItem('pendingReferralCodeTime'));
             
             if (referralCode) {
                 // 保存推荐码到本地存储，记录扫码时间
@@ -958,15 +965,62 @@
                 console.log('推荐码已保存到localStorage:', referralCode);
                 
                 // 自动填充到注册表单
-                const regReferralCode = document.getElementById('regReferralCode');
                 if (regReferralCode) {
                     regReferralCode.value = referralCode;
                     console.log('推荐码已填充到注册表单');
+                } else {
+                    console.log('注册表单输入框不存在，推荐码已保存到localStorage');
                 }
                 
                 // 清除URL参数
                 const cleanUrl = window.location.pathname + window.location.hash;
                 window.history.replaceState({}, document.title, cleanUrl);
+            } else if (regReferralCode) {
+                // URL中没有推荐码，检查localStorage中是否有有效推荐码
+                const storedReferralCode = localStorage.getItem('pendingReferralCode');
+                const storedTime = localStorage.getItem('pendingReferralCodeTime');
+                const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                
+                if (storedReferralCode && storedTime && (Date.now() - parseInt(storedTime)) < thirtyDaysMs) {
+                    // 在有效期内，填充到输入框
+                    regReferralCode.value = storedReferralCode;
+                    console.log('从localStorage读取推荐码并填充:', storedReferralCode);
+                } else {
+                    console.log('localStorage中无有效推荐码');
+                }
+            } else {
+                console.log('无URL推荐码，注册输入框不存在');
+            }
+        }
+        
+        // 从本地存储填充推荐码到输入框（确保表单显示后执行）
+        function fillReferralCodeFromStorage() {
+            const regReferralCode = document.getElementById('regReferralCode');
+            
+            console.log('=== fillReferralCodeFromStorage ===');
+            console.log('推荐码输入框:', regReferralCode ? '存在' : '不存在');
+            
+            if (regReferralCode) {
+                // 如果输入框已有值，不覆盖
+                if (regReferralCode.value) {
+                    console.log('输入框已有推荐码:', regReferralCode.value);
+                    return;
+                }
+                
+                // 从localStorage读取推荐码
+                const storedReferralCode = localStorage.getItem('pendingReferralCode');
+                const storedTime = localStorage.getItem('pendingReferralCodeTime');
+                const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                
+                console.log('localStorage推荐码:', storedReferralCode);
+                console.log('localStorage时间:', storedTime);
+                
+                if (storedReferralCode && storedTime && (Date.now() - parseInt(storedTime)) < thirtyDaysMs) {
+                    regReferralCode.value = storedReferralCode;
+                    console.log('推荐码已从localStorage填充到输入框:', storedReferralCode);
+                } else {
+                    console.log('localStorage中无有效推荐码');
+                }
             }
         }
         
@@ -1002,6 +1056,10 @@
             document.getElementById('step1').className = 'step active';
             document.getElementById('step2').className = 'step';
             selectedGender = '';
+            // 处理URL中的推荐码（扫描二维码后直接注册）
+            handleReferralCodeFromURL();
+            // 额外执行一次推荐码填充，确保表单显示后能正确填充
+            fillReferralCodeFromStorage();
         }
         
         // 显示找回密码
@@ -1167,6 +1225,11 @@
             const confirmPassword = document.getElementById('regConfirmPassword').value;
             const referralCode = document.getElementById('regReferralCode').value;
             
+            console.log('=== 注册开始 ===');
+            console.log('输入框推荐码:', referralCode);
+            console.log('localStorage推荐码:', localStorage.getItem('pendingReferralCode'));
+            console.log('localStorage推荐码时间:', localStorage.getItem('pendingReferralCodeTime'));
+            
             if (!phone || !password) {
                 showAlert('registerAlert', '请填写手机号和密码', 'error');
                 return;
@@ -1210,16 +1273,19 @@
                 const userReferralCode = generateReferralCode();
                 
                 // 获取推荐码优先级：URL参数 > 本地存储（30天有效）
-                let finalReferralCode = referralCode; // URL参数优先
+                let finalReferralCode = referralCode; // URL参数优先（从输入框获取）
                 let referrerId = null;
                 
-                // 如果URL没有推荐码，检查本地存储
+                console.log('=== 推荐关系处理开始 ===');
+                console.log('输入框推荐码:', referralCode);
+                
+                // 如果输入框没有推荐码，检查本地存储
                 if (!finalReferralCode) {
                     finalReferralCode = localStorage.getItem('pendingReferralCode');
                     console.log('从localStorage读取推荐码:', finalReferralCode);
                 }
                 
-                // 如果本地有推荐码，检查是否在30天有效期内
+                // 如果有推荐码，查询推荐人
                 if (finalReferralCode) {
                     const storedTime = localStorage.getItem('pendingReferralCodeTime');
                     const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
@@ -1227,27 +1293,34 @@
                     console.log('推荐码有效期检查:', storedTime, Date.now() - parseInt(storedTime) < thirtyDaysMs);
                     
                     if (storedTime && (Date.now() - parseInt(storedTime)) < thirtyDaysMs) {
-                        // 在有效期内，使用该推荐码
+                        // 在有效期内，使用该推荐码查询推荐人
                         console.log('推荐码有效，查询推荐人:', finalReferralCode);
-                        const { data: referrer } = await supabase
+                        const { data: referrer, error: referrerError } = await supabase
                             .from('jk_users')
                             .select('id')
                             .eq('referral_code', finalReferralCode)
                             .single();
                         
-                        console.log('查询推荐人结果:', referrer);
+                        console.log('查询推荐人结果:', referrer, '错误:', referrerError);
                         
                         if (referrer) {
                             referrerId = referrer.id;
                             console.log('找到推荐人ID:', referrerId);
+                        } else {
+                            console.log('未找到推荐人，推荐码:', finalReferralCode);
                         }
+                    } else {
+                        console.log('推荐码已过期或无保存时间');
                     }
                     // 不管是否有效，都清除本地存储的推荐码（已使用或已过期）
                     localStorage.removeItem('pendingReferralCode');
                     localStorage.removeItem('pendingReferralCodeTime');
                     console.log('已清除localStorage中的推荐码');
+                } else {
+                    console.log('无推荐码，跳过推荐人查询');
                 }
                 
+                console.log('=== 推荐关系处理结束 ===');
                 console.log('最终推荐人ID:', referrerId, '推荐码:', finalReferralCode);
                 
                 // 创建新用户（不手动设置ID，让数据库自动生成UUID）
@@ -1272,9 +1345,15 @@
                 }
                 
                 const newUserId = insertedUser[0].id;
+                console.log('新用户ID:', newUserId);
                 
                 // 创建基础健康信息记录
                 // 推荐关系永久有效（referral_valid_until为null表示无期限）
+                console.log('=== 保存推荐关系 ===');
+                console.log('用户ID:', newUserId);
+                console.log('推荐人ID:', referrerId);
+                console.log('使用的推荐码:', finalReferralCode);
+                
                 const { error: healthError } = await supabase
                     .from('jk_user_health_info')
                     .insert({
@@ -1287,6 +1366,8 @@
                 
                 if (healthError) {
                     console.error('健康信息创建失败:', healthError);
+                } else {
+                    console.log('健康信息创建成功，推荐关系已保存');
                 }
                 
                 showAlert('registerAlert', '注册成功！正在登录...', 'success');
@@ -2129,6 +2210,14 @@
                 // 获取我推荐的用户列表（通过 jk_user_health_info 表的 referrer_id 关联）
                 if (currentUser.role !== 'admin' && currentUser.role !== 'doctor') {
                     console.log('查询推荐用户，当前用户 ID:', currentUser.id);
+                    
+                    // 先查询所有健康信息，看看数据结构
+                    const { data: allHealthInfo } = await supabase
+                        .from('jk_user_health_info')
+                        .select('id, user_id, referrer_id, referral_code_used')
+                        .limit(20);
+                    console.log('所有健康信息（前20条）:', allHealthInfo);
+                    
                     const { data: referredData, error: refError } = await supabase
                         .from('jk_user_health_info')
                         .select(`
