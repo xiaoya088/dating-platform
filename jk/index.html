@@ -1272,47 +1272,38 @@
                 // 生成用户的推荐码
                 const userReferralCode = generateReferralCode();
                 
-                // 获取推荐码优先级：URL参数 > 本地存储（30天有效）
-                let finalReferralCode = referralCode; // URL参数优先（从输入框获取）
+                // 获取推荐码：输入框优先，其次localStorage
+                let finalReferralCode = referralCode; // 从输入框获取
                 let referrerId = null;
                 
                 console.log('=== 推荐关系处理开始 ===');
                 console.log('输入框推荐码:', referralCode);
                 
-                // 如果输入框没有推荐码，检查本地存储
+                // 如果输入框没有推荐码，检查本地存储（不检查有效期，只要有就用）
                 if (!finalReferralCode) {
                     finalReferralCode = localStorage.getItem('pendingReferralCode');
                     console.log('从localStorage读取推荐码:', finalReferralCode);
                 }
                 
-                // 如果有推荐码，查询推荐人
+                // 如果有推荐码，直接查询推荐人（不检查有效期）
                 if (finalReferralCode) {
-                    const storedTime = localStorage.getItem('pendingReferralCodeTime');
-                    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+                    console.log('有推荐码，查询推荐人:', finalReferralCode);
+                    const { data: referrer, error: referrerError } = await supabase
+                        .from('jk_users')
+                        .select('id, referral_code')
+                        .eq('referral_code', finalReferralCode)
+                        .single();
                     
-                    console.log('推荐码有效期检查:', storedTime, Date.now() - parseInt(storedTime) < thirtyDaysMs);
+                    console.log('查询推荐人结果:', referrer, '错误:', referrerError);
                     
-                    if (storedTime && (Date.now() - parseInt(storedTime)) < thirtyDaysMs) {
-                        // 在有效期内，使用该推荐码查询推荐人
-                        console.log('推荐码有效，查询推荐人:', finalReferralCode);
-                        const { data: referrer, error: referrerError } = await supabase
-                            .from('jk_users')
-                            .select('id')
-                            .eq('referral_code', finalReferralCode)
-                            .single();
-                        
-                        console.log('查询推荐人结果:', referrer, '错误:', referrerError);
-                        
-                        if (referrer) {
-                            referrerId = referrer.id;
-                            console.log('找到推荐人ID:', referrerId);
-                        } else {
-                            console.log('未找到推荐人，推荐码:', finalReferralCode);
-                        }
+                    if (referrer) {
+                        referrerId = referrer.id;
+                        console.log('找到推荐人ID:', referrerId);
                     } else {
-                        console.log('推荐码已过期或无保存时间');
+                        console.log('未找到推荐人，推荐码可能无效:', finalReferralCode);
                     }
-                    // 不管是否有效，都清除本地存储的推荐码（已使用或已过期）
+                    
+                    // 清除本地存储的推荐码（已使用）
                     localStorage.removeItem('pendingReferralCode');
                     localStorage.removeItem('pendingReferralCodeTime');
                     console.log('已清除localStorage中的推荐码');
