@@ -2175,14 +2175,28 @@
             
             // 加载匹配详情
             try {
+                console.log('开始加载匹配详情，用户ID:', userId);
+                
+                // 确保 supabaseClient 已初始化
+                if (!supabaseClient) {
+                    console.error('supabaseClient 未初始化');
+                    throw new Error('数据库连接未初始化，请刷新页面重试');
+                }
+                
                 // 获取用户基本信息
+                console.log('查询用户信息...');
                 const { data: user, error: userError } = await supabaseClient
                     .from('users')
                     .select('*')
                     .eq('id', userId)
                     .single();
                 
-                if (userError) throw userError;
+                if (userError) {
+                    console.error('查询用户失败:', userError);
+                    throw userError;
+                }
+                
+                console.log('用户信息:', user);
                 
                 const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
                 
@@ -2296,12 +2310,14 @@
                 }
                 
                 html += '</div>';
+                
+                // 更新模态框内容（包含关闭按钮）
                 modalContent.innerHTML = html;
                 
-                // 添加关闭按钮
-                const newCloseBtn = document.createElement('button');
-                newCloseBtn.innerHTML = '×';
-                newCloseBtn.style.cssText = `
+                // 添加关闭按钮到用户卡片区域
+                const finalCloseBtn = document.createElement('button');
+                finalCloseBtn.innerHTML = '×';
+                finalCloseBtn.style.cssText = `
                     position: absolute;
                     top: 15px;
                     right: 15px;
@@ -2315,16 +2331,24 @@
                     cursor: pointer;
                     z-index: 10;
                 `;
-                newCloseBtn.onclick = () => {
+                finalCloseBtn.onclick = () => {
                     document.body.removeChild(modal);
                     document.body.style.overflow = '';
                 };
-                modalContent.appendChild(newCloseBtn);
+                modalContent.appendChild(finalCloseBtn);
+                
+                console.log('匹配详情加载完成');
                 
             } catch (error) {
                 console.error('加载匹配详情失败:', error);
-                modalContent.innerHTML = `<div style="padding: 30px; text-align: center; color: #dc3545;">加载失败: ${error.message}</div>`;
-                modalContent.appendChild(closeBtn);
+                modalContent.innerHTML = `<div style="padding: 30px; text-align: center; color: #dc3545;">
+                    <div style="font-size: 18px; margin-bottom: 10px;">加载失败</div>
+                    <div style="font-size: 14px;">${error.message}</div>
+                    <button onclick="document.body.removeChild(document.getElementById('matchDetailModal')); document.body.style.overflow='';" 
+                        style="margin-top: 20px; padding: 10px 20px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                        关闭
+                    </button>
+                </div>`;
             }
         }
         
