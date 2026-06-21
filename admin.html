@@ -2201,23 +2201,36 @@
                 const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
                 
                 // 获取匹配结果
-                const { data: matchResults } = await supabaseClient
+                console.log('查询匹配结果...');
+                const { data: matchResults, error: matchError } = await supabaseClient
                     .from('match_results')
                     .select('target_user_id, score')
                     .eq('user_id', userId)
                     .eq('is_filtered', false)
                     .order('score', { ascending: false });
                 
-                const { data: reverseMatchResults } = await supabaseClient
+                if (matchError) {
+                    console.error('查询匹配结果失败:', matchError);
+                }
+                console.log('匹配结果:', matchResults);
+                
+                const { data: reverseMatchResults, error: reverseError } = await supabaseClient
                     .from('match_results')
                     .select('user_id, score')
                     .eq('target_user_id', userId)
                     .eq('is_filtered', false);
                 
+                if (reverseError) {
+                    console.error('查询反向匹配结果失败:', reverseError);
+                }
+                console.log('反向匹配结果:', reverseMatchResults);
+                
                 const reverseMatchMap = {};
                 (reverseMatchResults || []).forEach(m => {
                     reverseMatchMap[m.user_id] = m.score;
                 });
+                
+                console.log('反向匹配映射:', reverseMatchMap);
                 
                 const avgScore = matchResults && matchResults.length > 0 
                     ? Math.round(matchResults.reduce((sum, m) => sum + m.score, 0) / matchResults.length)
@@ -2229,15 +2242,28 @@
                     ? Math.round(reverseMatchResults.reduce((sum, m) => sum + m.score, 0) / reverseMatchResults.length)
                     : 0;
                 
+                console.log('统计数据:', { avgScore, maxScore, avgReverseScore });
+                
                 // 获取匹配对象信息
+                console.log('查询匹配对象信息...');
                 const targetUserIds = matchResults ? matchResults.map(m => m.target_user_id) : [];
-                const { data: targetUsers } = await supabaseClient
+                console.log('目标用户IDs:', targetUserIds);
+                
+                const { data: targetUsers, error: targetError } = await supabaseClient
                     .from('users')
                     .select('*')
                     .in('id', targetUserIds);
                 
+                if (targetError) {
+                    console.error('查询目标用户失败:', targetError);
+                }
+                console.log('目标用户:', targetUsers);
+                
                 const userMap = {};
                 (targetUsers || []).forEach(u => { userMap[u.id] = u; });
+                
+                console.log('用户映射:', userMap);
+                console.log('开始构建HTML...');
                 
                 // 构建HTML内容
                 let html = `
