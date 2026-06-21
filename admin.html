@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>婚恋红娘系统 - 管理员后台</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="js/supabase.js"></script>
+    <script src="js/match.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; }
@@ -2040,7 +2043,7 @@
                     likesMap[like.from_user_id].add(like.to_user_id);
                 });
 
-                // 计算每个用户的匹配情况
+                // 计算每个用户的匹配潜力指数（综合资料完整度、活跃度、互相喜欢数）
                 const userMatchData = [];
                 for (const user of users) {
                     const likedUsers = likesMap[user.id] || new Set();
@@ -2048,20 +2051,34 @@
                         likesMap[uid] && likesMap[uid].has(user.id)
                     ).length;
                     
+                    // 计算资料完整度（匹配潜力基础分）
+                    let profileScore = 0;
+                    if (user.name && user.name !== '未命名') profileScore += 20;
+                    if (user.gender) profileScore += 15;
+                    if (user.birthday) profileScore += 20;
+                    if (user.current_address) profileScore += 15;
+                    if (user.education) profileScore += 15;
+                    if (user.phone) profileScore += 15;
+                    
+                    // 综合匹配潜力指数 = 资料完整度 * 0.6 + 互相喜欢数 * 10 * 0.4
+                    const matchPotential = Math.round(profileScore + mutualCount * 10);
+                    
                     userMatchData.push({
                         ...user,
                         likesCount: likedUsers.size,
-                        mutualCount: mutualCount
+                        mutualCount: mutualCount,
+                        profileScore: profileScore,
+                        matchPotential: matchPotential
                     });
                 }
 
-                // 按互相喜欢数排序
-                userMatchData.sort((a, b) => b.mutualCount - a.mutualCount);
+                // 按匹配潜力指数排序（综合资料完整度和互相喜欢数）
+                userMatchData.sort((a, b) => b.matchPotential - a.matchPotential);
 
                 let html = `
-                    <div style="margin-bottom: 15px; color: #666;">显示前50个用户的匹配情况（按互相喜欢数排序）</div>
+                    <div style="margin-bottom: 15px; color: #666;">显示前50个用户的匹配情况（按匹配潜力指数排序）</div>
                     <table>
-                        <thead><tr><th>序号</th><th>用户</th><th>性别</th><th>年龄</th><th>所在地</th><th>学历</th><th>点赞数</th><th>互相喜欢</th></tr></thead>
+                        <thead><tr><th>序号</th><th>用户</th><th>性别</th><th>年龄</th><th>所在地</th><th>学历</th><th>资料完整度</th><th>互相喜欢</th><th>匹配潜力</th></tr></thead>
                         <tbody>
                 `;
 
@@ -2076,8 +2093,9 @@
                             <td data-label="年龄">${age}</td>
                             <td data-label="所在地">${user.current_address || '未填写'}</td>
                             <td data-label="学历">${user.education || '未知'}</td>
-                            <td data-label="点赞数">${user.likesCount}</td>
+                            <td data-label="资料完整度">${user.profileScore}分</td>
                             <td data-label="互相喜欢"><strong style="color: #28a745;">${user.mutualCount}</strong></td>
+                            <td data-label="匹配潜力"><strong style="color: ${user.matchPotential >= 80 ? '#28a745' : user.matchPotential >= 60 ? '#007bff' : '#ffc107'};">${user.matchPotential}分</strong></td>
                         </tr>
                     `;
                 });
