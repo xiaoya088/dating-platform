@@ -8,82 +8,130 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
     <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
         .match-detail-container {
+            width: 100%;
             max-width: 1200px;
-            margin: 20px auto;
-            padding: 20px;
+            margin: 0 auto;
+            padding: 10px;
+        }
+        
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 15px 0;
+            padding: 12px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+        }
+        
+        .back-btn:hover {
+            background: #0056b3;
         }
         
         .user-info-card {
             background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
             color: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 15px;
         }
         
         .user-avatar {
-            width: 80px;
-            height: 80px;
+            width: 70px;
+            height: 70px;
             border-radius: 50%;
             background: rgba(255,255,255,0.2);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 40px;
+            font-size: 35px;
+            flex-shrink: 0;
         }
         
         .user-details {
             flex: 1;
+            min-width: 0;
         }
         
         .user-name {
-            font-size: 28px;
+            font-size: 22px;
             font-weight: 700;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .user-meta {
-            font-size: 14px;
+            font-size: 13px;
             opacity: 0.9;
+            margin-bottom: 5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .match-stats {
-            display: flex;
-            gap: 30px;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
             margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255,255,255,0.2);
         }
         
         .stat-item {
             text-align: center;
+            background: rgba(255,255,255,0.15);
+            padding: 10px;
+            border-radius: 8px;
         }
         
         .stat-value {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
         }
         
         .stat-label {
-            font-size: 12px;
+            font-size: 11px;
             opacity: 0.8;
+            margin-top: 2px;
         }
         
         .match-list {
-            margin-top: 20px;
+            margin-top: 15px;
         }
         
         .match-card {
             background: white;
             border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             display: flex;
-            gap: 20px;
-            align-items: flex-start;
+            flex-direction: column;
+            gap: 15px;
         }
         
         .match-user-info {
@@ -91,29 +139,46 @@
         }
         
         .match-user-name {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             color: #333;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .match-user-meta {
             font-size: 13px;
             color: #666;
-            line-height: 1.8;
+            line-height: 1.6;
+        }
+        
+        .match-user-meta div {
+            margin-bottom: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .match-user-meta strong {
+            color: #333;
+            min-width: 50px;
+            flex-shrink: 0;
         }
         
         .match-scores {
-            display: flex;
-            gap: 20px;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #eee;
         }
         
         .score-box {
             text-align: center;
-            padding: 15px 20px;
-            border-radius: 10px;
-            min-width: 100px;
+            padding: 12px 8px;
+            border-radius: 8px;
         }
         
         .score-a-to-b {
@@ -127,13 +192,13 @@
         }
         
         .score-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
         
         .score-value {
-            font-size: 24px;
+            font-size: 22px;
             font-weight: 700;
         }
         
@@ -145,55 +210,66 @@
             color: #ff9800;
         }
         
-        .loading {
+        .loading, .empty {
             text-align: center;
-            padding: 50px;
+            padding: 40px 20px;
             color: #666;
+            font-size: 14px;
         }
         
-        .empty {
-            text-align: center;
-            padding: 50px;
-            color: #999;
-        }
-        
-        .back-btn {
-            display: inline-block;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background: #007bff;
-            color: white;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        
-        .back-btn:hover {
-            background: #0056b3;
-        }
-        
-        @media (max-width: 768px) {
+        @media (min-width: 768px) {
             .match-detail-container {
-                padding: 10px;
+                padding: 20px;
             }
             
             .user-info-card {
-                padding: 20px;
-                flex-direction: column;
-                text-align: center;
+                padding: 30px;
+                gap: 20px;
+            }
+            
+            .user-avatar {
+                width: 80px;
+                height: 80px;
+                font-size: 40px;
+            }
+            
+            .user-name {
+                font-size: 28px;
+            }
+            
+            .user-meta {
+                font-size: 14px;
             }
             
             .match-stats {
-                justify-content: center;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
             }
             
             .match-card {
-                flex-direction: column;
+                flex-direction: row;
+                align-items: flex-start;
+                gap: 20px;
+            }
+            
+            .match-user-name {
+                font-size: 18px;
             }
             
             .match-scores {
-                width: 100%;
-                justify-content: center;
+                grid-template-columns: repeat(3, auto);
+                border-top: none;
+                padding-top: 0;
+            }
+            
+            .score-box {
+                min-width: 100px;
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .match-detail-container {
+                padding: 30px;
             }
         }
     </style>
