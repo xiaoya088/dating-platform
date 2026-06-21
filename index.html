@@ -3,16 +3,121 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>婚恋红娘系统 - 登录</title>
+    <title>缘来是你婚恋红娘系统</title>
     <link rel="stylesheet" href="css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/supabase.js"></script>
+    <style>
+        /* 开场动画 */
+        .splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #6a3093 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            animation: gradientPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes gradientPulse {
+            0%, 100% { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 50%, #6a3093 100%); }
+            50% { background: linear-gradient(135deg, #6a3093 0%, #c44569 50%, #ff6b9d 100%); }
+        }
+        
+        .splash-content {
+            text-align: center;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .splash-title {
+            font-size: 48px;
+            font-weight: 800;
+            color: white;
+            text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+            letter-spacing: 8px;
+            animation: heartbeat 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .splash-subtitle {
+            font-size: 18px;
+            color: rgba(255, 255, 255, 0.9);
+            letter-spacing: 4px;
+            margin-bottom: 40px;
+        }
+        
+        .splash-heart {
+            font-size: 60px;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+        
+        .splash-loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-top: 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .splash-screen.fade-out {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+        
+        @keyframes fadeOut {
+            to {
+                opacity: 0;
+                visibility: hidden;
+            }
+        }
+    </style>
 </head>
 <body>
+    <!-- 开场动画 -->
+    <div class="splash-screen" id="splashScreen">
+        <div class="splash-content">
+            <div class="splash-heart">❤️</div>
+            <h1 class="splash-title">缘来是你</h1>
+            <p class="splash-subtitle">婚恋红娘系统</p>
+            <div class="splash-loader"></div>
+        </div>
+    </div>
+    
     <div class="container" style="display: flex; align-items: center; justify-content: center; min-height: 100vh;">
         <div class="card" style="width: 100%; max-width: 400px;">
             <div class="card-header" style="text-align: center;">
-                💕 婚恋红娘系统
+                ❤️ 缘来是你婚恋红娘系统
             </div>
             
             <div id="loginForm">
@@ -42,6 +147,15 @@
         // 页面加载完成后执行
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('页面加载完成，开始初始化...');
+            
+            // 显示开场动画，5秒后淡出
+            const splashScreen = document.getElementById('splashScreen');
+            setTimeout(function() {
+                splashScreen.classList.add('fade-out');
+                setTimeout(function() {
+                    splashScreen.style.display = 'none';
+                }, 500);
+            }, 5000);
             
             // 先检查是否已登录
             let currentUser = checkLoggedIn();
