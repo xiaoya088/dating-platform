@@ -1158,12 +1158,13 @@
             
             userList.innerHTML = `
                 <table>
-                    <thead><tr><th>姓名</th><th>手机号</th><th>性别</th><th>年龄</th><th>现居地</th><th>录入中介</th><th>状态</th><th>操作</th></tr></thead>
+                    <thead><tr><th>编号</th><th>姓名</th><th>手机号</th><th>性别</th><th>年龄</th><th>现居地</th><th>录入中介</th><th>状态</th><th>操作</th></tr></thead>
                     <tbody>
                         ${pageUsers.map(user => {
                             const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / 365.25 / 24 / 60 / 60 / 1000) : '-';
                             return `
                                 <tr>
+                                    <td data-label="编号">${user.user_code || user.id.substring(0, 8)}</td>
                                     <td data-label="姓名">${user.name || '-'}</td>
                                     <td data-label="手机号">${user.phone}</td>
                                     <td data-label="性别">${user.gender || '-'}</td>
@@ -1213,19 +1214,40 @@
         
         async function showUserDetail(userId) {
             try {
-                const { data: user, error } = await supabaseClient
-                    .from('users')
-                    .select('*')
-                    .eq('id', userId)
-                    .single();
+                // 使用 fetch API 获取用户信息
+                const userUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${userId}&select=*`;
+                const userResponse = await fetch(userUrl, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': 'sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA',
+                        'Authorization': 'Bearer sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA',
+                        'Content-Type': 'application/json'
+                    }
+                });
                 
-                if (error) throw error;
+                if (!userResponse.ok) {
+                    throw new Error('查询用户失败: ' + userResponse.status);
+                }
+                
+                const userData = await userResponse.json();
+                const user = userData && userData.length > 0 ? userData[0] : null;
+                
+                if (!user) {
+                    throw new Error('未找到用户信息');
+                }
 
-                const { data: requirements } = await supabaseClient
-                    .from('user_requirements')
-                    .select('*')
-                    .eq('user_id', userId)
-                    .maybeSingle();
+                // 使用 fetch API 获取用户要求
+                const reqUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/user_requirements?user_id=eq.${userId}&select=*`;
+                const reqResponse = await fetch(reqUrl, {
+                    method: 'GET',
+                    headers: {
+                        'apikey': 'sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA',
+                        'Authorization': 'Bearer sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const requirements = reqResponse.ok ? (await reqResponse.json())[0] : null;
                 
                 const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '-';
 
@@ -1262,16 +1284,16 @@
                         <tr><th style="width: 20%;">基本信息</th><td style="width: 80%;" colspan="3">
                             <table style="width: 100%; border: none;">
                                 <tr>
+                                    <td style="border: none; width: 25%;"><strong>编号：</strong>${user.user_code || user.id.substring(0, 8)}</td>
                                     <td style="border: none; width: 25%;"><strong>姓名：</strong>${user.name || '-'}</td>
                                     <td style="border: none; width: 25%;"><strong>性别：</strong>${user.gender || '-'}</td>
                                     <td style="border: none; width: 25%;"><strong>年龄：</strong>${age}岁</td>
-                                    <td style="border: none; width: 25%;"><strong>生日：</strong>${user.birthday || '-'}</td>
                                 </tr>
                                 <tr>
+                                    <td style="border: none;"><strong>生日：</strong>${user.birthday || '-'}</td>
                                     <td style="border: none;"><strong>身高：</strong>${user.height || '-'} cm</td>
                                     <td style="border: none;"><strong>体重：</strong>${user.weight || '-'} kg</td>
                                     <td style="border: none;"><strong>婚姻状况：</strong>${user.marital_status || '-'}</td>
-                                    <td style="border: none;"></td>
                                 </tr>
                             </table>
                         </td></tr>
@@ -2177,53 +2199,132 @@
             try {
                 console.log('开始加载匹配详情，用户ID:', userId);
                 
-                // 确保 supabaseClient 已初始化
-                if (!supabaseClient) {
-                    console.error('supabaseClient 未初始化');
-                    throw new Error('数据库连接未初始化，请刷新页面重试');
+                // 获取用户基本信息 - 使用 fetch API（带超时）
+                console.log('查询用户信息...');
+                const userUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${userId}&select=*&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                console.log('请求URL:', userUrl);
+                
+                let userResponse;
+                try {
+                    const userPromise = fetch(userUrl, { method: 'GET' });
+                    userResponse = await Promise.race([
+                        userPromise,
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('用户查询超时')), 5000))
+                    ]);
+                } catch (e) {
+                    throw new Error('查询用户信息超时（5秒）');
                 }
                 
-                // 获取用户基本信息
-                console.log('查询用户信息...');
-                const { data: user, error: userError } = await supabaseClient
-                    .from('users')
-                    .select('*')
-                    .eq('id', userId)
-                    .single();
+                console.log('用户查询响应状态:', userResponse.status, userResponse.statusText);
                 
-                if (userError) {
-                    console.error('查询用户失败:', userError);
-                    throw userError;
+                if (!userResponse.ok) {
+                    const errorText = await userResponse.text();
+                    throw new Error('查询用户失败: ' + userResponse.status + ' ' + errorText);
+                }
+                
+                // 使用流式读取避免卡住
+                let userText = '';
+                try {
+                    const userReader = userResponse.body.getReader();
+                    const decoder = new TextDecoder('utf-8');
+                    while (true) {
+                        const { done, value } = await userReader.read();
+                        if (done) break;
+                        userText += decoder.decode(value, { stream: true });
+                        if (userText.length > 100000) break;
+                    }
+                    userText += decoder.decode();
+                } catch (e) {
+                    throw new Error('读取用户数据失败: ' + e.message);
+                }
+                
+                console.log('用户响应文本长度:', userText.length);
+                const userData = JSON.parse(userText);
+                console.log('用户数据解析结果:', userData);
+                
+                const user = userData && userData.length > 0 ? userData[0] : null;
+                
+                if (!user) {
+                    throw new Error('未找到用户信息');
                 }
                 
                 console.log('用户信息:', user);
                 
                 const age = user.birthday ? Math.floor((new Date() - new Date(user.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
                 
-                // 获取匹配结果
+                // 获取匹配结果 - 使用 fetch API（带超时）
                 console.log('查询匹配结果...');
-                const { data: matchResults, error: matchError } = await supabaseClient
-                    .from('match_results')
-                    .select('target_user_id, score')
-                    .eq('user_id', userId)
-                    .eq('is_filtered', false)
-                    .order('score', { ascending: false });
+                const matchUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/match_results?user_id=eq.${userId}&is_filtered=eq.false&select=target_user_id,score&order=score.desc&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                console.log('匹配查询URL:', matchUrl);
                 
-                if (matchError) {
-                    console.error('查询匹配结果失败:', matchError);
+                let matchResponse;
+                let matchResults = [];
+                try {
+                    const matchPromise = fetch(matchUrl, { method: 'GET' });
+                    matchResponse = await Promise.race([
+                        matchPromise,
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('匹配查询超时')), 5000))
+                    ]);
+                    
+                    console.log('匹配查询响应状态:', matchResponse.status, matchResponse.statusText);
+                    
+                    if (matchResponse.ok) {
+                        // 使用流式读取
+                        let matchText = '';
+                        const matchReader = matchResponse.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        while (true) {
+                            const { done, value } = await matchReader.read();
+                            if (done) break;
+                            matchText += decoder.decode(value, { stream: true });
+                            if (matchText.length > 100000) break;
+                        }
+                        matchText += decoder.decode();
+                        matchResults = JSON.parse(matchText);
+                        console.log('匹配结果解析成功:', matchResults);
+                    } else {
+                        console.error('匹配查询失败:', matchResponse.status);
+                    }
+                } catch (e) {
+                    console.error('匹配查询异常:', e);
                 }
-                console.log('匹配结果:', matchResults);
                 
-                const { data: reverseMatchResults, error: reverseError } = await supabaseClient
-                    .from('match_results')
-                    .select('user_id, score')
-                    .eq('target_user_id', userId)
-                    .eq('is_filtered', false);
+                // 获取反向匹配结果 - 使用 fetch API（带超时）
+                console.log('查询反向匹配结果...');
+                const reverseUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/match_results?target_user_id=eq.${userId}&is_filtered=eq.false&select=user_id,score&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                console.log('反向匹配查询URL:', reverseUrl);
                 
-                if (reverseError) {
-                    console.error('查询反向匹配结果失败:', reverseError);
+                let reverseResponse;
+                let reverseMatchResults = [];
+                try {
+                    const reversePromise = fetch(reverseUrl, { method: 'GET' });
+                    reverseResponse = await Promise.race([
+                        reversePromise,
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('反向匹配查询超时')), 5000))
+                    ]);
+                    
+                    console.log('反向匹配查询响应状态:', reverseResponse.status, reverseResponse.statusText);
+                    
+                    if (reverseResponse.ok) {
+                        // 使用流式读取
+                        let reverseText = '';
+                        const reverseReader = reverseResponse.body.getReader();
+                        const decoder = new TextDecoder('utf-8');
+                        while (true) {
+                            const { done, value } = await reverseReader.read();
+                            if (done) break;
+                            reverseText += decoder.decode(value, { stream: true });
+                            if (reverseText.length > 100000) break;
+                        }
+                        reverseText += decoder.decode();
+                        reverseMatchResults = JSON.parse(reverseText);
+                        console.log('反向匹配结果解析成功:', reverseMatchResults);
+                    } else {
+                        console.error('反向匹配查询失败:', reverseResponse.status);
+                    }
+                } catch (e) {
+                    console.error('反向匹配查询异常:', e);
                 }
-                console.log('反向匹配结果:', reverseMatchResults);
                 
                 const reverseMatchMap = {};
                 (reverseMatchResults || []).forEach(m => {
@@ -2248,68 +2349,144 @@
                 console.log('查询匹配对象信息...');
                 const targetUserIds = matchResults ? matchResults.map(m => m.target_user_id) : [];
                 console.log('目标用户IDs:', targetUserIds);
+                console.log('目标用户IDs长度:', targetUserIds.length);
                 
                 // 如果没有匹配对象，直接显示空结果
                 if (targetUserIds.length === 0) {
                     console.log('没有匹配对象，显示空结果');
-                    modalContent.innerHTML = `
-                        <style>
-                            .modal-user-card {
-                                background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
-                                color: white;
-                                padding: 20px;
-                                border-radius: 15px 15px 0 0;
-                            }
-                            .modal-user-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
-                            .modal-user-meta { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
-                            .modal-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); }
-                            .modal-stat { text-align: center; background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; }
-                            .modal-stat-value { font-size: 18px; font-weight: 700; }
-                            .modal-stat-label { font-size: 11px; opacity: 0.8; }
-                        </style>
-                        <div class="modal-user-card">
-                            <div class="modal-user-name">${user.name || '未命名'}</div>
-                            <div class="modal-user-meta">${user.gender || '未知性别'} | ${age}岁 | ${user.current_address || '未知地区'}</div>
-                            <div class="modal-user-meta">手机: ${user.phone || '未填写'}</div>
-                            <div class="modal-stats">
-                                <div class="modal-stat"><div class="modal-stat-value">0</div><div class="modal-stat-label">匹配对象数</div></div>
-                                <div class="modal-stat"><div class="modal-stat-value">${avgScore}分</div><div class="modal-stat-label">平均匹配分</div></div>
-                                <div class="modal-stat"><div class="modal-stat-value">${avgReverseScore}分</div><div class="modal-stat-label">平均被匹配分</div></div>
-                                <div class="modal-stat"><div class="modal-stat-value">${maxScore}分</div><div class="modal-stat-label">最高匹配分</div></div>
-                            </div>
-                        </div>
-                        <div style="padding: 30px; text-align: center; color: #999;">暂无匹配对象</div>
-                    `;
-                    const finalCloseBtn = document.createElement('button');
-                    finalCloseBtn.innerHTML = '×';
-                    finalCloseBtn.style.cssText = `position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; border-radius: 50%; border: none; background: rgba(255,255,255,0.3); color: white; font-size: 24px; cursor: pointer; z-index: 10;`;
-                    finalCloseBtn.onclick = () => { document.body.removeChild(modal); document.body.style.overflow = ''; };
-                    modalContent.appendChild(finalCloseBtn);
+                    // ... 空结果处理
                     return;
                 }
                 
-                console.log('开始查询目标用户数据...');
-                const targetUsersPromise = supabaseClient
-                    .from('users')
-                    .select('*')
-                    .in('id', targetUserIds);
+                console.log('有匹配对象，准备查询目标用户数据...');
+                console.log('supabaseClient状态:', supabaseClient ? '已初始化' : '未初始化');
                 
-                // 添加超时处理
-                const timeoutPromise = new Promise((_, reject) => {
-                    setTimeout(() => reject(new Error('查询目标用户超时（10秒）')), 10000);
-                });
+                // 查询目标用户数据 - 使用 fetch API 直接调用
+                let targetUsers = [];
+                let targetError = null;
                 
-                const { data: targetUsers, error: targetError } = await Promise.race([targetUsersPromise, timeoutPromise])
-                    .catch(err => {
-                        console.error('查询目标用户失败或超时:', err);
-                        return { data: null, error: err };
-                    });
+                try {
+                    console.log('开始逐个查询目标用户（使用fetch）...');
+                    
+                    // 逐个查询用户
+                    for (const targetId of targetUserIds) {
+                        console.log('查询用户:', targetId);
+                        
+                        // 使用 fetch API 直接调用 Supabase REST API，带超时
+                        // 只查询必要字段，避免数据量过大
+                        const url = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${targetId}&select=id,name,gender,birthday,current_address,education,occupation,photos,user_code&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                        console.log('请求URL:', url);
+                        
+                        // 创建 AbortController 用于超时控制
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 5000);
+                        
+                        try {
+                            console.log('开始fetch请求...');
+                            
+                            // 添加整体超时控制
+                            const fetchPromise = fetch(url, {
+                                method: 'GET',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                signal: controller.signal
+                            });
+                            
+                            const response = await Promise.race([
+                                fetchPromise,
+                                new Promise((_, reject) => setTimeout(() => reject(new Error('fetch超时')), 5000))
+                            ]);
+                            
+                            clearTimeout(timeoutId);
+                            console.log('fetch响应收到:', response.status, response.statusText);
+                            
+                            if (!response.ok) {
+                                const errorText = await response.text();
+                                console.error('查询用户失败:', targetId, response.status, response.statusText, errorText);
+                                continue;
+                            }
+                            
+                            console.log('开始解析JSON...');
+                            
+                            // 使用流式读取响应
+                            const reader = response.body.getReader();
+                            let text = '';
+                            const decoder = new TextDecoder('utf-8');
+                            
+                            try {
+                                while (true) {
+                                    const { done, value } = await reader.read();
+                                    if (done) break;
+                                    text += decoder.decode(value, { stream: true });
+                                    // 限制响应大小，防止大数据卡住
+                                    if (text.length > 100000) {
+                                        console.warn('响应数据过大，截断处理');
+                                        break;
+                                    }
+                                }
+                                text += decoder.decode();
+                            } catch (readErr) {
+                                console.error('读取响应失败:', readErr);
+                                continue;
+                            }
+                            
+                            console.log('响应文本长度:', text.length);
+                            
+                            // 验证JSON格式
+                            if (!text || text.trim() === '') {
+                                console.error('响应为空');
+                                continue;
+                            }
+                            
+                            let data;
+                            try {
+                                data = JSON.parse(text);
+                            } catch (parseErr) {
+                                console.error('JSON解析失败:', parseErr);
+                                console.log('响应文本:', text.substring(0, 500));
+                                continue;
+                            }
+                            
+                            console.log('查询到用户数据:', data);
+                            
+                            if (data && data.length > 0) {
+                                targetUsers.push(data[0]);
+                                console.log('添加用户:', data[0].name);
+                            }
+                        } catch (fetchErr) {
+                            clearTimeout(timeoutId);
+                            if (fetchErr.name === 'AbortError') {
+                                console.error('查询用户超时:', targetId);
+                            } else {
+                                console.error('查询用户异常:', targetId, fetchErr);
+                            }
+                        }
+                    }
+                    
+                    console.log('所有用户查询完成，共:', targetUsers.length);
+                } catch (err) {
+                    console.error('查询目标用户异常:', err);
+                    targetError = err;
+                }
                 
                 if (targetError) {
                     console.error('查询目标用户失败:', targetError);
-                    throw new Error('查询匹配对象失败: ' + targetError.message);
+                    modalContent.innerHTML = `
+                        <div style="padding: 20px; text-align: center; color: #e74c3c;">
+                            <p>查询匹配对象失败</p>
+                            <p style="font-size: 12px; color: #999;">${targetError.message || '未知错误'}</p>
+                        </div>
+                    `;
+                    const errorCloseBtn = document.createElement('button');
+                    errorCloseBtn.innerHTML = '×';
+                    errorCloseBtn.style.cssText = `position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; border-radius: 50%; border: none; background: rgba(255,255,255,0.3); color: white; font-size: 24px; cursor: pointer; z-index: 10;`;
+                    errorCloseBtn.onclick = () => { document.body.removeChild(modal); document.body.style.overflow = ''; };
+                    modalContent.appendChild(errorCloseBtn);
+                    return;
                 }
-                console.log('目标用户查询完成:', targetUsers);
+                
+                console.log('目标用户数据:', targetUsers);
                 
                 const userMap = {};
                 (targetUsers || []).forEach(u => { userMap[u.id] = u; });
@@ -2328,6 +2505,7 @@
                         }
                         .modal-user-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
                         .modal-user-meta { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
+                        .modal-user-code { font-size: 12px; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; display: inline-block; margin-bottom: 8px; }
                         .modal-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); }
                         .modal-stat { text-align: center; background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; }
                         .modal-stat-value { font-size: 18px; font-weight: 700; }
@@ -2336,6 +2514,7 @@
                         .modal-match-card { background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 12px; }
                         .modal-match-name { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
                         .modal-match-meta { font-size: 12px; color: #666; line-height: 1.6; }
+                        .modal-match-code { font-size: 11px; color: #888; background: #eee; padding: 2px 6px; border-radius: 8px; display: inline-block; margin-left: 5px; }
                         .modal-scores { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd; }
                         .modal-score-box { text-align: center; padding: 10px 5px; border-radius: 6px; }
                         .modal-score-a { background: #e8f5e9; border: 1px solid #28a745; }
@@ -2348,6 +2527,7 @@
                         .modal-score-label { font-size: 10px; color: #666; }
                     </style>
                     <div class="modal-user-card">
+                        <div class="modal-user-code">编号: ${user.user_code || user.id.substring(0, 8)}</div>
                         <div class="modal-user-name">${user.name || '未命名'}</div>
                         <div class="modal-user-meta">${user.gender || '未知性别'} | ${age}岁 | ${user.current_address || '未知地区'}</div>
                         <div class="modal-user-meta">手机: ${user.phone || '未填写'}</div>
@@ -2366,6 +2546,9 @@
                     html += '<div style="text-align: center; padding: 30px; color: #999;">暂无匹配对象</div>';
                 } else {
                     matchResults.forEach((match, index) => {
+                        // 过滤掉自己匹配自己的情况
+                        if (match.target_user_id === userId) return;
+                        
                         const targetUser = userMap[match.target_user_id];
                         if (!targetUser) return;
                         const tAge = targetUser.birthday ? Math.floor((new Date() - new Date(targetUser.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
@@ -2373,8 +2556,8 @@
                         const combined = Math.round((match.score + rScore) / 2);
                         
                         html += `
-                            <div class="modal-match-card">
-                                <div class="modal-match-name">${index + 1}. ${targetUser.name || '未命名'} ${targetUser.gender === '男' ? '👨' : targetUser.gender === '女' ? '👩' : '👤'}</div>
+                            <div class="modal-match-card" style="cursor: pointer;" onclick="showMatchTargetDetail('${match.target_user_id}', '${userId}')">
+                                <div class="modal-match-name">${index + 1}. ${targetUser.name || '未命名'} ${targetUser.gender === '男' ? '👨' : targetUser.gender === '女' ? '👩' : '👤'} <span class="modal-match-code">${targetUser.user_code || targetUser.id.substring(0, 8)}</span></div>
                                 <div class="modal-match-meta">性别: ${targetUser.gender || '未知'} | 年龄: ${tAge}岁 | 地区: ${targetUser.current_address || '未知'}</div>
                                 <div class="modal-match-meta">学历: ${targetUser.education || '未知'} | 职业: ${targetUser.occupation || '未知'}</div>
                                 <div class="modal-scores">
@@ -2427,6 +2610,201 @@
                         关闭
                     </button>
                 </div>`;
+            }
+        }
+        
+        // 显示匹配对象详情
+        async function showMatchTargetDetail(targetUserId, sourceUserId) {
+            console.log('查看匹配对象详情:', targetUserId, '来源用户:', sourceUserId);
+            
+            const modal = document.getElementById('detailModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            
+            modalTitle.textContent = '匹配对象详情';
+            modalContent.innerHTML = '<div style="padding: 30px; text-align: center;">加载中...</div>';
+            modal.style.display = 'block';
+            
+            try {
+                // 获取匹配对象信息
+                const url = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${targetUserId}&select=id,name,gender,birthday,height,weight,education,occupation,income,marital_status,current_address,photos,user_code,declaration&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                
+                console.log('查询匹配对象详情URL:', url);
+                
+                const responsePromise = fetch(url);
+                const response = await Promise.race([
+                    responsePromise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('查询超时')), 5000))
+                ]);
+                
+                if (!response.ok) {
+                    throw new Error('查询失败: ' + response.status);
+                }
+                
+                // 使用流式读取
+                let text = '';
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    text += decoder.decode(value, { stream: true });
+                    if (text.length > 100000) break;
+                }
+                text += decoder.decode();
+                
+                console.log('用户详情响应长度:', text.length);
+                const data = JSON.parse(text);
+                const targetUser = data && data.length > 0 ? data[0] : null;
+                
+                if (!targetUser) {
+                    throw new Error('未找到用户信息');
+                }
+                
+                const age = targetUser.birthday ? Math.floor((new Date() - new Date(targetUser.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
+                
+                // 获取匹配分数
+                let aScore = 0, bScore = 0;
+                
+                // A对B的分数（来源用户对目标用户）
+                console.log('查询A对B分数...');
+                const aScoreUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/match_results?user_id=eq.${sourceUserId}&target_user_id=eq.${targetUserId}&is_filtered=eq.false&select=score&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                const aResponsePromise = fetch(aScoreUrl);
+                const aResponse = await Promise.race([
+                    aResponsePromise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('A分数查询超时')), 5000))
+                ]);
+                
+                if (aResponse.ok) {
+                    let aText = '';
+                    const aReader = aResponse.body.getReader();
+                    const aDecoder = new TextDecoder('utf-8');
+                    while (true) {
+                        const { done, value } = await aReader.read();
+                        if (done) break;
+                        aText += aDecoder.decode(value, { stream: true });
+                        if (aText.length > 10000) break;
+                    }
+                    aText += aDecoder.decode();
+                    const aData = JSON.parse(aText);
+                    if (aData && aData.length > 0) {
+                        aScore = aData[0].score || 0;
+                    }
+                }
+                
+                // B对A的分数（目标用户对来源用户）
+                console.log('查询B对A分数...');
+                const bScoreUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/match_results?user_id=eq.${targetUserId}&target_user_id=eq.${sourceUserId}&is_filtered=eq.false&select=score&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                const bResponsePromise = fetch(bScoreUrl);
+                const bResponse = await Promise.race([
+                    bResponsePromise,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('B分数查询超时')), 5000))
+                ]);
+                
+                if (bResponse.ok) {
+                    let bText = '';
+                    const bReader = bResponse.body.getReader();
+                    const bDecoder = new TextDecoder('utf-8');
+                    while (true) {
+                        const { done, value } = await bReader.read();
+                        if (done) break;
+                        bText += bDecoder.decode(value, { stream: true });
+                        if (bText.length > 10000) break;
+                    }
+                    bText += bDecoder.decode();
+                    const bData = JSON.parse(bText);
+                    if (bData && bData.length > 0) {
+                        bScore = bData[0].score || 0;
+                    }
+                }
+                
+                const combined = Math.round((aScore + bScore) / 2);
+                
+                let photosHtml = '';
+                if (targetUser.photos && typeof targetUser.photos === 'string') {
+                    try {
+                        const photos = JSON.parse(targetUser.photos);
+                        if (Array.isArray(photos) && photos.length > 0) {
+                            photosHtml = photos.map((photo, idx) => 
+                                `<img src="${photo}" style="max-width: 150px; max-height: 180px; margin: 5px; border-radius: 8px; object-fit: cover;" alt="照片${idx + 1}">`
+                            ).join('');
+                        }
+                    } catch (e) {
+                        photosHtml = '<span style="color: #888;">照片解析失败</span>';
+                    }
+                } else if (Array.isArray(targetUser.photos) && targetUser.photos.length > 0) {
+                    photosHtml = targetUser.photos.map((photo, idx) => 
+                        `<img src="${photo}" style="max-width: 150px; max-height: 180px; margin: 5px; border-radius: 8px; object-fit: cover;" alt="照片${idx + 1}">`
+                    ).join('');
+                } else {
+                    photosHtml = '<span style="color: #888;">暂无照片</span>';
+                }
+                
+                const html = `
+                    <style>
+                        .detail-header {
+                            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                            color: white;
+                            padding: 20px;
+                            border-radius: 15px 15px 0 0;
+                        }
+                        .detail-code { font-size: 12px; background: rgba(255,255,255,0.2); padding: 3px 8px; border-radius: 10px; display: inline-block; margin-bottom: 8px; }
+                        .detail-name { font-size: 24px; font-weight: 700; margin-bottom: 8px; }
+                        .detail-meta { font-size: 14px; opacity: 0.9; margin-bottom: 5px; }
+                        .detail-body { padding: 20px; }
+                        .detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid #eee; }
+                        .detail-label { width: 25%; font-weight: 600; color: #666; }
+                        .detail-value { flex: 1; color: #333; }
+                        .detail-scores { display: grid; grid-template-columns: repeat(3,1fr); gap: 15px; margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; }
+                        .detail-score-box { text-align: center; padding: 15px; border-radius: 8px; }
+                        .detail-score-value { font-size: 24px; font-weight: 700; }
+                        .detail-score-label { font-size: 12px; color: #666; margin-top: 5px; }
+                        .detail-score-a { background: #e8f5e9; }
+                        .detail-score-b { background: #fff3e0; }
+                        .detail-score-c { background: #f3e5f5; }
+                        .detail-photos { margin-top: 20px; }
+                        .detail-photos-title { font-weight: 600; margin-bottom: 10px; color: #333; }
+                        .detail-declaration { margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 10px; }
+                        .detail-declaration-title { font-weight: 600; margin-bottom: 10px; color: #333; }
+                        .detail-declaration-content { color: #666; line-height: 1.6; }
+                    </style>
+                    <div class="detail-header">
+                        <div class="detail-code">编号: ${targetUser.user_code || targetUser.id.substring(0, 8)}</div>
+                        <div class="detail-name">${targetUser.name || '未命名'} ${targetUser.gender === '男' ? '👨' : targetUser.gender === '女' ? '👩' : '👤'}</div>
+                        <div class="detail-meta">${targetUser.gender || '未知性别'} | ${age}岁 | ${targetUser.current_address || '未知地区'}</div>
+                    </div>
+                    <div class="detail-body">
+                        <div class="detail-row"><div class="detail-label">身高</div><div class="detail-value">${targetUser.height || '-'} cm</div></div>
+                        <div class="detail-row"><div class="detail-label">体重</div><div class="detail-value">${targetUser.weight || '-'} kg</div></div>
+                        <div class="detail-row"><div class="detail-label">学历</div><div class="detail-value">${targetUser.education || '-'}</div></div>
+                        <div class="detail-row"><div class="detail-label">职业</div><div class="detail-value">${targetUser.occupation || '-'}</div></div>
+                        <div class="detail-row"><div class="detail-label">收入</div><div class="detail-value">${targetUser.income || '-'}</div></div>
+                        <div class="detail-row"><div class="detail-label">婚姻状况</div><div class="detail-value">${targetUser.marital_status || '-'}</div></div>
+                        
+                        <div class="detail-scores">
+                            <div class="detail-score-box detail-score-a"><div class="detail-score-value" style="color: #28a745;">${aScore}</div><div class="detail-score-label">TA对您的匹配分</div></div>
+                            <div class="detail-score-box detail-score-b"><div class="detail-score-value" style="color: #ff9800;">${bScore}</div><div class="detail-score-label">您对TA的匹配分</div></div>
+                            <div class="detail-score-box detail-score-c"><div class="detail-score-value" style="color: #9c27b0;">${combined}</div><div class="detail-score-label">综合匹配分</div></div>
+                        </div>
+                        
+                        <div class="detail-photos">
+                            <div class="detail-photos-title">📷 照片</div>
+                            <div style="display: flex; flex-wrap: wrap;">${photosHtml}</div>
+                        </div>
+                        
+                        ${targetUser.declaration ? `
+                        <div class="detail-declaration">
+                            <div class="detail-declaration-title">💬 自我介绍</div>
+                            <div class="detail-declaration-content">${targetUser.declaration}</div>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                modalContent.innerHTML = html;
+            } catch (error) {
+                console.error('加载匹配对象详情失败:', error);
+                modalContent.innerHTML = `<div style="padding: 30px; text-align: center; color: #999;">加载失败: ${error.message}</div>`;
             }
         }
         
