@@ -2203,7 +2203,8 @@
                 
                 // 获取用户基本信息 - 使用 fetch API（带超时）
                 console.log('查询用户信息...');
-                const userUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${userId}&select=*&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                // 只查询核心字段，最小化数据量
+                const userUrl = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${userId}&select=id,name,gender,birthday&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
                 console.log('请求URL:', userUrl);
                 
                 let userResponse;
@@ -2233,7 +2234,11 @@
                         const { done, value } = await userReader.read();
                         if (done) break;
                         userText += decoder.decode(value, { stream: true });
-                        if (userText.length > 100000) break;
+                        // 增加响应大小限制到500KB
+                        if (userText.length > 500000) {
+                            console.warn('响应数据过大（超过500KB），截断处理');
+                            break;
+                        }
                     }
                     userText += decoder.decode();
                 } catch (e) {
@@ -2279,7 +2284,7 @@
                             const { done, value } = await matchReader.read();
                             if (done) break;
                             matchText += decoder.decode(value, { stream: true });
-                            if (matchText.length > 100000) break;
+                            if (matchText.length > 500000) break;
                         }
                         matchText += decoder.decode();
                         matchResults = JSON.parse(matchText);
@@ -2316,7 +2321,7 @@
                             const { done, value } = await reverseReader.read();
                             if (done) break;
                             reverseText += decoder.decode(value, { stream: true });
-                            if (reverseText.length > 100000) break;
+                            if (reverseText.length > 500000) break;
                         }
                         reverseText += decoder.decode();
                         reverseMatchResults = JSON.parse(reverseText);
@@ -2349,7 +2354,13 @@
                 
                 // 获取匹配对象信息
                 console.log('查询匹配对象信息...');
-                const targetUserIds = matchResults ? matchResults.map(m => m.target_user_id).filter(id => id !== userId) : [];
+                console.log('原始匹配结果:', matchResults);
+                
+                // 过滤掉自己匹配自己的记录
+                const filteredMatchResults = matchResults ? matchResults.filter(m => m.target_user_id !== userId) : [];
+                console.log('过滤后的匹配结果:', filteredMatchResults);
+                
+                const targetUserIds = filteredMatchResults.map(m => m.target_user_id);
                 console.log('目标用户IDs:', targetUserIds);
                 console.log('目标用户IDs长度:', targetUserIds.length);
                 
@@ -2398,6 +2409,8 @@
                 
                 console.log('有匹配对象，准备查询目标用户数据...');
                 console.log('supabaseClient状态:', supabaseClient ? '已初始化' : '未初始化');
+                console.log('待查询的目标用户IDs:', targetUserIds);
+                console.log('待查询的目标用户数量:', targetUserIds.length);
                 
                 // 查询目标用户数据 - 使用 fetch API 直接调用
                 let targetUsers = [];
@@ -2412,7 +2425,7 @@
                         
                         // 使用 fetch API 直接调用 Supabase REST API，带超时
                         // 只查询必要字段，避免数据量过大
-                        const url = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${targetId}&select=id,name,gender,birthday,current_address,education,occupation,photos,user_code&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                        const url = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${targetId}&select=id,name,gender,birthday,current_address,education,occupation,user_code&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
                         console.log('请求URL:', url);
                         
                         // 创建 AbortController 用于超时控制
@@ -2457,9 +2470,9 @@
                                     const { done, value } = await reader.read();
                                     if (done) break;
                                     text += decoder.decode(value, { stream: true });
-                                    // 限制响应大小，防止大数据卡住
-                                    if (text.length > 100000) {
-                                        console.warn('响应数据过大，截断处理');
+                                    // 增加响应大小限制到500KB
+                                    if (text.length > 500000) {
+                                        console.warn('响应数据过大（超过500KB），截断处理');
                                         break;
                                     }
                                 }
@@ -2530,6 +2543,7 @@
                 (targetUsers || []).forEach(u => { userMap[u.id] = u; });
                 
                 console.log('用户映射:', userMap);
+                console.log('用户映射长度:', Object.keys(userMap).length);
                 console.log('开始构建HTML...');
                 
                 // 构建HTML内容
@@ -2580,15 +2594,18 @@
                         <h3 style="margin-bottom: 15px; color: #333;">匹配对象列表</h3>
                 `;
                 
-                if (!matchResults || matchResults.length === 0) {
+                if (!filteredMatchResults || filteredMatchResults.length === 0) {
                     html += '<div style="text-align: center; padding: 30px; color: #999;">暂无匹配对象</div>';
                 } else {
-                    matchResults.forEach((match, index) => {
-                        // 过滤掉自己匹配自己的情况
-                        if (match.target_user_id === userId) return;
-                        
+                    filteredMatchResults.forEach((match, index) => {
                         const targetUser = userMap[match.target_user_id];
-                        if (!targetUser) return;
+                        if (!targetUser) {
+                            console.warn('未找到匹配对象:', match.target_user_id);
+                            return;
+                        }
+                        
+                        console.log('渲染匹配对象:', index + 1, targetUser.name, 'ID:', match.target_user_id);
+                        
                         const tAge = targetUser.birthday ? Math.floor((new Date() - new Date(targetUser.birthday)) / (365.25 * 24 * 60 * 60 * 1000)) : '未知';
                         const rScore = reverseMatchMap[match.target_user_id] || 0;
                         const combined = Math.round((match.score + rScore) / 2);
@@ -2665,7 +2682,7 @@
             
             try {
                 // 获取匹配对象信息
-                const url = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${targetUserId}&select=id,name,gender,birthday,height,weight,education,occupation,income,marital_status,current_address,photos,user_code,declaration&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
+                const url = `https://awhpfdhxcoycxgfhpfoy.supabase.co/rest/v1/users?id=eq.${targetUserId}&select=id,name,gender,birthday,height,weight,education,occupation,income,marital_status,current_address,user_code,declaration&apikey=sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA`;
                 
                 console.log('查询匹配对象详情URL:', url);
                 
@@ -2687,7 +2704,7 @@
                     const { done, value } = await reader.read();
                     if (done) break;
                     text += decoder.decode(value, { stream: true });
-                    if (text.length > 100000) break;
+                    if (text.length > 500000) break;
                 }
                 text += decoder.decode();
                 
