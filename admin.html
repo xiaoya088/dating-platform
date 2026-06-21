@@ -2032,53 +2032,52 @@
                     return;
                 }
 
-                // 获取所有点赞关系
-                const { data: allLikes } = await supabaseClient
-                    .from('likes')
-                    .select('from_user_id, to_user_id');
+                // 获取所有匹配结果（定时计算的匹配得分）
+                const { data: matchResults, error: matchError } = await supabaseClient
+                    .from('match_results')
+                    .select('user_id, target_user_id, score, is_filtered')
+                    .eq('is_filtered', false);
 
-                const likesMap = {};
-                (allLikes || []).forEach(like => {
-                    if (!likesMap[like.from_user_id]) likesMap[like.from_user_id] = new Set();
-                    likesMap[like.from_user_id].add(like.to_user_id);
-                });
+                if (matchError) {
+                    console.error('获取匹配结果失败:', matchError);
+                }
 
-                // 计算每个用户的匹配潜力指数（综合资料完整度、活跃度、互相喜欢数）
+                // 计算每个用户的匹配情况
                 const userMatchData = [];
                 for (const user of users) {
-                    const likedUsers = likesMap[user.id] || new Set();
-                    const mutualCount = [...likedUsers].filter(uid => 
-                        likesMap[uid] && likesMap[uid].has(user.id)
-                    ).length;
+                    // 获取该用户作为推荐对象的匹配得分（target_user_id = user.id）
+                    const matchesAsTarget = (matchResults || []).filter(m => m.target_user_id === user.id);
+                    // 获取该用户的推荐匹配得分（user_id = user.id）
+                    const matchesAsUser = (matchResults || []).filter(m => m.user_id === user.id);
                     
-                    // 计算资料完整度（匹配潜力基础分）
-                    let profileScore = 0;
-                    if (user.name && user.name !== '未命名') profileScore += 20;
-                    if (user.gender) profileScore += 15;
-                    if (user.birthday) profileScore += 20;
-                    if (user.current_address) profileScore += 15;
-                    if (user.education) profileScore += 15;
-                    if (user.phone) profileScore += 15;
+                    // 计算平均匹配得分（作为推荐对象）
+                    const avgScoreAsTarget = matchesAsTarget.length > 0 
+                        ? Math.round(matchesAsTarget.reduce((sum, m) => sum + m.score, 0) / matchesAsTarget.length)
+                        : 0;
                     
-                    // 综合匹配潜力指数 = 资料完整度 * 0.6 + 互相喜欢数 * 10 * 0.4
-                    const matchPotential = Math.round(profileScore + mutualCount * 10);
+                    // 计算最高匹配得分
+                    const maxScore = matchesAsUser.length > 0 
+                        ? Math.max(...matchesAsUser.map(m => m.score))
+                        : 0;
+                    
+                    // 匹配对象数量
+                    const matchCount = matchesAsUser.length;
                     
                     userMatchData.push({
                         ...user,
-                        likesCount: likedUsers.size,
-                        mutualCount: mutualCount,
-                        profileScore: profileScore,
-                        matchPotential: matchPotential
+                        avgMatchScore: avgScoreAsTarget,
+                        maxMatchScore: maxScore,
+                        matchCount: matchCount
                     });
                 }
 
-                // 按匹配潜力指数排序（综合资料完整度和互相喜欢数）
-                userMatchData.sort((a, b) => b.matchPotential - a.matchPotential);
+                // 按平均匹配得分排序（作为推荐对象的受欢迎程度）
+                userMatchData.sort((a, b) => b.avgMatchScore - a.avgMatchScore);
 
                 let html = `
-                    <div style="margin-bottom: 15px; color: #666;">显示前50个用户的匹配情况（按匹配潜力指数排序）</div>
+                    <div style="margin-bottom: 15px; color: #666;">显示前50个用户的匹配情况（按平均匹配得分排序，数据来自定时计算的match_results表）</div>
                     <table>
-                        <thead><tr><th>序号</th><th>用户</th><th>性别</th><th>年龄</th><th>所在地</th><th>学历</th><th>资料完整度</th><th>互相喜欢</th><th>匹配潜力</th></tr></thead>
+                        <thead><tr><th>序号</th><th>用户</th><th>性别</th><th>年龄</th><th>所在地</th><th>学历</th><th>平均匹配分</th><th>最高匹配分</th><th>匹配对象数</th></tr></thead>
                         <tbody>
                 `;
 
@@ -2093,9 +2092,9 @@
                             <td data-label="年龄">${age}</td>
                             <td data-label="所在地">${user.current_address || '未填写'}</td>
                             <td data-label="学历">${user.education || '未知'}</td>
-                            <td data-label="资料完整度">${user.profileScore}分</td>
-                            <td data-label="互相喜欢"><strong style="color: #28a745;">${user.mutualCount}</strong></td>
-                            <td data-label="匹配潜力"><strong style="color: ${user.matchPotential >= 80 ? '#28a745' : user.matchPotential >= 60 ? '#007bff' : '#ffc107'};">${user.matchPotential}分</strong></td>
+                            <td data-label="平均匹配分"><strong style="color: ${user.avgMatchScore >= 80 ? '#28a745' : user.avgMatchScore >= 60 ? '#007bff' : '#ffc107'};">${user.avgMatchScore}分</strong></td>
+                            <td data-label="最高匹配分"><strong style="color: ${user.maxMatchScore >= 80 ? '#28a745' : user.maxMatchScore >= 60 ? '#007bff' : '#ffc107'};">${user.maxMatchScore}分</strong></td>
+                            <td data-label="匹配对象数">${user.matchCount}人</td>
                         </tr>
                     `;
                 });
