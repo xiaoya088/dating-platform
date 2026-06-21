@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>缘来是你婚恋红娘系统 - 用户使用手册</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; padding: 30px 20px; border-radius: 15px; margin-bottom: 20px; text-align: center; }
+        .header h1 { font-size: 24px; margin-bottom: 10px; }
+        .header p { font-size: 14px; opacity: 0.9; }
+        .download-btn { display: inline-block; background: #28a745; color: white; padding: 12px 24px; border-radius: 25px; text-decoration: none; font-size: 16px; font-weight: 600; margin-top: 15px; transition: background 0.3s; }
+        .download-btn:hover { background: #218838; }
+        .download-btn:active { transform: scale(0.98); }
+        .section { background: white; border-radius: 12px; padding: 20px; margin-bottom: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .section h2 { font-size: 18px; color: #c44569; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+        .section h3 { font-size: 16px; color: #333; margin: 15px 0 10px; }
+        .section h4 { font-size: 14px; color: #555; margin: 12px 0 8px; }
+        .section p { margin-bottom: 10px; font-size: 14px; color: #666; }
+        .section ul, .section ol { margin-left: 20px; margin-bottom: 10px; }
+        .section li { font-size: 14px; color: #666; margin-bottom: 5px; }
+        .code-box { background: #f8f9fa; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #333; margin-bottom: 10px; }
+        .highlight { background: #fff3cd; padding: 10px; border-radius: 8px; margin-bottom: 10px; }
+        .table-container { overflow-x: auto; margin-bottom: 10px; }
+        .section table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .section th, .section td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        .section th { background: #f8f9fa; font-weight: 600; }
+        .faq-q { font-weight: 600; color: #333; margin-bottom: 5px; }
+        .faq-a { color: #666; margin-bottom: 15px; padding-left: 15px; }
+        .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+        @media (max-width: 480px) {
+            .container { padding: 10px; }
+            .header { padding: 20px 15px; }
+            .header h1 { font-size: 20px; }
+            .section { padding: 15px; }
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/docxtemplater/3.37.10/docxtemplater.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📖 缘来是你婚恋红娘系统</h1>
+            <p>用户使用手册</p>
+            <a href="#" class="download-btn" onclick="downloadWord(); return false;">📥 下载Word文档</a>
+        </div>
+
+        <div class="section">
+            <h2>一、系统介绍</h2>
+            <p>「缘来是你婚恋红娘系统」是一个专业的婚恋交友平台，致力于为单身男女提供智能匹配、真实交友、安全沟通的服务。</p>
+            <h3>系统特色</h3>
+            <ul>
+                <li>🎯 <strong>智能匹配算法</strong>：基于多维度的智能匹配推荐，提高匹配成功率</li>
+                <li>🔒 <strong>安全可靠</strong>：严格的身份验证和信息保护机制</li>
+                <li>💬 <strong>即时沟通</strong>：支持实时聊天和消息通知</li>
+                <li>📱 <strong>移动友好</strong>：完美适配手机端，随时随地使用</li>
+                <li>🎊 <strong>线下活动</strong>：定期组织线下交友活动</li>
+                <li>👥 <strong>中介服务</strong>：专业红娘一对一服务</li>
+            </ul>
+            <h3>用户角色</h3>
+            <ol>
+                <li><strong>普通用户</strong>：注册用户，可浏览匹配对象、发送消息、参与活动</li>
+                <li><strong>中介机构</strong>：经认证的红娘机构，可管理客户、提供专业服务</li>
+                <li><strong>系统管理员</strong>：负责系统运营、用户管理、数据统计</li>
+            </ol>
+        </div>
+
+        <div class="section">
+            <h2>二、用户注册与登录</h2>
+            <h3>1. 用户注册</h3>
+            <h4>注册流程</h4>
+            <ol>
+                <li><strong>访问注册页面</strong>：打开系统主页，点击"注册"按钮，或扫描推荐二维码直接进入注册页面</li>
+                <li><strong>填写基本信息</strong>：手机号码（必填）、密码（6-20位）、姓名、性别、生日</li>
+                <li><strong>推荐码填写</strong>：如果通过扫描二维码注册，推荐码会自动填充</li>
+                <li><strong>提交注册</strong>：点击"注册"按钮完成注册</li>
+            </ol>
+            <h4>注册注意事项</h4>
+            <ul>
+                <li>手机号码必须真实有效，用于接收系统通知</li>
+                <li>密码建议使用字母+数字组合，提高安全性</li>
+                <li>推荐码可建立推荐关系，享受推荐奖励</li>
+            </ul>
+            <h3>2. 用户登录</h3>
+            <h4>登录方式</h4>
+            <ol>
+                <li>输入注册时的手机号码</li>
+                <li>输入密码</li>
+                <li>点击"登录"按钮</li>
+            </ol>
+            <p>勾选"记住我"选项，系统会保持登录状态7天。</p>
+        </div>
+
+        <div class="section">
+            <h2>三、个人中心</h2>
+            <h3>1. 个人信息管理</h3>
+            <ul>
+                <li><strong>基本信息</strong>：姓名、性别、生日、手机号码、所在地、学历、职业、收入、婚姻状况</li>
+                <li><strong>详细信息</strong>：身高、体重、家庭情况、兴趣爱好、自我介绍</li>
+                <li><strong>照片管理</strong>：上传个人照片（最多9张），设置主照片</li>
+            </ul>
+            <h3>2. 择偶要求设置</h3>
+            <ul>
+                <li><strong>基本要求</strong>：年龄范围、性别要求、地区要求、学历要求</li>
+                <li><strong>详细要求</strong>：身高范围、收入要求、婚姻状况要求</li>
+            </ul>
+            <h3>3. 消费记录查看</h3>
+            <p>查看充值记录、消费明细、余额信息。</p>
+            <h3>4. 推荐关系管理</h3>
+            <p>查看推荐人信息、推荐奖励，生成推荐二维码。</p>
+        </div>
+
+        <div class="section">
+            <h2>四、智能匹配推荐</h2>
+            <h3>1. 匹配算法说明</h3>
+            <p>系统采用多维度智能匹配算法，综合考虑基本信息匹配度、择偶要求匹配度、兴趣爱好匹配度、互动行为匹配度。</p>
+            <h3>2. 查看匹配对象</h3>
+            <h4>匹配列表</h4>
+            <ul>
+                <li>按匹配度从高到低排序</li>
+                <li>显示匹配分数（0-100分）</li>
+                <li>显示基本信息：姓名、年龄、地区、学历</li>
+                <li>显示用户编号（xy+6位数字）</li>
+            </ul>
+            <h4>匹配详情</h4>
+            <p>点击匹配对象卡片，查看详细信息：基本信息、详细资料、匹配分数（A→B、B→A、综合匹配分）、照片展示、自我介绍。</p>
+            <h3>3. 表达好感</h3>
+            <ul>
+                <li><strong>点赞功能</strong>：点击"喜欢"按钮表达好感</li>
+                <li><strong>发送消息</strong>：点击"发消息"按钮进入聊天界面</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>五、消息聊天</h2>
+            <h3>1. 消息列表</h3>
+            <ul>
+                <li>显示所有聊天对话</li>
+                <li>显示未读消息数量</li>
+                <li>显示最新消息内容</li>
+                <li>按时间排序</li>
+            </ul>
+            <h3>2. 聊天功能</h3>
+            <ul>
+                <li><strong>发送消息</strong>：支持文本消息、表情</li>
+                <li><strong>消息状态</strong>：已发送、已读</li>
+            </ul>
+            <h3>3. 消息管理</h3>
+            <p>支持删除对话、标记未读、消息搜索。</p>
+        </div>
+
+        <div class="section">
+            <h2>六、活动与公告</h2>
+            <h3>1. 系统活动</h3>
+            <ul>
+                <li><strong>活动列表</strong>：显示所有线下活动，包括时间、地点、费用</li>
+                <li><strong>活动报名</strong>：点击"报名"按钮，填写报名信息</li>
+            </ul>
+            <h3>2. 系统公告</h3>
+            <p>查看系统通知、活动通知、匹配通知。</p>
+        </div>
+
+        <div class="section">
+            <h2>七、中介功能</h2>
+            <h3>1. 中介登录</h3>
+            <p>使用中介账号登录，进入中介管理后台。</p>
+            <h3>2. 客户管理</h3>
+            <ul>
+                <li><strong>客户列表</strong>：查看所有客户信息，支持搜索和筛选</li>
+                <li><strong>客户详情</strong>：查看客户基本信息、择偶要求、匹配情况</li>
+            </ul>
+            <h3>3. 匹配推荐</h3>
+            <p>为客户推荐匹配对象，查看匹配分数，安排线下见面。</p>
+        </div>
+
+        <div class="section">
+            <h2>八、管理员功能</h2>
+            <h3>1. 用户管理</h3>
+            <ul>
+                <li><strong>用户列表</strong>：查看所有用户信息，支持搜索和筛选</li>
+                <li><strong>用户详情</strong>：查看用户完整信息、匹配情况、消费记录</li>
+                <li><strong>用户操作</strong>：编辑、禁用/启用、重置密码、删除</li>
+            </ul>
+            <h3>2. 匹配管理</h3>
+            <ul>
+                <li><strong>匹配情况</strong>：查看所有用户匹配情况</li>
+                <li><strong>匹配详情</strong>：查看匹配对象列表和双向匹配分数</li>
+            </ul>
+            <h3>3. 系统设置</h3>
+            <ul>
+                <li><strong>基础设置</strong>：系统名称、公告设置、匹配算法参数</li>
+                <li><strong>推荐设置</strong>：推荐开关、奖励设置、有效期</li>
+            </ul>
+            <h3>4. 数据统计</h3>
+            <p>用户统计、匹配统计、消息统计、消费统计。</p>
+        </div>
+
+        <div class="section">
+            <h2>九、常见问题</h2>
+            <div class="faq-q">Q1: 如何提高匹配成功率？</div>
+            <div class="faq-a">完善个人信息，上传真实照片；设置合理的择偶要求；积极点赞和发送消息；参加线下活动。</div>
+            
+            <div class="faq-q">Q2: 匹配对象列表为什么显示自己？</div>
+            <div class="faq-a">系统已优化，匹配对象列表不再显示自己。如遇到此问题，请刷新页面。</div>
+            
+            <div class="faq-q">Q3: 如何查看匹配对象的详细信息？</div>
+            <div class="faq-a">在匹配对象列表中，点击任意匹配对象卡片，即可查看详细信息。</div>
+            
+            <div class="faq-q">Q4: 推荐码有什么作用？</div>
+            <div class="faq-a">建立推荐关系，推荐人可获得奖励；推荐码有效期可设置；扫描二维码注册时自动填充推荐码。</div>
+            
+            <div class="faq-q">Q5: 用户编号是什么？</div>
+            <div class="faq-a">用户编号格式为 xy+6位数字（如xy000001），用于唯一标识用户，显示在用户信息和匹配详情中。</div>
+            
+            <div class="faq-q">Q6: 匹配分数如何计算？</div>
+            <div class="faq-a">A→B分数是您对TA的匹配度，B→A分数是TA对您的匹配度，综合分数=(A→B + B→A)/2。</div>
+            
+            <div class="faq-q">Q7: 为什么匹配详情一直显示"加载中"？</div>
+            <div class="faq-a">请强制刷新页面（Ctrl+F5），检查网络连接，或查看控制台日志。</div>
+            
+            <div class="faq-q">Q8: 如何联系管理员？</div>
+            <div class="faq-a">通过系统消息功能、拨打客服电话或发送邮件至客服邮箱。</div>
+            
+            <div class="faq-q">Q9: 手机端如何使用？</div>
+            <div class="faq-a">系统完美适配手机端，使用手机浏览器访问即可。</div>
+            
+            <div class="faq-q">Q10: 如何保护个人信息安全？</div>
+            <div class="faq-a">不要泄露登录密码，不要向陌生人透露敏感信息，及时举报可疑用户，定期更新密码。</div>
+        </div>
+
+        <div class="section">
+            <h2>十、技术支持</h2>
+            <h3>系统版本</h3>
+            <ul>
+                <li>版本号：v1.0.0</li>
+                <li>更新日期：2026-06-21</li>
+                <li>系统名称：缘来是你婚恋红娘系统</li>
+            </ul>
+            <h3>技术架构</h3>
+            <ul>
+                <li>前端：HTML5 + CSS3 + JavaScript</li>
+                <li>后端：Supabase (PostgreSQL)</li>
+                <li>匹配算法：多维度智能匹配</li>
+                <li>部署平台：Netlify</li>
+            </ul>
+            <h3>联系方式</h3>
+            <ul>
+                <li>客服电话：400-XXX-XXXX</li>
+                <li>客服邮箱：support@example.com</li>
+                <li>官方网站：https://dating-platform.com</li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>附录：匹配算法参数权重</h2>
+            <div class="table-container">
+                <table>
+                    <tr><th>参数</th><th>权重</th><th>说明</th></tr>
+                    <tr><td>年龄匹配</td><td>20%</td><td>年龄范围是否符合要求</td></tr>
+                    <tr><td>地区匹配</td><td>15%</td><td>所在地是否匹配</td></tr>
+                    <tr><td>学历匹配</td><td>15%</td><td>学历是否符合要求</td></tr>
+                    <tr><td>身高匹配</td><td>10%</td><td>身高是否在要求范围内</td></tr>
+                    <tr><td>收入匹配</td><td>10%</td><td>收入是否符合要求</td></tr>
+                    <tr><td>婚姻状况</td><td>10%</td><td>婚姻状况是否匹配</td></tr>
+                    <tr><td>兴趣爱好</td><td>10%</td><td>共同兴趣爱好</td></tr>
+                    <tr><td>互动行为</td><td>10%</td><td>点赞、聊天等行为</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>「缘来是你婚恋红娘系统」用户使用手册</p>
+            <p>最后更新时间：2026-06-21</p>
+        </div>
+    </div>
+
+    <script>
+        function downloadWord() {
+            const content = generateDocxContent();
+            const zip = new JSZip();
+            zip.loadAsync(content).then(function(doc) {
+                doc.generateAsync({type:'blob'}).then(function(blob) {
+                    saveAs(blob, '缘来是你婚恋红娘系统_用户使用手册.docx');
+                });
+            });
+        }
+
+        function generateDocxContent() {
+            const templateContent = `
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p>
+      <w:r>
+        <w:t>缘来是你婚恋红娘系统</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>用户使用手册</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>一、系统介绍</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>「缘来是你婚恋红娘系统」是一个专业的婚恋交友平台，致力于为单身男女提供智能匹配、真实交友、安全沟通的服务。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>系统特色：</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 智能匹配算法：基于多维度的智能匹配推荐，提高匹配成功率</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 安全可靠：严格的身份验证和信息保护机制</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 即时沟通：支持实时聊天和消息通知</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>4. 移动友好：完美适配手机端，随时随地使用</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>5. 线下活动：定期组织线下交友活动</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>6. 中介服务：专业红娘一对一服务</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>用户角色：</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 普通用户：注册用户，可浏览匹配对象、发送消息、参与活动</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 中介机构：经认证的红娘机构，可管理客户、提供专业服务</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 系统管理员：负责系统运营、用户管理、数据统计</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>二、用户注册与登录</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 用户注册：</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>注册流程：访问注册页面 -> 填写基本信息 -> 推荐码填写 -> 提交注册</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>注册注意事项：手机号码必须真实有效，密码建议使用字母+数字组合，推荐码可建立推荐关系</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 用户登录：输入手机号和密码，点击登录</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>三、个人中心</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 个人信息管理：基本信息、详细信息、照片管理</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 择偶要求设置：基本要求、详细要求</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 消费记录查看：充值记录、消费明细、余额信息</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>4. 推荐关系管理：推荐人信息、推荐奖励、推荐二维码</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>四、智能匹配推荐</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 匹配算法说明：多维度智能匹配算法</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 查看匹配对象：匹配列表、匹配详情</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 表达好感：点赞、发送消息</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>五、消息聊天</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 消息列表：显示所有聊天对话</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 聊天功能：发送消息、消息状态</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 消息管理：删除对话、标记未读、消息搜索</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>六、活动与公告</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 系统活动：活动列表、活动报名</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 系统公告：系统通知、活动通知、匹配通知</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>七、中介功能</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 中介登录：使用中介账号登录</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 客户管理：客户列表、客户详情</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 匹配推荐：为客户推荐匹配对象</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>八、管理员功能</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>1. 用户管理：用户列表、用户详情、用户操作</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>2. 匹配管理：匹配情况、匹配详情</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>3. 系统设置：基础设置、推荐设置</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>4. 数据统计：用户统计、匹配统计、消息统计、消费统计</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>九、常见问题</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q1: 如何提高匹配成功率？完善个人信息，上传真实照片，设置合理的择偶要求，积极互动，参加线下活动。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q2: 匹配对象列表为什么显示自己？系统已优化，匹配对象列表不再显示自己。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q3: 如何查看匹配对象的详细信息？点击匹配对象卡片即可查看。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q4: 推荐码有什么作用？建立推荐关系，享受推荐奖励。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q5: 用户编号是什么？格式为xy+6位数字，用于唯一标识用户。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q6: 匹配分数如何计算？综合分数=(A→B + B→A)/2。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q7: 为什么匹配详情一直显示"加载中"？请强制刷新页面，检查网络连接。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q8: 如何联系管理员？通过系统消息、客服电话或邮箱。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q9: 手机端如何使用？使用手机浏览器访问即可。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>Q10: 如何保护个人信息安全？不要泄露密码，不向陌生人透露敏感信息。</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>十、技术支持</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>系统版本：v1.0.0</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>更新日期：2026-06-21</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>客服电话：400-XXX-XXXX</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>客服邮箱：support@example.com</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>官方网站：https://dating-platform.com</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>附录：匹配算法参数权重</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>年龄匹配：20% | 地区匹配：15% | 学历匹配：15% | 身高匹配：10%</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>收入匹配：10% | 婚姻状况：10% | 兴趣爱好：10% | 互动行为：10%</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>版权声明：本手册版权归「缘来是你婚恋红娘系统」所有</w:t>
+      </w:r>
+    </w:p>
+    <w:p>
+      <w:r>
+        <w:t>最后更新时间：2026-06-21</w:t>
+      </w:r>
+    </w:p>
+  </w:body>
+</w:document>
+            `;
+            
+            const zip = new JSZip();
+            zip.file('word/document.xml', templateContent);
+            zip.file('_rels/.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/></Relationships>`);
+            zip.file('word/_rels/document.xml.rels', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/></Relationships>`);
+            zip.file('[Content_Types].xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>`);
+            zip.file('word/styles.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:styles xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:style w:type="paragraph" w:default="true" w:styleId="Normal"><w:name w:val="Normal"/><w:qFormat/><w:rsid w:val="00000000"/></w:style></w:styles>`);
+            zip.file('word/settings.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:settings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/></w:settings>`);
+            zip.file('word/webSettings.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:webSettings xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/></w:webSettings>`);
+            zip.file('word/fontTable.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:fonts xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"/></w:fonts>`);
+            zip.file('docProps/app.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties"><Application>缘来是你婚恋红娘系统</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop><HeadingPairs><vt:vector xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes" vt:baseType="variant" vt:size="2"><vt:variant><vt:lpstr>用户使用手册</vt:lpstr></vt:variant><vt:variant><vt:i4>1</vt:i4></vt:variant></vt:vector></HeadingPairs><TitlesOfParts><vt:vector xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes" vt:baseType="lpstr" vt:size="1"><vt:lpstr>内容</vt:lpstr></vt:vector></TitlesOfParts></Properties>`);
+            zip.file('docProps/core.xml', `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties"><dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">缘来是你婚恋红娘系统 - 用户使用手册</dc:title><dc:creator xmlns:dc="http://purl.org/dc/elements/1.1/">系统管理员</dc:creator><cp:lastModifiedBy>系统管理员</cp:lastModifiedBy><cp:revision>1</cp:revision><dcterms:created xmlns:dcterms="http://purl.org/dc/terms/" xsi:type="dcterms:W3CDTF" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2026-06-21T00:00:00Z</dcterms:created><dcterms:modified xmlns:dcterms="http://purl.org/dc/terms/" xsi:type="dcterms:W3CDTF" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">2026-06-21T00:00:00Z</dcterms:modified></cp:coreProperties>`);
+            
+            return zip.generateAsync({type:'blob'});
+        }
+    </script>
+</body>
+</html>
