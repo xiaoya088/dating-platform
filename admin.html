@@ -2249,15 +2249,67 @@
                 const targetUserIds = matchResults ? matchResults.map(m => m.target_user_id) : [];
                 console.log('目标用户IDs:', targetUserIds);
                 
-                const { data: targetUsers, error: targetError } = await supabaseClient
+                // 如果没有匹配对象，直接显示空结果
+                if (targetUserIds.length === 0) {
+                    console.log('没有匹配对象，显示空结果');
+                    modalContent.innerHTML = `
+                        <style>
+                            .modal-user-card {
+                                background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+                                color: white;
+                                padding: 20px;
+                                border-radius: 15px 15px 0 0;
+                            }
+                            .modal-user-name { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+                            .modal-user-meta { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
+                            .modal-stats { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2); }
+                            .modal-stat { text-align: center; background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; }
+                            .modal-stat-value { font-size: 18px; font-weight: 700; }
+                            .modal-stat-label { font-size: 11px; opacity: 0.8; }
+                        </style>
+                        <div class="modal-user-card">
+                            <div class="modal-user-name">${user.name || '未命名'}</div>
+                            <div class="modal-user-meta">${user.gender || '未知性别'} | ${age}岁 | ${user.current_address || '未知地区'}</div>
+                            <div class="modal-user-meta">手机: ${user.phone || '未填写'}</div>
+                            <div class="modal-stats">
+                                <div class="modal-stat"><div class="modal-stat-value">0</div><div class="modal-stat-label">匹配对象数</div></div>
+                                <div class="modal-stat"><div class="modal-stat-value">${avgScore}分</div><div class="modal-stat-label">平均匹配分</div></div>
+                                <div class="modal-stat"><div class="modal-stat-value">${avgReverseScore}分</div><div class="modal-stat-label">平均被匹配分</div></div>
+                                <div class="modal-stat"><div class="modal-stat-value">${maxScore}分</div><div class="modal-stat-label">最高匹配分</div></div>
+                            </div>
+                        </div>
+                        <div style="padding: 30px; text-align: center; color: #999;">暂无匹配对象</div>
+                    `;
+                    const finalCloseBtn = document.createElement('button');
+                    finalCloseBtn.innerHTML = '×';
+                    finalCloseBtn.style.cssText = `position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; border-radius: 50%; border: none; background: rgba(255,255,255,0.3); color: white; font-size: 24px; cursor: pointer; z-index: 10;`;
+                    finalCloseBtn.onclick = () => { document.body.removeChild(modal); document.body.style.overflow = ''; };
+                    modalContent.appendChild(finalCloseBtn);
+                    return;
+                }
+                
+                console.log('开始查询目标用户数据...');
+                const targetUsersPromise = supabaseClient
                     .from('users')
                     .select('*')
                     .in('id', targetUserIds);
                 
+                // 添加超时处理
+                const timeoutPromise = new Promise((_, reject) => {
+                    setTimeout(() => reject(new Error('查询目标用户超时（10秒）')), 10000);
+                });
+                
+                const { data: targetUsers, error: targetError } = await Promise.race([targetUsersPromise, timeoutPromise])
+                    .catch(err => {
+                        console.error('查询目标用户失败或超时:', err);
+                        return { data: null, error: err };
+                    });
+                
                 if (targetError) {
                     console.error('查询目标用户失败:', targetError);
+                    throw new Error('查询匹配对象失败: ' + targetError.message);
                 }
-                console.log('目标用户:', targetUsers);
+                console.log('目标用户查询完成:', targetUsers);
                 
                 const userMap = {};
                 (targetUsers || []).forEach(u => { userMap[u.id] = u; });
