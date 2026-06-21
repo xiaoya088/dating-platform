@@ -289,6 +289,25 @@
     </div>
     
     <script>
+        // 确保 Supabase 初始化
+        let supabaseClient = null;
+        
+        async function ensureSupabase() {
+            if (supabaseClient) return supabaseClient;
+            
+            // 等待 supabase 库加载
+            while (typeof supabase === 'undefined') {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+            const SUPABASE_URL = 'https://awhpfdhxcoycxgfhpfoy.supabase.co';
+            const SUPABASE_ANON_KEY = 'sb_publishable_VyBOeg7kGc_i905NOmd69g_KkSbsOpA';
+            
+            supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase 客户端初始化成功');
+            return supabaseClient;
+        }
+        
         document.addEventListener('DOMContentLoaded', async function() {
             // 获取URL参数中的用户ID
             const urlParams = new URLSearchParams(window.location.search);
